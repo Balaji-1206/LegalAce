@@ -5,6 +5,7 @@ backend/__pycache__/
 
 # Environment variables
 backend/.env
+backend/.env.example 
 
 # Node
 frontend/node_modules/
@@ -15,3 +16,7 @@ frontend/node_modules/
 # OS files
 .DS_Store
 Thumbs.db
+
+backend/.venv
+activate.bat
+activate.ps1
