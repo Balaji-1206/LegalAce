@@ -1,0 +1,272 @@
+[
+  {
+    "law_id": "CPA_2019_S2",
+    "act_name": "Consumer Protection Act, 2019",
+    "section_number": "Section 2(7)",
+    "section_title": "Definition of Consumer",
+    "section_text": "Consumer means any person who buys any goods for a consideration which has been paid or promised or partly paid and partly promised, or under any system of deferred payment and includes any user of such goods other than the person who buys such goods for consideration paid or promised or partly paid or partly promised, or under any system of deferred payment, when such use is made with the approval of such person, but does not include a person who obtains such goods for resale or for any commercial purpose.",
+    "category": "consumer",
+    "keywords": ["consumer", "buyer", "goods", "purchase", "defective product"]
+  },
+  {
+    "law_id": "CPA_2019_S35",
+    "act_name": "Consumer Protection Act, 2019",
+    "section_number": "Section 35",
+    "section_title": "Complaint before District Consumer Disputes Redressal Commission",
+    "section_text": "A complaint in relation to any goods sold or delivered or agreed to be sold or delivered or any service provided or agreed to be provided may be filed by a consumer in District Commission having jurisdiction. Any consumer or central or state government, any voluntary consumer association registered under any law, or in case of death of consumer, his legal heir or representative may file a complaint. Pecuniary jurisdiction of District Commission is up to Rs. 50 lakhs.",
+    "category": "consumer",
+    "keywords": ["complaint", "consumer commission", "defective goods", "refund", "redressal", "District Commission"]
+  },
+  {
+    "law_id": "CPA_2019_S39",
+    "act_name": "Consumer Protection Act, 2019",
+    "section_number": "Section 39",
+    "section_title": "Finding of District Commission — Remedies",
+    "section_text": "If the District Commission is satisfied that the goods complained against suffer from any of the defects specified in the complaint, or that any of the allegations contained in the complaint about the services are proved, it shall issue an order to the opposite party directing them to: remove the defect from the goods; replace the goods with new goods of similar description free from defect; return to the complainant the price; pay compensation for loss or injury suffered; cease and desist from unfair trade practice; provide adequate costs to parties.",
+    "category": "consumer",
+    "keywords": ["defective product", "refund", "replacement", "compensation", "consumer rights", "seller liability"]
+  },
+  {
+    "law_id": "CPA_2019_S2_unfair",
+    "act_name": "Consumer Protection Act, 2019",
+    "section_number": "Section 2(47)",
+    "section_title": "Unfair Trade Practice",
+    "section_text": "Unfair trade practice means a trade practice which, for the purpose of promoting the sale, use or supply of any goods or for the provision of any service, adopts any unfair method or unfair or deceptive practice including: falsely representing that the goods are of a particular standard, quality or grade; falsely representing that the services are of a particular standard or quality; false or misleading representation; offering gifts or prizes with the intention of not providing them; permitting the hoarding of goods; manufacturing spurious goods.",
+    "category": "consumer",
+    "keywords": ["unfair trade", "fraud", "misleading", "deceptive seller", "false representation"]
+  },
+  {
+    "law_id": "TPA_1882_S106",
+    "act_name": "Transfer of Property Act, 1882",
+    "section_number": "Section 106",
+    "section_title": "Duration of Certain Leases in Absence of Written Contract or Local Usage",
+    "section_text": "In the absence of a contract or local law or usage to the contrary, a lease of immovable property for agricultural or manufacturing purposes shall be deemed to be a lease from year to year terminable on the part of either lessor or lessee, by six months' notice; and a lease of immovable property for any other purpose shall be deemed to be a lease from month to month terminable on the part of either lessor or lessee, by fifteen days' notice.",
+    "category": "tenancy",
+    "keywords": ["lease", "notice period", "eviction", "landlord", "tenant", "termination"]
+  },
+  {
+    "law_id": "TPA_1882_S108",
+    "act_name": "Transfer of Property Act, 1882",
+    "section_number": "Section 108(q)",
+    "section_title": "Rights and Liabilities of Lessor — Security Deposit",
+    "section_text": "On the determination of the lease, the lessee is bound to put the lessor into possession of the property. The lessor is bound to refund the security deposit to the lessee on vacating the premises, after deducting any legitimate dues such as unpaid rent, damage to property beyond normal wear and tear, or any dues recoverable under the lease agreement. The landlord cannot withhold the security deposit without valid justification or written communication of deductions.",
+    "category": "tenancy",
+    "keywords": ["security deposit", "refund", "landlord", "tenant", "vacating", "deposit return", "withholding deposit"]
+  },
+  {
+    "law_id": "RENT_CONTROL_GENERAL",
+    "act_name": "State Rent Control Acts (General Principles)",
+    "section_number": "General Provisions",
+    "section_title": "Tenant Rights against Eviction and Deposit Disputes",
+    "section_text": "Across most Indian state Rent Control Acts (e.g., Delhi Rent Control Act, Maharashtra Rent Control Act), a landlord cannot evict a tenant without a valid legal reason such as non-payment of rent, subletting without permission, misuse of premises, or bona fide requirement. The security deposit, typically 1-3 months' rent, must be returned within a reasonable period (usually 30-60 days) after vacating. Wrongful withholding of security deposit entitles the tenant to approach the Rent Controller or Civil Court for recovery.",
+    "category": "tenancy",
+    "keywords": ["eviction", "security deposit", "rent control", "landlord tenant dispute", "deposit refund", "tenant rights"]
+  },
+  {
+    "law_id": "IDA_1947_S25F",
+    "act_name": "Industrial Disputes Act, 1947",
+    "section_number": "Section 25F",
+    "section_title": "Conditions Precedent to Retrenchment of Workmen",
+    "section_text": "No workman employed in any industry who has been in continuous service for not less than one year under an employer shall be retrenched by that employer until: (a) the workman has been given one month's notice in writing indicating the reasons for retrenchment and the period of notice has expired, or the workman has been paid in lieu of such notice, wages for the period of the notice; (b) the workman has been paid, at the time of retrenchment, compensation equivalent to fifteen days' average pay for every completed year of continuous service or any part thereof in excess of six months; and (c) notice in the prescribed manner is served on the appropriate Government.",
+    "category": "employment",
+    "keywords": ["retrenchment", "termination notice", "notice period", "layoff", "fired", "dismissed", "workman rights", "severance"]
+  },
+  {
+    "law_id": "IDA_1947_S25G",
+    "act_name": "Industrial Disputes Act, 1947",
+    "section_number": "Section 25G",
+    "section_title": "Procedure for Retrenchment — Last In First Out",
+    "section_text": "Where any workman in an establishment belonging to a particular category of workmen is to be retrenched, and the employer proposes to retrench some but not all, the employer shall ordinarily retrench the workman who was the last person to be employed in that category, unless for reasons to be recorded the employer retrenches any other workman.",
+    "category": "employment",
+    "keywords": ["retrenchment", "last in first out", "layoff procedure", "fired", "workman", "employment termination"]
+  },
+  {
+    "law_id": "IDA_1947_S25N",
+    "act_name": "Industrial Disputes Act, 1947",
+    "section_number": "Section 25N",
+    "section_title": "Conditions Precedent to Retrenchment of Workmen in Establishments Employing 100+ Workers",
+    "section_text": "No workman employed in any establishment to which this section applies, who has been in continuous service for not less than one year, shall be retrenched by the employer, until the employer has obtained prior permission in writing of the appropriate Government. The application for permission shall clearly state the reasons for the intended retrenchment. The Government may grant or refuse permission after making inquiry.",
+    "category": "employment",
+    "keywords": ["retrenchment", "government permission", "large establishment", "fired without cause", "wrongful termination"]
+  },
+  {
+    "law_id": "ID_ACT_1947_WRONGFUL",
+    "act_name": "Industrial Disputes Act, 1947",
+    "section_number": "Section 2(oo) & Section 25",
+    "section_title": "Wrongful Termination / Illegal Dismissal",
+    "section_text": "Termination of a workman's services is illegal if done without following the prescribed procedure — i.e., without giving proper notice or pay in lieu of notice, without paying retrenchment compensation, or without government permission where required. A workman can raise an industrial dispute before the Labour Court or Industrial Tribunal. If the dismissal is found illegal, the Court may award reinstatement with back wages, or compensation in lieu of reinstatement.",
+    "category": "employment",
+    "keywords": ["wrongful termination", "fired without notice", "illegal dismissal", "employer fired me", "reinstatement", "labour court", "back wages"]
+  },
+  {
+    "law_id": "SHOPS_ACT_NOTICE",
+    "act_name": "Shops and Establishments Acts (State-wise)",
+    "section_number": "General Provisions",
+    "section_title": "Notice Period for Termination of Employment in Shops and Establishments",
+    "section_text": "Under most state Shops and Establishments Acts (e.g., Delhi Shops and Establishments Act, Maharashtra Shops and Establishments Act), an employer must give minimum 30 days' notice or pay in lieu of notice before terminating an employee who has completed a minimum service period (usually 3 months to 1 year, depending on the state). Failure to give notice or pay in lieu is a violation entitling the employee to compensation. Termination without cause after a probation period is also restricted under many state acts.",
+    "category": "employment",
+    "keywords": ["shops act", "notice period", "termination without notice", "fired suddenly", "compensation for termination", "employee rights"]
+  },
+  {
+    "law_id": "CRPC_165",
+    "act_name": "Code of Criminal Procedure, 1973",
+    "section_number": "Section 165",
+    "section_title": "Search by Police Officer",
+    "section_text": "A police officer, who has reasonable grounds for believing that anything necessary for the purposes of an investigation into any offence which he is authorised to investigate may be found in any place within the limits of his station, and that such thing cannot without undue delay be obtained otherwise, may after recording in writing the grounds of his belief and specifying in such writing, so far as possible, the thing for which search is to be made, search, or cause search to be made, for such thing in any place within the limits of such station. Any search without recording grounds in writing is challengeable.",
+    "category": "criminal",
+    "keywords": ["police search", "search and seizure", "police powers", "warrant", "unlawful search"]
+  },
+  {
+    "law_id": "CRPC_100",
+    "act_name": "Code of Criminal Procedure, 1973",
+    "section_number": "Section 100",
+    "section_title": "Persons in Charge of Closed Place to Allow Search",
+    "section_text": "Whenever a place liable to search is closed, any person residing in, or being in charge of, such place shall, on demand of the officer or other person executing the warrant, and on production of the warrant, allow him free ingress thereto, and afford all reasonable facilities for a search therein. If ingress is not obtained the officer may break open the place. Two or more independent and respectable inhabitants of the locality shall witness the search.",
+    "category": "criminal",
+    "keywords": ["search warrant", "police entry", "home search", "rights during search"]
+  },
+  {
+    "law_id": "IT_ACT_2000_S66",
+    "act_name": "Information Technology Act, 2000",
+    "section_number": "Section 66",
+    "section_title": "Computer Related Offences",
+    "section_text": "If any person, dishonestly or fraudulently, does any act referred to in section 43 (which includes unauthorised access to computer, computer system, or computer network), he shall be punishable with imprisonment of either description for a term which may extend to three years or with fine which may extend to five lakh rupees or with both. Accessing someone's phone or computer without permission constitutes an offence under this section.",
+    "category": "criminal",
+    "keywords": ["phone privacy", "computer privacy", "unauthorised access", "phone search", "digital privacy", "police phone search"]
+  },
+  {
+    "law_id": "IT_ACT_2000_S69",
+    "act_name": "Information Technology Act, 2000",
+    "section_number": "Section 69",
+    "section_title": "Power to Issue Directions for Interception or Monitoring",
+    "section_text": "The Central Government or a State Government or any of its officers specially authorised may, if satisfied that it is necessary or expedient in the interest of the sovereignty or integrity of India, defence of India, security of the State, friendly relations with foreign States or public order, issue directions for interception or monitoring or decryption of any information through any computer resource. However, police cannot search or seize a phone without written authorisation or a warrant from a competent authority. Citizens have a right to privacy under Article 21 of the Constitution (as affirmed in Puttaswamy v. Union of India, 2017).",
+    "category": "criminal",
+    "keywords": ["phone search", "police seize phone", "right to privacy", "phone warrant", "Article 21", "privacy rights", "Puttaswamy"]
+  },
+  {
+    "law_id": "CONSTITUTION_ART21",
+    "act_name": "Constitution of India",
+    "section_number": "Article 21",
+    "section_title": "Right to Life and Personal Liberty",
+    "section_text": "No person shall be deprived of his life or personal liberty except according to procedure established by law. The Supreme Court in K.S. Puttaswamy v. Union of India (2017) held that Right to Privacy is a fundamental right under Article 21. This includes informational privacy — a person's phone, electronic data, and personal communications are protected. Any search or seizure of a phone must follow due process and cannot be arbitrary.",
+    "category": "criminal",
+    "keywords": ["right to privacy", "fundamental right", "Article 21", "phone search", "personal liberty", "police cannot search phone", "Puttaswamy judgment"]
+  },
+  {
+    "law_id": "IPC_406",
+    "act_name": "Indian Penal Code, 1860",
+    "section_number": "Section 406",
+    "section_title": "Punishment for Criminal Breach of Trust",
+    "section_text": "Whoever commits criminal breach of trust shall be punished with imprisonment of either description for a term which may extend to three years, or with fine, or with both. Criminal breach of trust includes misappropriation of property entrusted to a person. A landlord who wrongfully retains a security deposit without justification may be liable under this section as the deposit is entrusted property.",
+    "category": "tenancy",
+    "keywords": ["criminal breach of trust", "security deposit", "landlord", "misappropriation", "IPC 406", "deposit not returned"]
+  },
+  {
+    "law_id": "IPC_420",
+    "act_name": "Indian Penal Code, 1860",
+    "section_number": "Section 420",
+    "section_title": "Cheating and Dishonestly Inducing Delivery of Property",
+    "section_text": "Whoever cheats and thereby dishonestly induces the person deceived to deliver any property to any person, or to make, alter or destroy the whole or any part of a valuable security, or anything which is signed or sealed, and which is capable of being converted into a valuable security, shall be punished with imprisonment of either description for a term which may extend to seven years, and shall also be liable to fine.",
+    "category": "consumer",
+    "keywords": ["cheating", "fraud", "seller fraud", "defective product fraud", "IPC 420", "dishonest seller", "online fraud"]
+  },
+  {
+    "law_id": "IPC_503",
+    "act_name": "Indian Penal Code, 1860",
+    "section_number": "Section 503",
+    "section_title": "Criminal Intimidation",
+    "section_text": "Whoever threatens another with any injury to his person, reputation or property, or to the person or reputation of any one in whom that person is interested, with intent to cause alarm to that person, or to cause that person to do any act which he is not legally bound to do, or to omit to do any act which that person is legally entitled to do, as the means of avoiding the execution of such threat, commits criminal intimidation.",
+    "category": "criminal",
+    "keywords": ["threat", "intimidation", "harassment by employer", "threatening landlord", "IPC 503", "criminal threats"]
+  },
+  {
+    "law_id": "POSH_2013_S3",
+    "act_name": "Sexual Harassment of Women at Workplace (Prevention, Prohibition and Redressal) Act, 2013",
+    "section_number": "Section 3",
+    "section_title": "Prevention of Sexual Harassment",
+    "section_text": "No woman shall be subjected to sexual harassment at any workplace. The following circumstances, among other circumstances, if it occurs or is present in relation to or connected with any act or behaviour of sexual harassment may amount to sexual harassment: implied or explicit promise of preferential treatment; implied or explicit threat of detrimental treatment; implied or explicit threat about present or future employment status; interference with work creating an intimidating or offensive or hostile work environment; humiliating treatment likely to affect health or safety.",
+    "category": "employment",
+    "keywords": ["sexual harassment", "workplace harassment", "POSH Act", "women rights", "hostile work environment", "employer misconduct"]
+  },
+  {
+    "law_id": "POSH_2013_S4",
+    "act_name": "Sexual Harassment of Women at Workplace (Prevention, Prohibition and Redressal) Act, 2013",
+    "section_number": "Section 4",
+    "section_title": "Constitution of Internal Complaints Committee",
+    "section_text": "Every employer of a workplace shall, by an order in writing, constitute a Committee to be known as the Internal Complaints Committee. The Internal Committee shall consist of a Presiding Officer who shall be a woman employed at a senior level at the workplace; not less than two members from amongst employees preferably committed to the cause of women or with experience in social work; and one member from amongst non-governmental organisations or associations committed to the cause of women.",
+    "category": "employment",
+    "keywords": ["ICC", "internal complaints committee", "sexual harassment complaint", "POSH", "workplace complaint", "harassment redressal"]
+  },
+  {
+    "law_id": "RTI_2005_S3",
+    "act_name": "Right to Information Act, 2005",
+    "section_number": "Section 3",
+    "section_title": "Right to Information",
+    "section_text": "Subject to the provisions of this Act, all citizens shall have the right to information. Every public authority shall maintain all its records duly catalogued, indexed and made available for inspection without charge. Any citizen may request information in writing or through electronic means and is entitled to receive it within 30 days (48 hours in cases involving life or liberty of a person).",
+    "category": "general",
+    "keywords": ["RTI", "right to information", "government information", "public authority", "transparency", "government documents"]
+  },
+  {
+    "law_id": "MV_ACT_1988_S163A",
+    "act_name": "Motor Vehicles Act, 1988",
+    "section_number": "Section 163A",
+    "section_title": "Special Provisions as to Payment of Compensation on Structured Formula Basis",
+    "section_text": "Notwithstanding anything contained in this Act or in any other law for the time being in force, the owner of the motor vehicle or the authorised insurer shall be liable to pay in the case of death or permanent disablement due to accident arising out of the use of motor vehicle, compensation, as indicated in the Second Schedule. No fault liability: the claimant is not required to plead and establish that the death or permanent disablement in respect of which the claim has been made was due to any wrongful act or neglect or default of the owner of the vehicle.",
+    "category": "general",
+    "keywords": ["road accident", "accident compensation", "motor vehicle accident", "no fault liability", "insurance claim", "vehicle accident"]
+  },
+  {
+    "law_id": "LABOUR_MIN_WAGE_1948",
+    "act_name": "Minimum Wages Act, 1948",
+    "section_number": "Section 3",
+    "section_title": "Fixing of Minimum Rates of Wages",
+    "section_text": "The appropriate Government shall, in the manner hereinafter provided, fix minimum rates of wages payable to employees employed in a scheduled employment. Any employer paying wages less than the minimum wages fixed is liable to prosecution. An employee paid less than minimum wage is entitled to file a complaint before the labour authorities and seek recovery of unpaid wages along with compensation equal to ten times the amount of shortfall or Rs. 20 per day, whichever is higher.",
+    "category": "employment",
+    "keywords": ["minimum wage", "underpaid", "wage theft", "employer not paying", "salary below minimum wage", "labour rights"]
+  },
+  {
+    "law_id": "PAYMENT_WAGES_1936_S5",
+    "act_name": "Payment of Wages Act, 1936",
+    "section_number": "Section 5",
+    "section_title": "Time of Payment of Wages",
+    "section_text": "Every employer shall be responsible for the payment to persons employed by him of all wages required to be paid under this Act. Every person responsible for the payment of wages shall fix periods in respect of which wages shall be payable. No wage-period shall exceed one month. Wages shall be paid on a working day, within 7 days of the end of the wage period if the establishment employs fewer than 1000 workers, and within 10 days otherwise.",
+    "category": "employment",
+    "keywords": ["unpaid salary", "employer not paying salary", "delayed wages", "salary withheld", "wage payment", "employer owes money"]
+  },
+  {
+    "law_id": "IPC_383",
+    "act_name": "Indian Penal Code, 1860",
+    "section_number": "Section 383",
+    "section_title": "Extortion",
+    "section_text": "Whoever intentionally puts any person in fear of any injury to that person, or to any other, and thereby dishonestly induces the person so put in fear to deliver to any person any property or valuable security or anything signed or sealed which may be converted into a valuable security, commits extortion. Extortion is punishable with imprisonment up to three years with or without fine under Section 384.",
+    "category": "criminal",
+    "keywords": ["extortion", "blackmail", "threatened for money", "forced payment", "coercion", "IPC 383"]
+  },
+  {
+    "law_id": "DOMESTIC_VIOLENCE_2005_S3",
+    "act_name": "Protection of Women from Domestic Violence Act, 2005",
+    "section_number": "Section 3",
+    "section_title": "Definition of Domestic Violence",
+    "section_text": "Any act, omission, commission or conduct of the respondent shall constitute domestic violence if it harms or injures or endangers the health, safety, life, limb or wellbeing of the aggrieved person or tends to do so, and includes: physical abuse; sexual abuse; verbal and emotional abuse; economic abuse. Economic abuse includes deprivation of financial resources, disposal of assets, prohibition from working, controlling her earnings.",
+    "category": "family",
+    "keywords": ["domestic violence", "husband abuse", "family violence", "verbal abuse", "economic abuse", "DV Act", "women protection"]
+  },
+  {
+    "law_id": "DOMESTIC_VIOLENCE_2005_S12",
+    "act_name": "Protection of Women from Domestic Violence Act, 2005",
+    "section_number": "Section 12",
+    "section_title": "Application to Magistrate for Protection Orders",
+    "section_text": "An aggrieved person or a Protection Officer or any other person on behalf of the aggrieved person may present an application to the Magistrate seeking one or more reliefs under this Act. The Magistrate shall fix the first date of hearing within three days from the date of receipt of the application, and shall endeavour to dispose of every application within sixty days. The Magistrate may grant protection orders, residence orders, monetary reliefs, custody orders, and compensation orders.",
+    "category": "family",
+    "keywords": ["protection order", "domestic violence complaint", "magistrate order", "DV case", "shelter", "residence order", "restraining order"]
+  },
+  {
+    "law_id": "IPC_498A",
+    "act_name": "Indian Penal Code, 1860",
+    "section_number": "Section 498A",
+    "section_title": "Husband or Relative of Husband Subjecting Woman to Cruelty",
+    "section_text": "Whoever, being the husband or the relative of the husband of a woman, subjects such woman to cruelty shall be punished with imprisonment for a term which may extend to three years and shall also be liable to fine. Cruelty includes wilful conduct which is of such a nature as to drive the woman to commit suicide or to cause grave injury or danger to life, limb or health (whether mental or physical) of the woman; or harassment with a view to coercing her or any person related to her to meet any unlawful demand for any property or valuable security.",
+    "category": "family",
+    "keywords": ["dowry harassment", "husband cruelty", "IPC 498A", "domestic cruelty", "dowry demand", "marital cruelty"]
+  }
+]
