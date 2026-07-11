@@ -1,46 +1,12 @@
 """
 MongoDB document model for Conversations.
-
-MongoDB collection: conversations
-Document structure (stored as raw dicts via Motor):
-
-{
-  "conversation_id": "uuid4-string",
-  "user_id": "string",
-  "title": "First 60 chars of first user message",
-  "messages": [
-    {
-      "role": "user" | "assistant",
-      "content": "string",
-      "timestamp": "ISO datetime string",
-      "citations": [
-        {
-          "act": "...",
-          "section": "...",
-          "section_title": "...",
-          "relevance_score": 0.95
-        }
-      ]
-    }
-  ],
-  "intent_history": ["tenancy", "tenancy", "general"],
-  "created_at": "ISO datetime",
-  "updated_at": "ISO datetime"
-}
-
-Indexes (created during startup):
-  - conversation_id (unique)
-  - user_id
-  - updated_at
 """
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any
 
-
 CONVERSATION_COLLECTION = "conversations"
-
 
 def new_conversation_doc(
     conversation_id: str,
@@ -57,7 +23,6 @@ def new_conversation_doc(
         "created_at": now,
         "updated_at": now,
     }
-
 
 def make_message_doc(
     role: str,

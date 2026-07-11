@@ -1,11 +1,5 @@
 """
 Intent Classifier for legal queries.
-
-Classifies user queries into one of the legal intent categories:
-  employment, tenancy, consumer, criminal, property, family, general
-
-Uses a keyword map for speed. Falls back to GPT for ambiguous queries
-to keep latency low and costs minimal.
 """
 from __future__ import annotations
 
@@ -50,25 +44,38 @@ INTENT_KEYWORDS: dict[str, list[str]] = {
     ],
 }
 
-
 def classify_intent(query: str) -> str:
     """
     Classify the legal intent of a user query.
-
-    Returns one of: employment, tenancy, consumer, criminal, family, property, general
     """
-    query_lower = query.lower()
-    scores: dict[str, int] = {}
+    query_lower = query.lower().strip()
+    
+    # 1. Check for basic greetings
+    greetings = {"hi", "hello", "hey", "good morning", "good afternoon", "good evening", "howdy", "hola", "yo"}
+    cleaned_query = re.sub(r'[^\w\s]', '', query_lower)
+    if cleaned_query in greetings or len(cleaned_query) <= 3:
+        return "greeting"
 
+    # 2. Blacklist of completely non-legal terms
+    blacklist = [
+        "cake", "bake", "recipe", "cook", "food", "ingredients", 
+        "programming", "coding", "javascript", "python", "html", "css", "java", "c++",
+        "weather", "temperature", "vacation", "cricket", "football", "ipl", "score"
+    ]
+    if any(re.search(rf"\b{re.escape(word)}\b", query_lower) for word in blacklist):
+        return "out_of_scope"
+
+    # 3. Category Matcher
+    scores: dict[str, int] = {}
     for intent, keywords in INTENT_KEYWORDS.items():
         count = sum(1 for kw in keywords if re.search(rf"\b{re.escape(kw)}\b", query_lower))
         if count > 0:
             scores[intent] = count
 
-    if not scores:
-        logger.debug(f"No keyword match for query — defaulting to 'general': '{query[:80]}'")
-        return "general"
+    if scores:
+        best_intent = max(scores, key=lambda k: scores[k])
+        logger.debug(f"Intent classified as '{best_intent}' for query: '{query[:80]}'")
+        return best_intent
 
-    best_intent = max(scores, key=lambda k: scores[k])
-    logger.debug(f"Intent classified as '{best_intent}' for query: '{query[:80]}'")
-    return best_intent
+    # 4. Fallback to general (will be filtered by FAISS score threshold in pipeline)
+    return "general"

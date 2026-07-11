@@ -11,22 +11,15 @@ from __future__ import annotations
 import time
 
 from app.core.logging import get_logger
-from app.rag.pipeline import run_rag_pipeline
-from app.schemas.chat import ChatRequest, ChatResponse, LawCitation
-from app.services import conversation_service
+from app.modules.chatbot.rag.pipeline import run_rag_pipeline
+from app.modules.chatbot.schemas import ChatRequest, ChatResponse, LawCitation
+from app.modules.chatbot import conversation_service
 
 logger = get_logger(__name__)
-
 
 async def process_message(request: ChatRequest) -> ChatResponse:
     """
     Process a single user message through the full RAG pipeline.
-
-    Args:
-        request: ChatRequest with user_id, optional conversation_id, and message.
-
-    Returns:
-        ChatResponse with answer, rights, action_steps, citations, and disclaimer.
     """
     start_time = time.perf_counter()
 

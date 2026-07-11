@@ -40,30 +40,36 @@ async def lifespan(app: FastAPI):
     await connect_to_mongo()
 
     # 2. Load embedding model (blocks until model is loaded from disk/cache)
-    from app.rag import embedder
+    from app.modules.chatbot.rag import embedder
     embedder.load_embedder()
-
+ 
     # 3. Load (or auto-build) FAISS index
-    from app.rag import faiss_store
+    from app.modules.chatbot.rag import faiss_store
     faiss_store.load_index()
-
+ 
     # 4. Initialize LLM
-    from app.rag.pipeline import load_llm
-    load_llm()
-
+    from app.modules.chatbot.rag.pipeline import load_openai_client
+    load_openai_client()
+ 
+    # 5. Start Deadline Engine background scheduler (Module 3)
+    from app.modules.deadline_engine.scheduler import start_scheduler
+    start_scheduler()
+ 
     logger.info("=== LegalAce Backend Ready ===")
-
+ 
     yield  # Application runs here
-
+ 
     # ------------------------------------------------------------------ #
     # SHUTDOWN
     # ------------------------------------------------------------------ #
     logger.info("=== LegalAce Backend Shutting Down ===")
+    from app.modules.deadline_engine.scheduler import stop_scheduler
+    stop_scheduler()
     from app.database.mongodb import close_mongo_connection
     await close_mongo_connection()
     logger.info("=== Shutdown Complete ===")
-
-
+ 
+ 
 # ---------------------------------------------------------------------------
 # FastAPI Application
 # ---------------------------------------------------------------------------
@@ -78,7 +84,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
-
+ 
 # ---------------------------------------------------------------------------
 # CORS Middleware — allow React Native / Expo frontend
 # ---------------------------------------------------------------------------
@@ -89,7 +95,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+ 
 # ---------------------------------------------------------------------------
 # Global Exception Handler
 # ---------------------------------------------------------------------------
@@ -103,14 +109,20 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
             "detail": "An unexpected error occurred. Please try again later.",
         },
     )
-
+ 
 # ---------------------------------------------------------------------------
 # Routers
 # ---------------------------------------------------------------------------
 from app.api.health import router as health_router
-from app.api.chat import router as chat_router
-from app.api.conversation import router as conversation_router
-
+from app.modules.chatbot.api import router as chat_router
+from app.modules.chatbot.conversation_api import router as conversation_router
+from app.modules.situation_finder.api import router as situations_router
+from app.modules.deadline_engine.api import router as deadline_router
+from app.modules.wizard.api import router as wizard_router
+ 
 app.include_router(health_router)
 app.include_router(chat_router)
 app.include_router(conversation_router)
+app.include_router(situations_router)
+app.include_router(deadline_router)
+app.include_router(wizard_router)

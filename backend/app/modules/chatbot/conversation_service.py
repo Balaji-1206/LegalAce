@@ -9,29 +9,23 @@ from typing import Any
 
 from app.core.logging import get_logger
 from app.database.mongodb import get_database
-from app.models.conversation import (
+from app.modules.chatbot.models import (
     CONVERSATION_COLLECTION,
     new_conversation_doc,
     make_message_doc,
 )
-from app.schemas.conversation import (
+from app.modules.chatbot.conversation_schemas import (
     ConversationResponse,
     ConversationSummary,
     ConversationHistoryResponse,
     Message,
 )
-from app.schemas.chat import LawCitation
+from app.modules.chatbot.schemas import LawCitation
 
 logger = get_logger(__name__)
 
-
 async def create_conversation(user_id: str) -> str:
-    """
-    Create a new conversation document in MongoDB.
-
-    Returns:
-        The new conversation_id (UUID string).
-    """
+    """Create a new conversation document in MongoDB."""
     conversation_id = str(uuid.uuid4())
     doc = new_conversation_doc(conversation_id=conversation_id, user_id=user_id)
     db = get_database()
@@ -39,14 +33,8 @@ async def create_conversation(user_id: str) -> str:
     logger.info(f"Created conversation '{conversation_id}' for user '{user_id}'")
     return conversation_id
 
-
 async def get_conversation(conversation_id: str) -> ConversationResponse | None:
-    """
-    Fetch a full conversation document by its ID.
-
-    Returns:
-        ConversationResponse if found, None otherwise.
-    """
+    """Fetch a full conversation document by its ID."""
     db = get_database()
     doc = await db[CONVERSATION_COLLECTION].find_one(
         {"conversation_id": conversation_id},
@@ -56,12 +44,8 @@ async def get_conversation(conversation_id: str) -> ConversationResponse | None:
         return None
     return _doc_to_response(doc)
 
-
 async def get_user_history(user_id: str) -> ConversationHistoryResponse:
-    """
-    Fetch a summary list of all conversations for a given user.
-    Sorted by most recently updated.
-    """
+    """Fetch a summary list of all conversations for a given user, sorted by most recently updated."""
     db = get_database()
     cursor = db[CONVERSATION_COLLECTION].find(
         {"user_id": user_id},
@@ -87,7 +71,6 @@ async def get_user_history(user_id: str) -> ConversationHistoryResponse:
         conversations=summaries,
     )
 
-
 async def append_messages(
     conversation_id: str,
     user_message: str,
@@ -97,10 +80,7 @@ async def append_messages(
     rights: list[str] | None = None,
     action_steps: list[str] | None = None,
 ) -> None:
-    """
-    Append both the user message and the assistant response to a conversation.
-    Also updates the conversation title (from the first user message) and updated_at.
-    """
+    """Append both the user message and the assistant response to a conversation."""
     db = get_database()
     now = datetime.now(timezone.utc)
 
@@ -113,7 +93,6 @@ async def append_messages(
         action_steps=action_steps or [],
     )
 
-    # Fetch the current doc to determine title update logic
     doc = await db[CONVERSATION_COLLECTION].find_one(
         {"conversation_id": conversation_id},
         {"messages": 1, "title": 1},
@@ -123,7 +102,6 @@ async def append_messages(
         "updated_at": now,
     }
 
-    # Set title from first user message (if still default)
     if doc and (doc.get("title") == "New Conversation" or not doc.get("title")):
         title = user_message[:60].strip()
         if len(user_message) > 60:
@@ -140,7 +118,6 @@ async def append_messages(
     )
     logger.debug(f"Appended messages to conversation '{conversation_id}'")
 
-
 async def conversation_exists(conversation_id: str) -> bool:
     """Check whether a conversation_id exists in MongoDB."""
     db = get_database()
@@ -149,14 +126,8 @@ async def conversation_exists(conversation_id: str) -> bool:
     )
     return count > 0
 
-
 async def delete_conversation(conversation_id: str) -> bool:
-    """
-    Delete a conversation document.
-
-    Returns:
-        True if deleted, False if not found.
-    """
+    """Delete a conversation document."""
     db = get_database()
     result = await db[CONVERSATION_COLLECTION].delete_one({"conversation_id": conversation_id})
     deleted = result.deleted_count > 0
@@ -166,11 +137,8 @@ async def delete_conversation(conversation_id: str) -> bool:
         logger.warning(f"Attempted to delete non-existent conversation '{conversation_id}'")
     return deleted
 
-
 async def get_conversation_messages(conversation_id: str) -> list[dict]:
-    """
-    Return the raw messages list for a conversation (for history injection into the RAG prompt).
-    """
+    """Return the raw messages list for a conversation."""
     db = get_database()
     doc = await db[CONVERSATION_COLLECTION].find_one(
         {"conversation_id": conversation_id},
@@ -179,11 +147,6 @@ async def get_conversation_messages(conversation_id: str) -> list[dict]:
     if not doc:
         return []
     return doc.get("messages", [])
-
-
-# ---------------------------------------------------------------------------
-# Internal helpers
-# ---------------------------------------------------------------------------
 
 def _doc_to_response(doc: dict) -> ConversationResponse:
     messages = [

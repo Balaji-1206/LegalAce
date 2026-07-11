@@ -1,62 +1,55 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
-
-interface LawCitation {
-  act: string;
-  section: string;
-  section_title: string;
-  relevance_score: number;
-}
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: string;
-  citations?: LawCitation[] | null;
-  rights?: string[];
-  action_steps?: string[];
-  intent?: string;
-  disclaimer?: string;
-}
-
-interface ConversationSummary {
-  conversation_id: string;
-  title: string;
-  created_at: string;
-  updated_at: string;
-  message_count: number;
-}
+import type { Message, ConversationSummary } from './modules/shared/types';
+import HomeScreen from './modules/shared/HomeScreen';
+import DailyRightsScreen from './modules/shared/DailyRightsScreen';
+import { ChatbotTab } from './modules/chatbot/ChatbotTab';
+import { SituationFinderTab } from './modules/situation_finder/SituationFinderTab';
+import { DeadlineDashboard } from './modules/deadline_engine/DeadlineDashboard';
+import { WizardScreen } from './modules/wizard/WizardScreen';
 
 const BACKEND_URL = 'http://localhost:8000';
 
-// Real law dictionary matches from data/indian_law_corpus.json to support interactive clicks in frontend!
 const LAW_DETAILS_MAP: Record<string, string> = {
-  "Section 2(7)": "Consumer means any person who buys any goods for a consideration which has been paid or promised or partly paid and partly promised...",
-  "Section 35": "A complaint in relation to any goods sold or delivered or agreed to be sold or delivered or any service provided or agreed to be provided may be filed by a consumer in District Commission having jurisdiction...",
-  "Section 39": "If the District Commission is satisfied that the goods complained against suffer from any of the defects specified in the complaint... it shall issue an order to the opposite party directing them to: remove the defect; replace; refund; pay compensation...",
-  "Section 2(47)": "Unfair trade practice means a trade practice which, for the purpose of promoting the sale, use or supply of any goods or for the provision of any service, adopts any unfair method or unfair or deceptive practice...",
-  "Section 106": "In the absence of a contract or local law or usage to the contrary, a lease of immovable property for agricultural or manufacturing purposes shall be deemed to be a lease from year to year; and other leases month to month...",
-  "Section 108(q)": "On the determination of the lease, the lessee is bound to put the lessor into possession of the property. The lessor is bound to refund the security deposit to the lessee on vacating, deducting legitimate dues...",
-  "General Provisions": "Across most Indian state Rent Control Acts, a landlord cannot evict a tenant without a valid legal reason... The security deposit must be returned within a reasonable period (usually 30-60 days).",
-  "Section 25F": "No workman employed in any industry who has been in continuous service for not less than one year under an employer shall be retrenched until: given one month's notice (or paid in lieu) and compensation...",
-  "Section 25G": "Procedure for Retrenchment -- Last In First Out (LIFO). Ordinarily retrench the workman who was the last person to be employed in that category.",
-  "Section 25N": "Conditions Precedent to Retrenchment of Workmen in Establishments Employing 100+ Workers -- Requires prior permission in writing of the appropriate Government.",
-  "Section 2(oo) & Section 25": "Termination is illegal if done without following prescribed procedure (no notice, compensation, or permission). Labour Court can award reinstatement, back wages, or compensation.",
-  "Section 165": "A police officer, who has reasonable grounds for believing that anything necessary for the purposes of an investigation may be found... may, after recording grounds in writing, search.",
-  "Section 100": "Whenever a place liable to search is closed, person in charge shall allow free ingress and afford all facilities for search. Two independent local inhabitants must witness.",
-  "Section 66": "Computer Related Offences. Accessing someone's phone or computer without permission is punishable with imprisonment up to 3 years or fine up to 5 lakh rupees.",
-  "Section 69": "Government can issue directions for interception or monitoring in interests of sovereignty/security. Police cannot search a phone without written authorization. Right to privacy protected.",
-  "Article 21": "Right to Life and Personal Liberty. Supreme Court in Puttaswamy (2017) held that Right to Privacy is a fundamental right. Phone, electronic data, and personal communications are protected.",
-  "Section 406": "Punishment for Criminal Breach of Trust. Up to 3 years imprisonment or fine or both. A landlord who wrongfully retains a security deposit may be liable under this section.",
-  "Section 420": "Cheating and Dishonestly Inducing Delivery of Property. Punishable with imprisonment up to 7 years and fine.",
-  "Section 503": "Criminal Intimidation. Threatening another with injury to person, reputation or property to cause alarm or force actions. Punishable under Section 504/505.",
-  "Section 3": "POSH Act 2013 -- Prevention of Sexual Harassment of Women at Workplace. Restricts preferential/detrimental treatment or hostile work environments.",
-  "Section 4": "ICC (Internal Complaints Committee) creation for every workplace employing 10+ workers, consisting of presiding female officer, employees, and NGO members.",
-  "Section 163A": "Motor Vehicles Act -- Special Provisions as to Payment of Compensation on Structured Formula Basis. No fault liability: claimant does not need to establish negligence of the owner.",
-  "Section 383": "Extortion. Putting any person in fear of injury to deliver property or valuable security. Punishable with up to 3 years imprisonment.",
-  "Section 12": "DV Act 2005 -- Magistrate application for protection orders, residence orders, monetary reliefs, custody, or compensation. First hearing within 3 days.",
-  "Section 498A": "Husband or relative of husband subjecting woman to cruelty. Punishable with up to 3 years imprisonment and fine."
+  "Section 2(7)": "Consumer means any person who buys any goods for a consideration which has been paid or promised...",
+  "Section 35": "A complaint may be filed by a consumer in District Commission having jurisdiction...",
+  "Section 39": "If the District Commission is satisfied that goods suffer from defects... it shall issue an order to remove the defect; replace; refund; pay compensation...",
+  "Section 2(47)": "Unfair trade practice means a trade practice which adopts any unfair method or deceptive practice...",
+  "Section 106": "A lease of immovable property for agricultural or manufacturing purposes shall be deemed to be a lease from year to year...",
+  "Section 108(q)": "The lessor is bound to refund the security deposit to the lessee on vacating, deducting legitimate dues...",
+  "Section 25F": "No workman in continuous service for not less than one year shall be retrenched without one month's notice and compensation...",
+  "Section 25G": "Ordinarily retrench the workman who was the last person employed in that category.",
+  "Section 25N": "Conditions Precedent to Retrenchment of Workmen — Requires prior permission of the appropriate Government.",
+  "Section 2(oo) & Section 25": "Termination without prescribed procedure is illegal. Labour Court can award reinstatement, back wages, or compensation.",
+  "Section 165": "A police officer may search after recording grounds in writing.",
+  "Section 100": "Whenever a place for search is closed, person in charge shall allow ingress. Two witnesses must be present.",
+  "Section 66": "Accessing someone's phone without permission is punishable with up to 3 years imprisonment or fine.",
+  "Article 21": "Right to Life and Personal Liberty. Privacy is a fundamental right (Puttaswamy 2017).",
+  "Section 406": "Punishment for Criminal Breach of Trust — up to 3 years imprisonment or fine or both.",
+  "Section 420": "Cheating — imprisonment up to 7 years and fine.",
+  "Section 3": "POSH Act — Prevention of Sexual Harassment of Women at Workplace.",
+  "Section 12": "DV Act — Magistrate application for protection orders, monetary reliefs. First hearing within 3 days.",
+  "Section 498A": "Husband or relative subjecting woman to cruelty — up to 3 years imprisonment.",
+  "Section 11": "Model Tenancy Act — Security deposit restricted to 2 months rent (residential).",
+  "Section 18": "RERA — Builders must return payment with interest if possession is delayed.",
+  "Section 6": "RTI — Citizens can request public documents in writing/online without stating a reason.",
+  "Section 134": "Motor Vehicles Act — Driver must secure medical attention for victim and report to police within 24 hours.",
+  "Section 46": "CrPC — Restricts arrest of women between sunset and sunrise.",
+  "Section 50": "CrPC — Police must inform arrested person of grounds of arrest and right to bail.",
 };
+
+const FALLBACK_CATEGORIES = [
+  { id: "employment", name: "Employment", icon: "💼", color_gradient: ["#3b82f6", "#1d4ed8"], situation_count: 2 },
+  { id: "housing", name: "Housing & Renting", icon: "🏠", color_gradient: ["#10b981", "#047857"], situation_count: 2 },
+  { id: "consumer", name: "Consumer Rights", icon: "🛒", color_gradient: ["#f59e0b", "#d97706"], situation_count: 2 },
+  { id: "cyber_crime", name: "Cyber Crime", icon: "🛡️", color_gradient: ["#ec4899", "#be185d"], situation_count: 2 },
+  { id: "women_rights", name: "Women Rights", icon: "👩", color_gradient: ["#a855f7", "#7e22ce"], situation_count: 2 },
+  { id: "banking", name: "Banking & Finance", icon: "🏦", color_gradient: ["#06b6d4", "#0891b2"], situation_count: 2 },
+  { id: "traffic", name: "Traffic Rules", icon: "🚗", color_gradient: ["#f43f5e", "#e11d48"], situation_count: 2 },
+  { id: "education", name: "Education", icon: "🎓", color_gradient: ["#14b8a6", "#0d9488"], situation_count: 2 },
+];
+
+type ActiveTab = 'home' | 'chat' | 'situations' | 'deadlines' | 'wizard' | 'rights' | 'profile';
 
 export default function App() {
   const [userId, setUserId] = useState<string>('');
@@ -65,14 +58,23 @@ export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [expandedCitation, setExpandedCitation] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+
+  const [activeTab, setActiveTab] = useState<ActiveTab>('home');
+  const [sitScreen, setSitScreen] = useState<'categories' | 'list' | 'detail'>('categories');
+  const [categories, setCategories] = useState<any[]>([]);
+  const [situations, setSituations] = useState<any[]>([]);
+  const [bookmarks, setBookmarks] = useState<string[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
+  const [selectedSituationId, setSelectedSituationId] = useState<string | null>(null);
+  const [selectedSituation, setSelectedSituation] = useState<any | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [situationsLoading, setSituationsLoading] = useState<boolean>(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Initialize User ID and check backend status
   useEffect(() => {
     let id = localStorage.getItem('legalace_user_id');
     if (!id) {
@@ -80,26 +82,86 @@ export default function App() {
       localStorage.setItem('legalace_user_id', id);
     }
     setUserId(id);
-    checkBackendHealth(id);
+
+    const savedBookmarks = localStorage.getItem('legalace_bookmarks');
+    if (savedBookmarks) setBookmarks(JSON.parse(savedBookmarks));
+
+    const savedRecents = localStorage.getItem('legalace_recently_viewed');
+    if (savedRecents) setRecentlyViewed(JSON.parse(savedRecents));
+
+    const cachedCats = localStorage.getItem('legalace_cached_categories');
+    const cachedSits = localStorage.getItem('legalace_cached_situations');
+    if (cachedCats) setCategories(JSON.parse(cachedCats));
+    else setCategories(FALLBACK_CATEGORIES);
+    if (cachedSits) setSituations(JSON.parse(cachedSits));
+
+    fetchHistory(id);
+    fetchSituationsData();
   }, []);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const checkBackendHealth = async (uid: string) => {
+  const fetchSituationsData = async () => {
+    setSituationsLoading(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/`);
-      if (res.ok) {
-        setBackendStatus('online');
-        fetchHistory(uid);
-      } else {
-        setBackendStatus('offline');
+      const catRes = await fetch(`${BACKEND_URL}/api/v1/situations/categories`);
+      if (catRes.ok) {
+        const fetchedCats = await catRes.json();
+        setCategories(fetchedCats);
+        localStorage.setItem('legalace_cached_categories', JSON.stringify(fetchedCats));
       }
-    } catch (e) {
-      setBackendStatus('offline');
+      const sitRes = await fetch(`${BACKEND_URL}/api/v1/situations`);
+      if (sitRes.ok) {
+        const fetchedSits = await sitRes.json();
+        setSituations(fetchedSits);
+        localStorage.setItem('legalace_cached_situations', JSON.stringify(fetchedSits));
+      }
+    } catch {
+      const cachedCats = localStorage.getItem('legalace_cached_categories');
+      const cachedSits = localStorage.getItem('legalace_cached_situations');
+      if (cachedCats) setCategories(JSON.parse(cachedCats));
+      else setCategories(FALLBACK_CATEGORIES);
+      if (cachedSits) setSituations(JSON.parse(cachedSits));
+    } finally {
+      setSituationsLoading(false);
     }
+  };
+
+  const openSituationDetail = async (situationId: string) => {
+    setSelectedSituationId(situationId);
+    setSitScreen('detail');
+
+    const filtered = recentlyViewed.filter(id => id !== situationId);
+    const updated = [situationId, ...filtered].slice(0, 5);
+    setRecentlyViewed(updated);
+    localStorage.setItem('legalace_recently_viewed', JSON.stringify(updated));
+
+    const localSit = situations.find(s => s.situation_id === situationId);
+    if (localSit) setSelectedSituation(localSit);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/v1/situations/${situationId}`);
+      if (res.ok) {
+        const freshSit = await res.json();
+        setSelectedSituation(freshSit);
+        setSituations(prev => prev.map(s => s.situation_id === situationId ? freshSit : s));
+      }
+    } catch { /* use local */ }
+  };
+
+  const toggleBookmark = (id: string) => {
+    const updated = bookmarks.includes(id)
+      ? bookmarks.filter(b => b !== id)
+      : [...bookmarks, id];
+    setBookmarks(updated);
+    localStorage.setItem('legalace_bookmarks', JSON.stringify(updated));
+  };
+
+  const getCategoryIcon = (catId: string) => {
+    const found = FALLBACK_CATEGORIES.find(c => c.id === catId);
+    return found ? found.icon : '🛡️';
   };
 
   const fetchHistory = async (uid: string) => {
@@ -109,9 +171,7 @@ export default function App() {
         const data = await res.json();
         setConversations(data.conversations || []);
       }
-    } catch (err) {
-      console.error('Failed to fetch conversation history:', err);
-    }
+    } catch { /* offline */ }
   };
 
   const selectConversation = async (conversationId: string) => {
@@ -122,36 +182,19 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         setCurrentConversationId(data.conversation_id);
-        
-        // Map messages to include structures returned by the backend
-        const formattedMessages: Message[] = data.messages.map((m: any) => {
-          if (m.role === 'assistant') {
-            return {
-              role: 'assistant',
-              content: m.content,
-              timestamp: m.timestamp,
-              citations: m.citations,
-              rights: m.rights || [],
-              action_steps: m.action_steps || [],
-              disclaimer: m.disclaimer || "This information is for educational purposes only and does not constitute legal advice."
-            };
-          }
-          return {
-            role: 'user',
-            content: m.content,
-            timestamp: m.timestamp
-          };
-        });
+        const formattedMessages: Message[] = data.messages.map((m: any) => ({
+          role: m.role,
+          content: m.content,
+          timestamp: m.timestamp,
+          citations: m.citations,
+          rights: m.rights || [],
+          action_steps: m.action_steps || [],
+          disclaimer: m.disclaimer || "For educational purposes only.",
+        }));
         setMessages(formattedMessages);
-        setSidebarOpen(false);
-      } else {
-        setErrorMessage('Failed to load conversation.');
       }
-    } catch (err) {
-      setErrorMessage('Error connecting to server.');
-    } finally {
-      setLoading(false);
-    }
+    } catch { setErrorMessage('Error connecting to server.'); }
+    finally { setLoading(false); }
   };
 
   const startNewChat = () => {
@@ -159,366 +202,299 @@ export default function App() {
     setMessages([]);
     setErrorMessage(null);
     setExpandedCitation(null);
-    setSidebarOpen(false);
   };
 
   const deleteConversation = async (e: React.MouseEvent, conversationId: string) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this chat history?')) return;
-    
+    if (!confirm('Delete this chat history?')) return;
     try {
-      const res = await fetch(`${BACKEND_URL}/api/v1/conversation/${conversationId}`, {
-        method: 'DELETE',
-      });
+      const res = await fetch(`${BACKEND_URL}/api/v1/conversation/${conversationId}`, { method: 'DELETE' });
       if (res.ok) {
         setConversations(prev => prev.filter(c => c.conversation_id !== conversationId));
-        if (currentConversationId === conversationId) {
-          startNewChat();
-        }
+        if (currentConversationId === conversationId) startNewChat();
       }
-    } catch (err) {
-      alert('Failed to delete conversation.');
-    }
+    } catch { alert('Failed to delete.'); }
   };
 
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputValue).trim();
     if (!text) return;
 
-    if (backendStatus === 'offline') {
-      setErrorMessage('Server is offline. Please make sure the FastAPI backend is running.');
-      return;
-    }
-
-    setInputValue('');
-    setErrorMessage(null);
-    setExpandedCitation(null);
-    
-    // Optimistically append user message
-    const userMsg: Message = {
-      role: 'user',
-      content: text,
-      timestamp: new Date().toISOString()
-    };
+    const userMsg: Message = { role: 'user', content: text, timestamp: new Date().toISOString() };
     setMessages(prev => [...prev, userMsg]);
+    if (!textToSend) setInputValue('');
     setLoading(true);
+    setErrorMessage(null);
 
     try {
       const res = await fetch(`${BACKEND_URL}/api/v1/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userId,
-          conversation_id: currentConversationId,
-          message: text
-        })
+        body: JSON.stringify({ user_id: userId, conversation_id: currentConversationId, message: text }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        
-        const assistantMsg: Message = {
+        if (!currentConversationId && data.conversation_id) {
+          setCurrentConversationId(data.conversation_id);
+          fetchHistory(userId);
+        }
+        const aiMsg: Message = {
           role: 'assistant',
           content: data.answer,
           timestamp: new Date().toISOString(),
           citations: data.law_citations,
-          rights: data.rights,
-          action_steps: data.action_steps,
-          intent: data.intent,
-          disclaimer: data.disclaimer
+          rights: data.rights || [],
+          action_steps: data.action_steps || [],
+          disclaimer: data.disclaimer,
         };
-
-        setMessages(prev => [...prev, assistantMsg]);
-        
-        if (!currentConversationId) {
-          setCurrentConversationId(data.conversation_id);
-        }
-        
-        // Refresh history list
-        fetchHistory(userId);
+        setMessages(prev => [...prev, aiMsg]);
       } else {
-        const errorData = await res.json().catch(() => ({}));
-        setErrorMessage(errorData.detail || 'Failed to generate response. Check backend logs or API keys.');
+        const data = await res.json();
+        setErrorMessage(data.detail || 'Failed to generate response.');
       }
-    } catch (err) {
-      setErrorMessage('Network error: Cannot reach the backend API.');
-    } finally {
-      setLoading(false);
-    }
+    } catch { setErrorMessage('Network error: Cannot reach the backend API.'); }
+    finally { setLoading(false); }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); }
   };
 
   const toggleCitation = (section: string) => {
-    if (expandedCitation === section) {
-      setExpandedCitation(null);
-    } else {
-      setExpandedCitation(section);
-    }
+    setExpandedCitation(prev => prev === section ? null : section);
   };
 
   const suggestions = [
     { text: "My employer fired me without notice.", label: "Wrongful Firing" },
     { text: "My landlord is not returning my security deposit.", label: "Deposit Dispute" },
-    { text: "Can police search my phone without permission?", label: "Police Search Rights" },
-    { text: "I received a defective product and the seller refuses a refund.", label: "Defective Product" }
+    { text: "Can police search my phone without permission?", label: "Police Search" },
+    { text: "I received a defective product and the seller refuses a refund.", label: "Defective Product" },
+  ];
+
+  const getFilteredSituations = () => {
+    if (searchQuery.trim()) {
+      return situations.filter(s =>
+        s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.category.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    if (selectedCategory?.id === 'bookmarks') return situations.filter(s => bookmarks.includes(s.situation_id));
+    return situations.filter(s => s.category === selectedCategory?.id);
+  };
+
+  const filteredSituations = getFilteredSituations();
+
+  const handleNavigate = (tab: string) => {
+    if (tab === 'chat') { setActiveTab('chat'); }
+    else if (tab === 'situations') { setActiveTab('situations'); setSitScreen('categories'); setSearchQuery(''); }
+    else if (tab === 'rights') setActiveTab('rights');
+    else if (tab === 'deadlines') setActiveTab('deadlines');
+    else if (tab === 'wizard') setActiveTab('wizard');
+    else if (tab === 'profile') setActiveTab('profile');
+    else if (tab === 'home') setActiveTab('home');
+  };
+
+  // SVG icons for bottom nav
+  const navItems: { key: ActiveTab; label: string; icon: React.ReactNode }[] = [
+    {
+      key: 'home', label: 'Home',
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+    },
+    {
+      key: 'chat', label: 'Chat',
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+    },
+    {
+      key: 'wizard', label: 'Wizard',
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+    },
+    {
+      key: 'situations', label: 'Situations',
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+    },
+    {
+      key: 'deadlines', label: 'Monitor',
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /><path d="m9 16 2 2 4-4" /></svg>
+    },
+    {
+      key: 'profile', label: 'Profile',
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+    },
   ];
 
   return (
     <div className="phone-mockup-wrapper">
       <div className="phone-container">
-        {/* Sidebar Backdrop Overlay */}
-        {sidebarOpen && (
-          <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
-        )}
-
-        {/* Sidebar Panel (Drawer on Mobile) */}
-        <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-          <div className="sidebar-brand">
-            <div className="brand-logo">🛡️</div>
-            <div className="brand-meta">
-              <h2>LegalAce</h2>
-              <span>Indian Rights Companion</span>
-            </div>
-          </div>
-
-          <button className="new-chat-btn" onClick={startNewChat}>
-            <span>+ New Consultation</span>
-          </button>
-
-          <div className="sidebar-history">
-            <h3>Recent Consultations</h3>
-            {conversations.length === 0 ? (
-              <div className="no-history">No consultation history yet.</div>
-            ) : (
-              <ul className="history-list">
-                {conversations.map((c) => (
-                  <li 
-                    key={c.conversation_id}
-                    className={`history-item ${currentConversationId === c.conversation_id ? 'active' : ''}`}
-                    onClick={() => selectConversation(c.conversation_id)}
-                  >
-                    <div className="history-info">
-                      <span className="history-title">{c.title}</span>
-                      <span className="history-date">
-                        {new Date(c.updated_at).toLocaleDateString(undefined, {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                    <button 
-                      className="delete-history-btn" 
-                      onClick={(e) => deleteConversation(e, c.conversation_id)}
-                      title="Delete history"
-                    >
-                      🗑️
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="sidebar-footer">
-            <div className="user-badge">
-              <span className="user-dot"></span>
-              <span className="user-id">ID: {userId}</span>
-            </div>
-          </div>
-        </aside>
-
-        {/* Main Chat Workspace */}
         <main className="chat-workspace">
-          <header className="chat-header">
-            <button className="menu-btn" onClick={() => setSidebarOpen(true)} aria-label="Open history">
-              ☰
-            </button>
-            <div className="header-details">
-              <h1>AI Legal Companion</h1>
-              <p>Indian rights, laws & citations</p>
-            </div>
-            <div className="header-status">
-              <span className={`status-badge ${backendStatus}`} title={backendStatus}>
-                <span className="status-dot"></span>
-              </span>
-            </div>
-          </header>
 
-        {/* Chat Feed */}
-        <div className="chat-feed">
-          {messages.length === 0 ? (
-            <div className="welcome-container">
-              <div className="welcome-logo">🛡️</div>
-              <h2>How can I help you today?</h2>
-              <p className="welcome-subtitle">
-                Ask legal questions regarding employment, tenancy, consumer disputes, criminal search/seizure rights, family laws, and other rights in India.
-              </p>
+          {/* === HOME SCREEN === */}
+          {activeTab === 'home' && (
+            <HomeScreen
+              onNavigate={handleNavigate}
+              situations={situations}
+              recentlyViewed={recentlyViewed}
+              openSituationDetail={(id) => { openSituationDetail(id); setActiveTab('situations'); }}
+            />
+          )}
 
-              <div className="suggestions-grid">
-                {suggestions.map((s, idx) => (
-                  <button 
-                    key={idx} 
-                    className="suggestion-card"
-                    onClick={() => handleSendMessage(s.text)}
-                  >
-                    <span className="suggestion-label">{s.label}</span>
-                    <p className="suggestion-text">"{s.text}"</p>
-                  </button>
+          {/* === CHAT SCREEN === */}
+          {activeTab === 'chat' && (
+            <ChatbotTab
+              messages={messages}
+              inputValue={inputValue}
+              setInputValue={setInputValue}
+              loading={loading}
+              errorMessage={errorMessage}
+              expandedCitation={expandedCitation}
+              toggleCitation={toggleCitation}
+              LAW_DETAILS_MAP={LAW_DETAILS_MAP}
+              handleSendMessage={handleSendMessage}
+              handleKeyPress={handleKeyPress}
+              suggestions={suggestions}
+              messagesEndRef={messagesEndRef}
+              onBack={() => setActiveTab('home')}
+              startNewChat={startNewChat}
+              conversations={conversations}
+              selectConversation={selectConversation}
+              deleteConversation={deleteConversation}
+              userId={userId}
+              backendUrl={BACKEND_URL}
+            />
+          )}
+
+          {/* === SITUATION FINDER SCREEN === */}
+          {activeTab === 'situations' && (
+            <SituationFinderTab
+              screen={sitScreen}
+              setScreen={setSitScreen}
+              categories={categories}
+              situations={situations}
+              bookmarks={bookmarks}
+              recentlyViewed={recentlyViewed}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              selectedSituation={selectedSituation}
+              openSituationDetail={openSituationDetail}
+              toggleBookmark={toggleBookmark}
+              getCategoryIcon={getCategoryIcon}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              situationsLoading={situationsLoading}
+              filteredSituations={filteredSituations}
+              LAW_DETAILS_MAP={LAW_DETAILS_MAP}
+              onBackHome={() => handleNavigate('home')}
+            />
+          )}
+
+          {/* === DAILY RIGHTS / DOCUMENTS (accessed via Profile) === */}
+          {activeTab === 'rights' && (
+            <DailyRightsScreen
+              bookmarks={bookmarks}
+              toggleBookmark={toggleBookmark}
+              onBackHome={() => handleNavigate('home')}
+            />
+          )}
+
+          {/* === MODULE 3: LEGAL HEALTH MONITOR / DEADLINE ENGINE === */}
+          {activeTab === 'deadlines' && (
+            <DeadlineDashboard userId={userId} onBackHome={() => handleNavigate('home')} />
+          )}
+
+          {/* === MODULE 4: WIZARD SCREEN === */}
+          {activeTab === 'wizard' && (
+            <WizardScreen userId={userId} onBackHome={() => handleNavigate('home')} />
+          )}
+
+          {/* === PROFILE SCREEN === */}
+          {activeTab === 'profile' && (
+            <div className="profile-screen animate-fade-in" style={{ position: 'relative' }}>
+              <div className="profile-header">
+                <button
+                  onClick={() => handleNavigate('home')}
+                  style={{
+                    position: 'absolute',
+                    top: 52,
+                    left: 20,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: '#1a1a5e'
+                  }}
+                  title="Back to Home"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                </button>
+                <div className="profile-avatar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" width="36" height="36">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                  </svg>
+                </div>
+                <h2>Legal User</h2>
+                <p>{userId || 'LegalAce Member'}</p>
+                <div className="profile-stat-row">
+                  <div className="profile-stat">
+                    <strong>{conversations.length}</strong>
+                    <span>Consultations</span>
+                  </div>
+                  <div className="profile-stat">
+                    <strong>{bookmarks.length}</strong>
+                    <span>Bookmarks</span>
+                  </div>
+                  <div className="profile-stat">
+                    <strong>{recentlyViewed.length}</strong>
+                    <span>Viewed</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="profile-menu-list">
+                {[
+                  { label: 'Legal Health Monitor', desc: 'Deadlines & health score', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /><path d="m9 16 2 2 4-4" /></svg>, action: () => setActiveTab('deadlines') },
+                  { label: 'Saved Situations', desc: `${bookmarks.length} bookmarked`, icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" /></svg>, action: () => { setActiveTab('situations'); setSitScreen('categories'); setSelectedCategory({ id: 'bookmarks', name: 'Bookmarks' }); } },
+                  { label: 'Chat History', desc: `${conversations.length} conversations`, icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>, action: () => setActiveTab('chat') },
+                  { label: 'Daily Rights', desc: 'Know your rights', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>, action: () => setActiveTab('rights') },
+                  { label: 'About LegalAce', desc: 'Legal AI Platform v1.0', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>, action: () => alert('LegalAce v1.0 — AI-powered Indian Law Companion.\n\nModules:\n  1. AI Chatbot (RAG + FAISS + OpenAI)\n  2. Situation Finder\n  3. Legal Health Monitor\n\nFor educational use only.') },
+                ].map((item, i) => (
+                  <div className="profile-menu-item" key={i} onClick={item.action}>
+                    <div className="profile-menu-icon">{item.icon}</div>
+                    <div className="profile-menu-text">
+                      <strong>{item.label}</strong>
+                      <span>{item.desc}</span>
+                    </div>
+                    <div className="chevron-right">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
-          ) : (
-            <div className="message-list">
-              {messages.map((m, idx) => (
-                <div key={idx} className={`message-wrapper ${m.role}`}>
-                  <div className="message-avatar">
-                    {m.role === 'user' ? '👤' : '🛡️'}
-                  </div>
-                  <div className="message-bubble">
-                    {m.role === 'user' ? (
-                      <div className="message-content">{m.content}</div>
-                    ) : (
-                      <div className="assistant-response">
-                        {/* Factual Answer */}
-                        <div className="message-content">{m.content}</div>
-
-                        {/* Legal Rights Cards */}
-                        {m.rights && m.rights.length > 0 && (
-                          <div className="rights-section">
-                            <h4>🔑 Key Legal Rights</h4>
-                            <div className="rights-grid">
-                              {m.rights.map((r, rIdx) => (
-                                <div key={rIdx} className="right-card">
-                                  <span className="right-check">✓</span>
-                                  <p>{r}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Action Steps Roadmap */}
-                        {m.action_steps && m.action_steps.length > 0 && (
-                          <div className="actions-section">
-                            <h4>📋 Recommended Action Steps</h4>
-                            <ol className="action-roadmap">
-                              {m.action_steps.map((a, aIdx) => (
-                                <li key={aIdx}>
-                                  <div className="step-num">{aIdx + 1}</div>
-                                  <p>{a}</p>
-                                </li>
-                              ))}
-                            </ol>
-                          </div>
-                        )}
-
-                        {/* Citations badges */}
-                        {m.citations && m.citations.length > 0 && (
-                          <div className="citations-section">
-                            <h4>📚 Law Citations (Click to view section text)</h4>
-                            <div className="citations-flex">
-                              {m.citations.map((c, cIdx) => (
-                                <div key={cIdx} className="citation-pill-wrapper">
-                                  <button 
-                                    className={`citation-pill ${expandedCitation === c.section ? 'active' : ''}`}
-                                    onClick={() => toggleCitation(c.section)}
-                                  >
-                                    <span className="citation-act">{c.act}</span>
-                                    <span className="citation-sec">{c.section}: {c.section_title}</span>
-                                  </button>
-                                  {expandedCitation === c.section && (
-                                    <div className="citation-detail-box">
-                                      <p className="detail-text">
-                                        {LAW_DETAILS_MAP[c.section] || "Detailed statutory text matches loaded in corpus."}
-                                      </p>
-                                      <span className="relevance-score">
-                                        Retrieval Match: {Math.round(c.relevance_score * 100)}%
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Disclaimer */}
-                        {m.disclaimer && (
-                          <div className="disclaimer-text">
-                            ⚠️ {m.disclaimer}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {loading && (
-                <div className="message-wrapper assistant loading">
-                  <div className="message-avatar">🛡️</div>
-                  <div className="message-bubble">
-                    <div className="loading-spinner-dots">
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </div>
-                    <span className="loading-label">Retrieving Indian statutes & generating response...</span>
-                  </div>
-                </div>
-              )}
-
-              {errorMessage && (
-                <div className="error-banner">
-                  <span className="error-icon">⚠️</span>
-                  <p>{errorMessage}</p>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
-            </div>
           )}
-        </div>
 
-        {/* Input Bar */}
-        <footer className="chat-footer">
-          <form 
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendMessage();
-            }} 
-            className="chat-input-form"
-          >
-            <textarea
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder="Describe your legal situation (e.g., 'My employer hasn't paid my salary for two months')..."
-              rows={2}
-              disabled={loading}
-            />
-            <button 
-              type="submit" 
-              className="send-btn"
-              disabled={loading || !inputValue.trim()}
-            >
-              Send ➔
-            </button>
-          </form>
-          <div className="footer-note">
-            LegalAce is an educational companion. It uses an AI pipeline trained on real Indian statutes.
+          {/* === BOTTOM NAVIGATION BAR === */}
+          <div className="bottom-navigation-bar">
+            {navItems.map(({ key, label, icon }) => (
+              <button
+                key={key}
+                className={`nav-tab-item${activeTab === key ? ' active' : ''}`}
+                onClick={() => handleNavigate(key)}
+              >
+                <div className="nav-icon-wrap">{icon}</div>
+                <span className="tab-item-label">{label}</span>
+              </button>
+            ))}
           </div>
-        </footer>
-      </main>
+
+        </main>
+      </div>
     </div>
-  </div>
   );
 }

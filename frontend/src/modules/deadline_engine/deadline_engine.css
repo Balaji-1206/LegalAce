@@ -1,0 +1,599 @@
+/* ============================================================
+   Module 3 — Legal Health Monitor + Deadline Engine
+   Dedicated styles for Dashboard, Timeline, and Score Ring
+   ============================================================ */
+
+/* ---- Dashboard wrapper ---- */
+.deadline-dashboard {
+  flex: 1;
+  overflow-y: auto;
+  background: #f4f5f9;
+  padding-bottom: 80px;
+}
+
+.deadline-dashboard::-webkit-scrollbar { width: 3px; }
+.deadline-dashboard::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 3px; }
+
+/* ---- Dashboard header ---- */
+.deadline-header {
+  padding: 52px 20px 16px;
+  background: #f4f5f9;
+}
+
+.deadline-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.deadline-header h1 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1a1a5e;
+  letter-spacing: -0.3px;
+}
+
+.deadline-header-sub {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.add-deadline-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #1a1a5e;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  transition: all 0.2s;
+  box-shadow: 0 4px 10px rgba(26,26,94,0.25);
+}
+
+.add-deadline-btn:hover { background: #2d2d8e; transform: scale(1.05); }
+
+/* ---- Health Score Card ---- */
+.health-score-card {
+  margin: 8px 16px 16px;
+  background: #1a1a5e;
+  border-radius: 24px;
+  padding: 24px 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 8px 24px rgba(26,26,94,0.28);
+  position: relative;
+  overflow: hidden;
+}
+
+.health-score-card::before {
+  content: '';
+  position: absolute;
+  top: -30px;
+  right: -30px;
+  width: 130px;
+  height: 130px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+}
+
+.health-score-card::after {
+  content: '';
+  position: absolute;
+  bottom: -40px;
+  left: 80px;
+  width: 100px;
+  height: 100px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 50%;
+}
+
+/* Circular score ring */
+.score-ring-wrap {
+  flex-shrink: 0;
+  width: 90px;
+  height: 90px;
+  position: relative;
+}
+
+.score-ring-svg {
+  transform: rotate(-90deg);
+  width: 90px;
+  height: 90px;
+}
+
+.score-ring-track {
+  fill: none;
+  stroke: rgba(255,255,255,0.15);
+  stroke-width: 7;
+}
+
+.score-ring-fill {
+  fill: none;
+  stroke: #a5f3fc;
+  stroke-width: 7;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.2s ease-out;
+}
+
+.score-ring-fill.good { stroke: #6ee7b7; }
+.score-ring-fill.fair { stroke: #fde68a; }
+.score-ring-fill.risk { stroke: #fca5a5; }
+.score-ring-fill.critical { stroke: #f87171; }
+
+.score-ring-number {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.score-ring-number span {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.6);
+  margin-top: 2px;
+}
+
+/* Score text panel */
+.score-info { flex: 1; position: relative; z-index: 1; }
+
+.score-grade {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.score-subtext {
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.score-stat-row {
+  display: flex;
+  gap: 14px;
+}
+
+.score-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.score-stat strong {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.score-stat span {
+  font-size: 10px;
+  color: rgba(255,255,255,0.55);
+  font-weight: 500;
+}
+
+/* ---- Strengths & Risks pills ---- */
+.health-insights {
+  margin: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.insight-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  border: 1.5px solid #f0f1f5;
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.4;
+}
+
+.insight-pill.strength { border-left: 4px solid #10b981; }
+.insight-pill.risk { border-left: 4px solid #f97316; }
+.insight-pill.critical { border-left: 4px solid #ef4444; }
+
+.insight-pill-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* ---- Section Titles ---- */
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  margin-bottom: 10px;
+}
+
+.section-heading h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.section-heading button {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4f46e5;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* ---- Deadline Cards ---- */
+.deadline-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 16px;
+  margin: 0 16px 10px;
+  border: 1.5px solid #f0f1f5;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deadline-card:hover {
+  border-color: #c7d2fe;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+.deadline-card.high { border-left: 4px solid #ef4444; }
+.deadline-card.medium { border-left: 4px solid #f97316; }
+.deadline-card.low { border-left: 4px solid #3b82f6; }
+.deadline-card.completed { opacity: 0.6; border-left: 4px solid #10b981; }
+.deadline-card.expired { border-left: 4px solid #9ca3af; }
+
+.deadline-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.deadline-card-icon.rental { background: #dcfce7; color: #16a34a; }
+.deadline-card-icon.employment { background: #dbeafe; color: #1d4ed8; }
+.deadline-card-icon.consumer { background: #fef3c7; color: #d97706; }
+.deadline-card-icon.banking { background: #e0f2fe; color: #0369a1; }
+.deadline-card-icon.insurance { background: #fce7f3; color: #be185d; }
+.deadline-card-icon.general { background: #eef0ff; color: #4f46e5; }
+
+.deadline-card-icon svg { width: 22px; height: 22px; }
+
+.deadline-card-body { flex: 1; }
+
+.deadline-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.deadline-cat-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7280;
+}
+
+.priority-badge {
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.priority-badge.high { background: #fee2e2; color: #dc2626; }
+.priority-badge.medium { background: #ffedd5; color: #c2410c; }
+.priority-badge.low { background: #dbeafe; color: #1d4ed8; }
+
+.deadline-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 5px;
+  line-height: 1.3;
+}
+
+.deadline-card-desc {
+  font-size: 12.5px;
+  color: #6b7280;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.deadline-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.days-remaining-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.days-remaining-chip.urgent { background: #fee2e2; color: #dc2626; }
+.days-remaining-chip.soon { background: #ffedd5; color: #c2410c; }
+.days-remaining-chip.ok { background: #dcfce7; color: #15803d; }
+.days-remaining-chip.expired { background: #f3f4f6; color: #6b7280; }
+.days-remaining-chip.done { background: #dcfce7; color: #15803d; }
+
+.deadline-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.dl-action-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid #e8eaf0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.dl-action-btn:hover { border-color: #a5b4fc; color: #4f46e5; }
+.dl-action-btn.complete:hover { border-color: #6ee7b7; color: #10b981; }
+.dl-action-btn.delete:hover { border-color: #fca5a5; color: #ef4444; }
+.dl-action-btn svg { width: 13px; height: 13px; }
+
+/* ---- Add Deadline Form ---- */
+.add-deadline-modal {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: flex-end;
+  z-index: 200;
+}
+
+.add-deadline-sheet {
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  padding: 24px 20px 36px;
+  width: 100%;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.sheet-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.sheet-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  background: #f4f5f9;
+  border: 1.5px solid #e8eaf0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  color: #111827;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #818cf8;
+  background: #fff;
+}
+
+.form-group textarea { resize: none; height: 72px; }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.form-submit-btn {
+  width: 100%;
+  padding: 14px;
+  background: #1a1a5e;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(26,26,94,0.25);
+}
+
+.form-submit-btn:hover { background: #2d2d8e; }
+.form-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Extract from text area */
+.extract-mode-toggle {
+  display: flex;
+  background: #f4f5f9;
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 16px;
+  gap: 3px;
+}
+
+.extract-toggle-btn {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.extract-toggle-btn.active {
+  background: #fff;
+  color: #1a1a5e;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* ---- Timeline View ---- */
+.deadline-timeline {
+  flex: 1;
+  overflow-y: auto;
+  background: #f4f5f9;
+  padding-bottom: 80px;
+}
+
+.timeline-filters {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.timeline-filters::-webkit-scrollbar { display: none; }
+
+.filter-chip {
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1.5px solid #e8eaf0;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.filter-chip.active {
+  background: #1a1a5e;
+  border-color: #1a1a5e;
+  color: #fff;
+}
+
+.filter-chip:hover:not(.active) { border-color: #c7d2fe; color: #4f46e5; }
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #eef0ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.empty-state-icon svg { width: 34px; height: 34px; color: #818cf8; }
+
+.empty-state h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  font-size: 13.5px;
+  color: #6b7280;
+  line-height: 1.55;
+  max-width: 260px;
+}
+
+/* Prevent scrolling when modal is open */
+.deadline-dashboard.modal-open {
+  overflow: hidden;
+}

@@ -23,6 +23,10 @@ async def connect_to_mongo() -> None:
         await _db["conversations"].create_index("conversation_id", unique=True)
         await _db["conversations"].create_index("user_id")
         await _db["conversations"].create_index("updated_at")
+        # Module 3 — Deadline Engine indexes
+        await _db["deadlines"].create_index("user_id")
+        await _db["deadlines"].create_index("status")
+        await _db["deadlines"].create_index([("user_id", 1), ("status", 1), ("deadline_date", 1)])
         logger.info(f"Connected to MongoDB — database: '{settings.DATABASE_NAME}'")
     except Exception as e:
         logger.warning(f"MongoDB index creation skipped — DB may not be available: {e}")
