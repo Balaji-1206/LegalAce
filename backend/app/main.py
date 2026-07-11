@@ -118,9 +118,11 @@ from app.modules.chatbot.api import router as chat_router
 from app.modules.chatbot.conversation_api import router as conversation_router
 from app.modules.situation_finder.api import router as situations_router
 from app.modules.deadline_engine.api import router as deadline_router
+from app.modules.wizard.api import router as wizard_router
  
 app.include_router(health_router)
 app.include_router(chat_router)
 app.include_router(conversation_router)
 app.include_router(situations_router)
 app.include_router(deadline_router)
+app.include_router(wizard_router)

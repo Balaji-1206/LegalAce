@@ -6,6 +6,7 @@ import DailyRightsScreen from './modules/shared/DailyRightsScreen';
 import { ChatbotTab } from './modules/chatbot/ChatbotTab';
 import { SituationFinderTab } from './modules/situation_finder/SituationFinderTab';
 import { DeadlineDashboard } from './modules/deadline_engine/DeadlineDashboard';
+import { WizardScreen } from './modules/wizard/WizardScreen';
 
 const BACKEND_URL = 'http://localhost:8000';
 
@@ -48,7 +49,7 @@ const FALLBACK_CATEGORIES = [
   { id: "education", name: "Education", icon: "🎓", color_gradient: ["#14b8a6", "#0d9488"], situation_count: 2 },
 ];
 
-type ActiveTab = 'home' | 'chat' | 'situations' | 'deadlines' | 'rights' | 'profile';
+type ActiveTab = 'home' | 'chat' | 'situations' | 'deadlines' | 'wizard' | 'rights' | 'profile';
 
 export default function App() {
   const [userId, setUserId] = useState<string>('');
@@ -290,6 +291,7 @@ export default function App() {
     else if (tab === 'situations') { setActiveTab('situations'); setSitScreen('categories'); setSearchQuery(''); }
     else if (tab === 'rights') setActiveTab('rights');
     else if (tab === 'deadlines') setActiveTab('deadlines');
+    else if (tab === 'wizard') setActiveTab('wizard');
     else if (tab === 'profile') setActiveTab('profile');
     else if (tab === 'home') setActiveTab('home');
   };
@@ -303,6 +305,10 @@ export default function App() {
     {
       key: 'chat', label: 'Chat',
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+    },
+    {
+      key: 'wizard', label: 'Wizard',
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
     },
     {
       key: 'situations', label: 'Situations',
@@ -353,6 +359,8 @@ export default function App() {
               conversations={conversations}
               selectConversation={selectConversation}
               deleteConversation={deleteConversation}
+              userId={userId}
+              backendUrl={BACKEND_URL}
             />
           )}
 
@@ -376,6 +384,7 @@ export default function App() {
               situationsLoading={situationsLoading}
               filteredSituations={filteredSituations}
               LAW_DETAILS_MAP={LAW_DETAILS_MAP}
+              onBackHome={() => handleNavigate('home')}
             />
           )}
 
@@ -384,18 +393,44 @@ export default function App() {
             <DailyRightsScreen
               bookmarks={bookmarks}
               toggleBookmark={toggleBookmark}
+              onBackHome={() => handleNavigate('home')}
             />
           )}
 
           {/* === MODULE 3: LEGAL HEALTH MONITOR / DEADLINE ENGINE === */}
           {activeTab === 'deadlines' && (
-            <DeadlineDashboard userId={userId} />
+            <DeadlineDashboard userId={userId} onBackHome={() => handleNavigate('home')} />
+          )}
+
+          {/* === MODULE 4: WIZARD SCREEN === */}
+          {activeTab === 'wizard' && (
+            <WizardScreen userId={userId} onBackHome={() => handleNavigate('home')} />
           )}
 
           {/* === PROFILE SCREEN === */}
           {activeTab === 'profile' && (
-            <div className="profile-screen animate-fade-in">
+            <div className="profile-screen animate-fade-in" style={{ position: 'relative' }}>
               <div className="profile-header">
+                <button
+                  onClick={() => handleNavigate('home')}
+                  style={{
+                    position: 'absolute',
+                    top: 52,
+                    left: 20,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: '#1a1a5e'
+                  }}
+                  title="Back to Home"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                </button>
                 <div className="profile-avatar">
                   <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" width="36" height="36">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />

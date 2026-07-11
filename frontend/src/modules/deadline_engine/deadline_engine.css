@@ -592,3 +592,8 @@
   line-height: 1.55;
   max-width: 260px;
 }
+
+/* Prevent scrolling when modal is open */
+.deadline-dashboard.modal-open {
+  overflow: hidden;
+}

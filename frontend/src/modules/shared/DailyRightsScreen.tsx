@@ -3,6 +3,7 @@ import React from 'react';
 interface DailyRightsScreenProps {
   bookmarks: string[];
   toggleBookmark: (id: string) => void;
+  onBackHome?: () => void;
 }
 
 const RIGHTS_DATA = [
@@ -56,6 +57,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
   bookmarks,
   toggleBookmark,
+  onBackHome,
 }) => {
   const handleShare = (title: string) => {
     if (navigator.share) {
@@ -69,7 +71,15 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
     <div className="rights-screen animate-fade-in">
       <div className="rights-header">
         <div className="rights-header-nav">
-          <div style={{ width: 36 }} />
+          {onBackHome ? (
+            <button className="chat-menu-btn" onClick={onBackHome} title="Back to Home" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#1a1a5e" strokeWidth="2.5" width="20" height="20">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+          ) : (
+            <div style={{ width: 36 }} />
+          )}
           <button className="chat-menu-btn" title="Search">
             <svg viewBox="0 0 24 24" fill="none" stroke="#1a1a5e" strokeWidth="2" width="20" height="20">
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />

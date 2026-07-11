@@ -48,8 +48,43 @@ async def run_rag_pipeline(
     # 1. Intent Classification
     intent = classify_intent(query)
 
+    if intent == "greeting":
+        parsed_greeting = {
+            "answer": "Hello! I am LegalAce, your AI legal information assistant. I can help you understand your legal rights, statutory laws, and action steps in India. How can I help you today?",
+            "rights": [],
+            "action_steps": [],
+            "law_citations": [],
+            "disclaimer": "This is a greeting response. For legal matters, please consult a qualified advocate."
+        }
+        return parsed_greeting, "greeting", []
+
+    if intent == "out_of_scope":
+        parsed_out_of_scope = {
+            "answer": "I am LegalAce, your AI legal companion. I am specialized in explaining Indian statutory laws, rights, and legal situations. I cannot assist with non-legal queries. Please ask a legal question.",
+            "rights": [],
+            "action_steps": [],
+            "law_citations": [],
+            "disclaimer": "This system is strictly constrained to legal topics only."
+        }
+        return parsed_out_of_scope, "out_of_scope", []
+
     # 2. FAISS Document Retrieval
     law_chunks = await retrieve_relevant_laws(query, top_k=5)
+
+    # 3. Guardrail Threshold Check
+    # If the user asks a general query, check if the maximum vector similarity score is below the threshold of 0.22.
+    # If it is, the query is not legal-related (e.g., "what is cancer?", "who won the match?").
+    max_score = max([chunk.score for chunk in law_chunks]) if law_chunks else 0.0
+    if intent == "general" and max_score < 0.22:
+        logger.info(f"Out of scope query detected via score threshold (max_score={max_score:.4f}): '{query[:80]}'")
+        parsed_out_of_scope = {
+            "answer": "I am LegalAce, your AI legal companion. I am specialized in explaining Indian statutory laws, rights, and legal situations. I cannot assist with non-legal queries. Please ask a legal question.",
+            "rights": [],
+            "action_steps": [],
+            "law_citations": [],
+            "disclaimer": "This system is strictly constrained to legal topics only."
+        }
+        return parsed_out_of_scope, "out_of_scope", []
 
     # 3. Prompt Construction
     context_block = build_context_block(law_chunks)

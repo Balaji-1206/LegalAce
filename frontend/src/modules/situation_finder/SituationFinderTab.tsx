@@ -18,6 +18,7 @@ interface SituationFinderTabProps {
   situationsLoading: boolean;
   filteredSituations: any[];
   LAW_DETAILS_MAP: Record<string, string>;
+  onBackHome?: () => void;
 }
 
 // Category icon SVG renderer
@@ -104,6 +105,7 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
   situationsLoading,
   filteredSituations,
   LAW_DETAILS_MAP,
+  onBackHome,
 }) => {
 
   // Common Situations (top 3 for home view)
@@ -320,7 +322,15 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
     <div className="situations-screen animate-fade-in">
       <div className="situations-header">
         <div className="situations-header-nav">
-          <div style={{ width: 36 }} />
+          {onBackHome ? (
+            <button className="situations-back-btn" onClick={onBackHome} title="Back to Home" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+          ) : (
+            <div style={{ width: 36 }} />
+          )}
           <span style={{ fontSize: 17, fontWeight: 700, color: '#1a1a5e' }}>LegalAce</span>
           <button className="situations-back-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">

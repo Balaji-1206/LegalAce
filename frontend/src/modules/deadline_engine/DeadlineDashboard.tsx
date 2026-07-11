@@ -222,9 +222,14 @@ const AddDeadlineSheet: React.FC<AddSheetProps> = ({ userId, onClose, onAdded })
               <label>Deadline Date</label>
               <input type="date" value={deadlineDate} onChange={e => setDeadlineDate(e.target.value)} />
             </div>
-            <button className="form-submit-btn" onClick={handleManualSubmit} disabled={submitting || !title || !deadlineDate}>
-              {submitting ? 'Saving...' : 'Add Deadline'}
-            </button>
+            <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+              <button className="form-cancel-btn" onClick={onClose} style={{ flex: 1, padding: 12, borderRadius: 12, border: '1.5px solid #e8eaf0', background: '#fff', color: '#6b7280', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Exit
+              </button>
+              <button className="form-submit-btn" onClick={handleManualSubmit} disabled={submitting || !title || !deadlineDate} style={{ flex: 2, margin: 0 }}>
+                {submitting ? 'Saving...' : 'Add Deadline'}
+              </button>
+            </div>
           </>
         ) : (
           <>
@@ -240,9 +245,14 @@ const AddDeadlineSheet: React.FC<AddSheetProps> = ({ userId, onClose, onAdded })
             <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 12, lineHeight: 1.5 }}>
               AI will automatically identify deadlines, notice periods, and legal obligations from your text.
             </p>
-            <button className="form-submit-btn" onClick={handleExtract} disabled={submitting || !extractText.trim()}>
-              {submitting ? 'Extracting...' : '🤖 Extract & Save Deadlines'}
-            </button>
+            <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+              <button className="form-cancel-btn" onClick={onClose} style={{ flex: 1, padding: 12, borderRadius: 12, border: '1.5px solid #e8eaf0', background: '#fff', color: '#6b7280', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Exit
+              </button>
+              <button className="form-submit-btn" onClick={handleExtract} disabled={submitting || !extractText.trim()} style={{ flex: 2, margin: 0 }}>
+                {submitting ? 'Extracting...' : '🤖 Extract & Save'}
+              </button>
+            </div>
           </>
         )}
       </div>
@@ -253,9 +263,10 @@ const AddDeadlineSheet: React.FC<AddSheetProps> = ({ userId, onClose, onAdded })
 // ---- Main Dashboard Component ----
 interface DeadlineDashboardProps {
   userId: string;
+  onBackHome?: () => void;
 }
 
-export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId }) => {
+export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, onBackHome }) => {
   const [healthScore, setHealthScore] = useState<any>(null);
   const [upcoming, setUpcoming] = useState<any[]>([]);
   const [allDeadlines, setAllDeadlines] = useState<any[]>([]);
@@ -315,14 +326,23 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId }) 
   ];
 
   return (
-    <div className="deadline-dashboard animate-fade-in" style={{ position: 'relative' }}>
+    <div className={`deadline-dashboard animate-fade-in${showAddSheet ? ' modal-open' : ''}`} style={{ position: 'relative' }}>
 
       {/* Header */}
       <div className="deadline-header">
         <div className="deadline-header-row">
-          <div>
-            <h1>Legal Health</h1>
-            <p className="deadline-header-sub">Your personal legal guardian</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {onBackHome && (
+              <button onClick={onBackHome} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: '#1a1a5e' }} title="Back to Home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
+            )}
+            <div>
+              <h1>Legal Health</h1>
+              <p className="deadline-header-sub">Your personal legal guardian</p>
+            </div>
           </div>
           <button className="add-deadline-btn" onClick={() => setShowAddSheet(true)} title="Add Deadline">
             <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="18" height="18">

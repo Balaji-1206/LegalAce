@@ -30,6 +30,7 @@ body {
   position: relative;
   width: 375px;
   height: 812px;
+  max-height: calc(100vh - 48px);
   background: #f4f5f9;
   border-radius: 44px;
   box-shadow:
@@ -568,46 +569,57 @@ body {
   background: #f4f5f9;
   border-top: 1px solid #e8eaf0;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 10px;
 }
 
-.chat-attach-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+.chat-input-box-wrapper {
+  flex: 1;
   background: #ffffff;
   border: 1.5px solid #e8eaf0;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  padding: 3px 6px 3px 12px;
+  transition: all 0.2s;
+}
+
+.chat-input-box-wrapper:focus-within {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1);
+}
+
+.chat-attach-btn {
+  background: transparent;
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   color: #6b7280;
+  padding: 8px;
   flex-shrink: 0;
-  transition: all 0.2s;
+  transition: color 0.2s;
 }
 
-.chat-attach-btn:hover { border-color: #c7d2fe; color: #4f46e5; }
+.chat-attach-btn:hover { color: #4f46e5; }
 
 .chat-input-box {
   flex: 1;
-  background: #ffffff;
-  border: 1.5px solid #e8eaf0;
-  border-radius: 22px;
-  padding: 11px 16px;
-  font-size: 14px;
-  color: #111827;
+  background: transparent;
+  border: none;
   outline: none;
   resize: none;
-  min-height: 44px;
-  max-height: 120px;
+  font-size: 14px;
+  color: #111827;
+  padding: 8px 10px 8px 6px;
+  min-height: 38px;
+  max-height: 100px;
   font-family: inherit;
-  line-height: 1.5;
-  transition: border-color 0.2s;
+  line-height: 1.4;
 }
 
 .chat-input-box::placeholder { color: #9ca3af; }
-.chat-input-box:focus { border-color: #818cf8; }
 
 .chat-send-btn {
   width: 44px;
@@ -1409,3 +1421,292 @@ body {
 .profile-menu-text span { font-size: 12px; color: #6b7280; }
 
 .chevron-right svg { width: 16px; height: 16px; color: #9ca3af; }
+
+/* ---- Legal Dictionary Card (RAG Citations) ---- */
+.legal-dictionary-card {
+  margin-top: 12px;
+  background: #ffffff;
+  border: 1.5px solid #e0e7ff;
+  border-left: 4px solid #4f46e5;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.08);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.ld-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.ld-act-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4f46e5;
+  background: #eef0ff;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  max-width: 85%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ld-close-btn {
+  background: #f3f4f6;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #9ca3af;
+  transition: all 0.2s;
+}
+
+.ld-close-btn:hover {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+.ld-section-number {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1a1a5e;
+  margin-bottom: 4px;
+}
+
+.ld-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
+.ld-section-text {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.6;
+  background: #f9fafb;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #f3f4f6;
+  margin-bottom: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ld-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ld-copy-btn {
+  background: #1a1a5e;
+  color: #ffffff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.ld-copy-btn:hover {
+  background: #2d2d8e;
+  transform: translateY(-1px);
+}
+
+.ld-copy-btn:active {
+  transform: translateY(0);
+}
+
+.ld-relevance {
+  font-size: 11px;
+  font-weight: 600;
+  color: #10b981;
+  background: #dcfce7;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+/* ---- Chatbot Rich Response Cards ---- */
+.rich-card {
+  background: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+  margin-top: 10px;
+  width: 100%;
+}
+
+.rich-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a1a5e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 6px;
+}
+
+.rich-card-header svg {
+  flex-shrink: 0;
+}
+
+.rich-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Rights Card Items */
+.rich-right-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.right-bullet-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: #dcfce7;
+  color: #10b981;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: bold;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.right-text-content {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.45;
+}
+
+/* Action Checklist Card Items */
+.rich-action-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.rich-action-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.rich-action-item.checked .action-step-text {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
+.action-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.action-checkbox-input {
+  display: none;
+}
+
+.action-checkbox-custom {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: inline-block;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.action-checkbox-input:checked + .action-checkbox-custom {
+  background: #f97316;
+  border-color: #f97316;
+}
+
+.action-checkbox-input:checked + .action-checkbox-custom::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.action-step-text {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.45;
+  transition: color 0.2s;
+}
+
+/* Create Reminder Button */
+.create-reminder-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #c7d2fe;
+  background: #f5f7ff;
+  color: #4f46e5;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  font-family: inherit;
+}
+
+.create-reminder-btn:hover {
+  background: #e0e7ff;
+  border-color: #818cf8;
+}
+
+.create-reminder-btn.loading {
+  background: #f3f4f6;
+  color: #9ca3af;
+  border-color: #e5e7eb;
+  cursor: not-allowed;
+}
+
+.create-reminder-btn.created {
+  background: #dcfce7;
+  color: #10b981;
+  border-color: #a7f3d0;
+  cursor: default;
+}
+
+
