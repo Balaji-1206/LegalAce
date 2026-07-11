@@ -1,12 +1,5 @@
 """
 System prompt template and guardrail definitions for the LegalAce chatbot.
-
-Key design principles:
-- Never provide legal advice — only legal information
-- Never predict court outcomes
-- Never fabricate or paraphrase law sections — cite only what was retrieved
-- Clearly state uncertainty when relevant laws are not found
-- Always include the disclaimer
 """
 from __future__ import annotations
 
@@ -64,7 +57,6 @@ The following Indian law sections are relevant to the user's query. Use ONLY the
 Remember: Respond ONLY with the JSON object. No preamble, no markdown, no explanation outside the JSON.
 """
 
-
 def build_context_block(law_chunks: list) -> str:
     """
     Format retrieved law chunks into a structured context string for the prompt.
@@ -81,7 +73,6 @@ def build_context_block(law_chunks: list) -> str:
         )
     return "\n\n".join(lines)
 
-
 def build_history_block(messages: list[dict]) -> str:
     """
     Format the last N conversation messages into a readable history string.
@@ -93,7 +84,6 @@ def build_history_block(messages: list[dict]) -> str:
     for msg in messages:
         role = "User" if msg["role"] == "user" else "LegalAce"
         content = msg["content"]
-        # Truncate long assistant messages in history to save tokens
         if msg["role"] == "assistant" and len(content) > 500:
             content = content[:500] + "...[truncated]"
         lines.append(f"{role}: {content}")

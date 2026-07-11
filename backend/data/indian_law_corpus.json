@@ -268,5 +268,140 @@
     "section_text": "Whoever, being the husband or the relative of the husband of a woman, subjects such woman to cruelty shall be punished with imprisonment for a term which may extend to three years and shall also be liable to fine. Cruelty includes wilful conduct which is of such a nature as to drive the woman to commit suicide or to cause grave injury or danger to life, limb or health (whether mental or physical) of the woman; or harassment with a view to coercing her or any person related to her to meet any unlawful demand for any property or valuable security.",
     "category": "family",
     "keywords": ["dowry harassment", "husband cruelty", "IPC 498A", "domestic cruelty", "dowry demand", "marital cruelty"]
+  },
+  {
+    "law_id": "MATERNITY_BENEFIT_1961_S5",
+    "act_name": "Maternity Benefit Act, 1961",
+    "section_number": "Section 5",
+    "section_title": "Right to Payment of Maternity Benefit",
+    "section_text": "Subject to the provisions of this Act, every woman shall be entitled to, and her employer shall be liable for, the payment of maternity benefit at the rate of the average daily wage for the period of her actual absence, which is a maximum of twenty-six weeks of which not more than eight weeks shall precede the date of her expected delivery. A woman is eligible if she has actually worked in an establishment of the employer for not less than eighty days in the twelve months immediately preceding the date of her expected delivery.",
+    "category": "employment",
+    "keywords": ["maternity leave", "pregnancy benefit", "pregnancy leave", "maternity wages", "pregnant employee rights", "maternity benefit duration"]
+  },
+  {
+    "law_id": "PAYMENT_GRATUITY_1972_S4",
+    "act_name": "Payment of Gratuity Act, 1972",
+    "section_number": "Section 4",
+    "section_title": "Payment of Gratuity",
+    "section_text": "Gratuity shall be payable to an employee on the termination of his employment after he has rendered continuous service for not less than five years: (a) on his superannuation, or (b) on his retirement or resignation, or (c) on his death or disablement due to accident or disease. Continuous service of five years is not necessary where termination is due to death or disablement. The gratuity rate is fifteen days' wages for every completed year of service, up to a maximum limit (currently Rs. 20 Lakhs).",
+    "category": "employment",
+    "keywords": ["gratuity", "gratuity eligibility", "retirement benefit", "continuous service five years", "resignation gratuity", "gratuity calculation"]
+  },
+  {
+    "law_id": "MODEL_TENANCY_2021_S11",
+    "act_name": "Model Tenancy Act, 2021",
+    "section_number": "Section 11",
+    "section_title": "Security Deposit",
+    "section_text": "The security deposit to be paid by the tenant in advance shall be decided by the landlord and the tenant in the tenancy agreement, subject to: (a) not exceeding two months' rent in case of residential premises; and (b) not exceeding six months' rent in case of non-residential premises. The security deposit shall be refunded to the tenant by the landlord at the time of taking over vacant possession of the premises, after making necessary deductions of any liability of the tenant.",
+    "category": "tenancy",
+    "keywords": ["security deposit limit", "model tenancy act", "deposit maximum months", "residential deposit", "deposit refund landlord", "commercial lease deposit"]
+  },
+  {
+    "law_id": "TPA_1882_S108_M",
+    "act_name": "Transfer of Property Act, 1882",
+    "section_number": "Section 108(m)",
+    "section_title": "Rights and Liabilities of Lessee — Maintenance",
+    "section_text": "The lessee is bound to keep, and on the termination of the lease to restore, the property in as good condition as it was in at the time when he was put in possession, subject only to the changes caused by reasonable wear and tear or irresistible force. The lessee must make any repairs within three months after notice in writing is given by the lessor. If the lessee fails, the lessor may enter and make them at the lessee's expense.",
+    "category": "tenancy",
+    "keywords": ["flat maintenance", "property repairs", "tenant wear and tear", "damage to flat", "repairing leased property", "landlord repair notice"]
+  },
+  {
+    "law_id": "CONSUMER_ECOMMERCE_2020_R4",
+    "act_name": "Consumer Protection (E-Commerce) Rules, 2020",
+    "section_number": "Rule 4",
+    "section_title": "Duties and Liabilities of E-Commerce Entities",
+    "section_text": "No e-commerce entity shall impose cancellation charges on consumers cancelling after confirming purchase unless similar charges are borne by the e-commerce entity if they cancel unilaterally. Every e-commerce entity shall effect all refunds in case of delivery failure, product returns, or service deficits within a reasonable time as prescribed. E-commerce entities are prohibited from adopting any unfair trade practice or manipulating search results to mislead consumers.",
+    "category": "consumer",
+    "keywords": ["e-commerce refund", "online cancellation fee", "amazon flipkart cancel", "delivery delay refund", "unfair e-commerce", "product return period"]
+  },
+  {
+    "law_id": "CPA_2019_S84",
+    "act_name": "Consumer Protection Act, 2019",
+    "section_number": "Section 84",
+    "section_title": "Liability of Product Manufacturer",
+    "section_text": "A product manufacturer shall be liable in a product liability action, if the product: (a) contains a manufacturing defect; or (b) is defective in design; or (c) there is a deviation from manufacturing specifications; or (d) does not conform to express warranty; or (e) fails to contain adequate instructions of usage to prevent harm. The consumer is entitled to compensation for personal injury, property damage, or death caused by such defective product.",
+    "category": "consumer",
+    "keywords": ["product liability", "manufacturer liability", "defective design", "broken product injury", "compensation warranty", "faulty goods lawsuit"]
+  },
+  {
+    "law_id": "CRPC_1973_S46",
+    "act_name": "Code of Criminal Procedure, 1973",
+    "section_number": "Section 46",
+    "section_title": "Arrest How Made — Special Protection for Women",
+    "section_text": "In making an arrest, the police officer shall actually touch or confine the body of the person to be arrested, unless there be a submission to the custody by word or action. Save in exceptional circumstances, no woman shall be arrested after sunset and before sunrise, and where such exceptional circumstances exist, the woman police officer shall, by making a written report, obtain the prior permission of the Judicial Magistrate of the first class within whose local jurisdiction the arrest is to be made.",
+    "category": "criminal",
+    "keywords": ["arrest of woman", "arrest after sunset", "night arrest", "female arrest rules", "police arrest procedure", "magistrate arrest permission"]
+  },
+  {
+    "law_id": "CRPC_1973_S50",
+    "act_name": "Code of Criminal Procedure, 1973",
+    "section_number": "Section 50",
+    "section_title": "Person Arrested to be Informed of Grounds of Arrest and Right to Bail",
+    "section_text": "Every police officer or other person arresting any person without warrant shall forthwith communicate to him full particulars of the offence for which he is arrested or other grounds for such arrest. Where a police officer arrests without warrant any person other than a person accused of a non-bailable offence, he shall inform the person arrested that he is entitled to be released on bail and that he may arrange for sureties on his behalf.",
+    "category": "criminal",
+    "keywords": ["grounds of arrest", "arrest warrant info", "right to bail", "bailable offence right", "police inform arrest", "surety rights"]
+  },
+  {
+    "law_id": "IPC_1860_S379",
+    "act_name": "Indian Penal Code, 1860",
+    "section_number": "Section 379",
+    "section_title": "Punishment for Theft",
+    "section_text": "Whoever commits theft shall be punished with imprisonment of either description for a term which may extend to three years, or with fine, or with both. Theft is defined (under Section 378) as intending to take dishonestly any movable property out of the possession of any person without that person's consent, and moving that property in order to such taking.",
+    "category": "criminal",
+    "keywords": ["theft punishment", "stolen property", "stole my items", "robbery charge", "IPC 379", "unlawful property taking"]
+  },
+  {
+    "law_id": "HMA_1955_S13B",
+    "act_name": "Hindu Marriage Act, 1955",
+    "section_number": "Section 13B",
+    "section_title": "Divorce by Mutual Consent",
+    "section_text": "Subject to the provisions of this Act, a petition for dissolution of marriage by a decree of divorce may be presented to the district court by both the parties to a marriage together, on the ground that they have been living separately for a period of one year or more, that they have not been able to live together and that they have mutually agreed that the marriage should be dissolved. On the motion of both the parties made not earlier than six months after the date of presentation, the Court shall pass a decree of divorce.",
+    "category": "family",
+    "keywords": ["mutual consent divorce", "divorce wait time", "six months cooling period", "joint divorce petition", "living separately one year", "HMA divorce"]
+  },
+  {
+    "law_id": "SENIOR_CITIZENS_2007_S4",
+    "act_name": "Maintenance and Welfare of Parents and Senior Citizens Act, 2007",
+    "section_number": "Section 4",
+    "section_title": "Maintenance of Parents and Senior Citizens",
+    "section_text": "A senior citizen including parent who is unable to maintain himself from his own earning or out of the property owned by him, shall be entitled to make an application under Section 5 against one or more of his children or relatives. The obligation of the children or relative, as the case may be, to maintain a senior citizen extends to the needs of such citizen so that they may lead a normal life. Children include son, daughter, grandson and granddaughter.",
+    "category": "family",
+    "keywords": ["senior citizen maintenance", "parents rights", "abandoned by children", "monthly allowance parents", "maintenance tribunal", "elderly support law"]
+  },
+  {
+    "law_id": "RERA_2016_S18",
+    "act_name": "Real Estate (Regulation and Development) Act, 2016",
+    "section_number": "Section 18",
+    "section_title": "Return of Amount and Compensation for Delay in Possession",
+    "section_text": "If the promoter (builder) fails to complete or is unable to give possession of an apartment, plot or building in accordance with the terms of the agreement for sale by the date specified, he shall be liable on demand to the allottees (buyers), in case the allottee wishes to withdraw from the project, without prejudice to any other remedy available, to return the amount received by him along with interest at such rate as may be prescribed, and compensation. If the buyer does not withdraw, the builder must pay monthly interest for every month of delay.",
+    "category": "property",
+    "keywords": ["builder delay possession", "rera refund flat", "delayed possession compensation", "builder delay interest", "real estate delay", "flat delivery late"]
+  },
+  {
+    "law_id": "RERA_2016_S31",
+    "act_name": "Real Estate (Regulation and Development) Act, 2016",
+    "section_number": "Section 31",
+    "section_title": "Filing of Complaints to Authority or Adjudicating Officer",
+    "section_text": "Any aggrieved person may file a complaint with the RERA Authority or the adjudicating officer, as the case may be, for any violation or contravention of the provisions of this Act or the rules and regulations made thereunder against any promoter, allottee or real estate agent. Complaints can be filed online through the state-specific RERA portal, and RERA must resolve or address violations in a time-bound manner.",
+    "category": "property",
+    "keywords": ["rera complaint", "file case against builder", "rera online portal", "real estate agent fraud", "builder violation complaint"]
+  },
+  {
+    "law_id": "RTI_2005_S6",
+    "act_name": "Right to Information Act, 2005",
+    "section_number": "Section 6",
+    "section_title": "Request for Obtaining Information",
+    "section_text": "A person, who desires to obtain any information under this Act, shall make a request in writing or through electronic means in English or Hindi or in the official language of the area, to the Central Public Information Officer (CPIO) or State Public Information Officer (SPIO) specifying the particulars of the information sought. An applicant making request for information shall not be required to give any reason for requesting all or any details, except contact details necessary for contacting him.",
+    "category": "general",
+    "keywords": ["rti application process", "file rti online", "how to write rti request", "public information officer", "reasons for rti", "seek official records"]
+  },
+  {
+    "law_id": "MV_ACT_1988_S134",
+    "act_name": "Motor Vehicles Act, 1988",
+    "section_number": "Section 134",
+    "section_title": "Duty of Driver in Case of Accident and Injury to a Person",
+    "section_text": "When any person is injured or any property of a third party is damaged as a result of an accident in which a motor vehicle is involved, the driver of the vehicle or other person in charge of the vehicle shall: (a) take all reasonable steps to secure medical attention for the injured person, and, if necessary, convey him to the nearest hospital, unless the driver is prevented by mob fury; (b) give on demand by a police officer any information; (c) report the circumstances of the occurrence to the nearest police station within 24 hours.",
+    "category": "general",
+    "keywords": ["road accident duty", "hit and run legal duty", "help accident victim", "medical help road accident", "report car crash", "driver responsibility accident"]
   }
 ]

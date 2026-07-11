@@ -1,11 +1,5 @@
 """
 Intent Classifier for legal queries.
-
-Classifies user queries into one of the legal intent categories:
-  employment, tenancy, consumer, criminal, property, family, general
-
-Uses a keyword map for speed. Falls back to GPT for ambiguous queries
-to keep latency low and costs minimal.
 """
 from __future__ import annotations
 
@@ -50,12 +44,9 @@ INTENT_KEYWORDS: dict[str, list[str]] = {
     ],
 }
 
-
 def classify_intent(query: str) -> str:
     """
     Classify the legal intent of a user query.
-
-    Returns one of: employment, tenancy, consumer, criminal, family, property, general
     """
     query_lower = query.lower()
     scores: dict[str, int] = {}

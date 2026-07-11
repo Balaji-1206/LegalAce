@@ -14,7 +14,6 @@ logger = get_logger(__name__)
 
 _model: SentenceTransformer | None = None
 
-
 def load_embedder() -> None:
     """Initialize the embedding model. Call during FastAPI lifespan startup."""
     global _model
@@ -22,14 +21,12 @@ def load_embedder() -> None:
     _model = SentenceTransformer(settings.EMBEDDING_MODEL)
     logger.info("Embedding model loaded successfully.")
 
-
 def embed(text: str) -> np.ndarray:
     """Generate a normalized embedding vector for a given text string."""
     if _model is None:
         raise RuntimeError("Embedder not initialized. Call load_embedder() first.")
     vector: np.ndarray = _model.encode(text, normalize_embeddings=True)
     return vector
-
 
 def embed_batch(texts: list[str]) -> np.ndarray:
     """Generate normalized embeddings for a batch of texts."""
