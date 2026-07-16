@@ -385,7 +385,9 @@ export default function App() {
               filteredSituations={filteredSituations}
               LAW_DETAILS_MAP={LAW_DETAILS_MAP}
               onBackHome={() => handleNavigate('home')}
+              onOpenWizard={() => handleNavigate('wizard')}
             />
+
           )}
 
           {/* === DAILY RIGHTS / DOCUMENTS (accessed via Profile) === */}

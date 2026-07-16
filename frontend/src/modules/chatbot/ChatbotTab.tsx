@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Message, ConversationSummary } from '../shared/types';
+import './ChatbotTab.css';
 
 interface ChatbotTabProps {
   messages: Message[];

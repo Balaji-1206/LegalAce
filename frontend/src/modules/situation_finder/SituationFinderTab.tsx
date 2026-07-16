@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
+import './situation_finder.css';
 
+// ─── Props ──────────────────────────────────────────────────────────────────
 interface SituationFinderTabProps {
   screen: 'categories' | 'list' | 'detail';
   setScreen: (screen: 'categories' | 'list' | 'detail') => void;
@@ -19,124 +21,265 @@ interface SituationFinderTabProps {
   filteredSituations: any[];
   LAW_DETAILS_MAP: Record<string, string>;
   onBackHome?: () => void;
+  onOpenWizard?: () => void;
 }
 
-// Category icon SVG renderer
-const CatSVG: React.FC<{ id: string }> = ({ id }) => {
+// ─── Category colors map ────────────────────────────────────────────────────
+const CAT_COLORS: Record<string, string> = {
+  employment:  '#3b82f6',
+  housing:     '#10b981',
+  consumer:    '#f59e0b',
+  cyber_crime: '#8b5cf6',
+  women_rights:'#a855f7',
+  banking:     '#06b6d4',
+  traffic:     '#f43f5e',
+  education:   '#14b8a6',
+};
+
+// ─── Category SVG icons ─────────────────────────────────────────────────────
+const CatSVG: React.FC<{ id: string; color?: string }> = ({ id, color }) => {
+  const c = color || CAT_COLORS[id] || '#4f46e5';
   const iconMap: Record<string, React.ReactNode> = {
     employment: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="1.8" width="26" height="26">
+      <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" width="24" height="24">
         <rect x="2" y="7" width="20" height="14" rx="2" />
         <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
         <line x1="12" y1="12" x2="12" y2="16" /><line x1="10" y1="14" x2="14" y2="14" />
       </svg>
     ),
     housing: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="1.8" width="26" height="26">
+      <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" width="24" height="24">
         <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
         <polyline points="9 22 9 12 15 12 15 22" />
       </svg>
     ),
     consumer: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="1.8" width="26" height="26">
+      <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" width="24" height="24">
         <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
         <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
       </svg>
     ),
     cyber_crime: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="1.8" width="26" height="26">
+      <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" width="24" height="24">
         <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" />
         <path d="M9 8l2 2 4-4" />
       </svg>
     ),
     women_rights: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="1.8" width="26" height="26">
-        <circle cx="12" cy="8" r="4" />
-        <path d="M12 12v8M9 18h6" />
+      <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" width="24" height="24">
+        <circle cx="12" cy="8" r="4" /><path d="M12 12v8M9 18h6" />
       </svg>
     ),
     banking: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="1.8" width="26" height="26">
-        <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+      <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" width="24" height="24">
+        <line x1="12" y1="1" x2="12" y2="23" />
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
       </svg>
     ),
     traffic: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="1.8" width="26" height="26">
+      <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" width="24" height="24">
         <path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2h-2" />
         <circle cx="9" cy="17" r="2" /><circle cx="17" cy="17" r="2" />
       </svg>
     ),
     education: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="1.8" width="26" height="26">
+      <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" width="24" height="24">
         <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
         <path d="M6 12v5c3 3 9 3 12 0v-5" />
       </svg>
     ),
-    bookmarks: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="1.8" width="26" height="26">
-        <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
-      </svg>
-    ),
   };
-  return <>{iconMap[id] || iconMap.bookmarks}</>;
+  return <>{iconMap[id] || (
+    <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" width="24" height="24">
+      <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+    </svg>
+  )}</>;
 };
 
-const SitItemIcon: React.FC<{ category: string }> = ({ category }) => (
-  <div className="sit-item-icon">
-    <CatSVG id={category} />
+// ─── Skeleton Loaders ────────────────────────────────────────────────────────
+const SkeletonCategories: React.FC = () => (
+  <div className="sf-skeleton-grid">
+    {[0,1,2,3,4,5].map(i => (
+      <div key={i} className="sf-skeleton-cat" style={{ '--sf-stagger': i } as React.CSSProperties}>
+        <div className="sf-skeleton-icon" />
+        <div className="sf-skeleton-line w85" />
+        <div className="sf-skeleton-line w40" />
+      </div>
+    ))}
   </div>
 );
 
+const SkeletonList: React.FC = () => (
+  <div className="sf-skeleton-list">
+    {[0,1,2,3].map(i => (
+      <div key={i} className="sf-skeleton-item" style={{ '--sf-stagger': i } as React.CSSProperties}>
+        <div className="sf-skeleton-circle" />
+        <div className="sf-skeleton-lines">
+          <div className="sf-skeleton-line w85" />
+          <div className="sf-skeleton-line w60" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+// ─── Law Citation Accordion ──────────────────────────────────────────────────
+const LawCitationCard: React.FC<{ law: any; LAW_DETAILS_MAP: Record<string, string> }> = ({ law, LAW_DETAILS_MAP }) => {
+  const [open, setOpen] = useState(false);
+  const detail = LAW_DETAILS_MAP[law.section];
+  return (
+    <div className="law-citation-row">
+      <div className="law-citation-header" onClick={() => setOpen(o => !o)}>
+        <div className="law-icon-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+        </div>
+        <div className="law-cite-info">
+          <strong>{law.act} — {law.section}</strong>
+          <span>{law.section_title}</span>
+        </div>
+        {detail && (
+          <svg className={`law-expand-chevron${open ? ' open' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        )}
+      </div>
+      {detail && (
+        <div className={`law-citation-body${open ? ' open' : ''}`}>
+          <div className="law-citation-body-inner">{detail}</div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Situation List Item ─────────────────────────────────────────────────────
+const SituationListItem: React.FC<{
+  sit: any;
+  index: number;
+  isBookmarked: boolean;
+  onClick: () => void;
+  onBookmark: (e: React.MouseEvent) => void;
+}> = ({ sit, index, isBookmarked, onClick, onBookmark }) => {
+  const catColor = CAT_COLORS[sit.category] || '#4f46e5';
+  return (
+    <div
+      className="situation-list-item"
+      onClick={onClick}
+      style={{ '--sf-stagger': index, '--sf-cat-color': catColor } as React.CSSProperties}
+    >
+      <div className="sit-item-icon">
+        <CatSVG id={sit.category} />
+      </div>
+      <div className="sit-item-body">
+        <div className="sit-item-tag">
+          {(sit.category || '').toUpperCase().replace(/_/g, ' ')}
+        </div>
+        <h4>{sit.title}</h4>
+        <p>{sit.description?.slice(0, 75)}…</p>
+      </div>
+      <button
+        className={`sit-item-bookmark${isBookmarked ? ' bookmarked' : ''}`}
+        onClick={onBookmark}
+        title={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
+      >
+        <svg viewBox="0 0 24 24" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+          <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+        </svg>
+      </button>
+    </div>
+  );
+};
+
+// ─── Main Component ──────────────────────────────────────────────────────────
 export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
-  screen,
-  setScreen,
-  categories,
-  situations,
-  bookmarks,
-  recentlyViewed,
-  selectedCategory,
-  setSelectedCategory,
-  selectedSituation,
-  openSituationDetail,
-  toggleBookmark,
-  getCategoryIcon,
-  searchQuery,
-  setSearchQuery,
-  situationsLoading,
-  filteredSituations,
-  LAW_DETAILS_MAP,
-  onBackHome,
+  screen, setScreen,
+  categories, situations, bookmarks, recentlyViewed,
+  selectedCategory, setSelectedCategory,
+  selectedSituation, openSituationDetail, toggleBookmark,
+  searchQuery, setSearchQuery,
+  situationsLoading, filteredSituations,
+  LAW_DETAILS_MAP, onBackHome, onOpenWizard,
 }) => {
+  const [activeFilter, setActiveFilter] = useState<'all' | 'bookmarked' | 'recent'>('all');
 
-  // Common Situations (top 3 for home view)
-  const commonSituations = situations.slice(0, 5);
+  const handleToggleBookmark = useCallback((e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    toggleBookmark(id);
+  }, [toggleBookmark]);
 
+  const handleShare = async (situation: any) => {
+    const text = [
+      `⚖️ ${situation.title}`,
+      '',
+      situation.description,
+      '',
+      '📋 Your Rights:',
+      ...(situation.user_rights || []).map((r: string) => `  • ${r}`),
+      '',
+      '✅ Action Steps:',
+      ...(situation.action_steps || []).map((s: string, i: number) => `  ${i + 1}. ${s}`),
+      '',
+      '— Shared via LegalAce'
+    ].join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {}
+  };
+
+  // Compute displayed situations based on active filter
+  const getDisplayedSituations = () => {
+    if (activeFilter === 'bookmarked') {
+      return filteredSituations.filter(s => bookmarks.includes(s.situation_id));
+    }
+    if (activeFilter === 'recent') {
+      const recentIds = new Set(recentlyViewed);
+      return filteredSituations.filter(s => recentIds.has(s.situation_id));
+    }
+    return filteredSituations;
+  };
+
+  const displayedSituations = getDisplayedSituations();
+
+  // ── DETAIL SCREEN ────────────────────────────────────────────
   if (screen === 'detail' && selectedSituation) {
     const isBookmarked = bookmarks.includes(selectedSituation.situation_id);
     return (
-      <div className="situation-detail-screen animate-fade-in">
-        <div className="sit-detail-header">
-          <div className="sit-detail-nav">
-            <button className="back-btn" onClick={() => setScreen('list')}>
+      <div className="situation-detail-screen sf-screen-enter">
+        {/* Dark gradient hero */}
+        <div className="sit-detail-hero">
+          <div className="sit-detail-hero-nav">
+            <button className="sit-detail-back-btn" onClick={() => setScreen('list')}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
-            <button
-              className={`bookmark-btn${isBookmarked ? ' bookmarked' : ''}`}
-              onClick={() => toggleBookmark(selectedSituation.situation_id)}
-            >
-              <svg viewBox="0 0 24 24" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" width="18" height="18">
-                <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
-              </svg>
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="sit-detail-share-btn" onClick={() => handleShare(selectedSituation)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                  <polyline points="16 6 12 2 8 6" />
+                  <line x1="12" y1="2" x2="12" y2="15" />
+                </svg>
+                Share
+              </button>
+              <button
+                className={`sit-detail-bookmark-btn${isBookmarked ? ' bookmarked' : ''}`}
+                onClick={() => toggleBookmark(selectedSituation.situation_id)}
+                title={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
+              >
+                <svg viewBox="0 0 24 24" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" width="18" height="18">
+                  <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           <div className="sit-detail-cat-tag">
-            <CatSVG id={selectedSituation.category} />
-            {(selectedSituation.category || '').replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+            <CatSVG id={selectedSituation.category} color="rgba(255,255,255,0.9)" />
+            {(selectedSituation.category || '').replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
           </div>
-
           <h1>{selectedSituation.title}</h1>
           <p>{selectedSituation.description}</p>
         </div>
@@ -152,9 +295,9 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
             </h3>
             <ul>
               {selectedSituation.user_rights.map((r: string, i: number) => (
-                <li key={i}>
-                  <div className="check-circle">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="12" height="12">
+                <li key={i} style={{ '--sf-stagger': i } as React.CSSProperties}>
+                  <div className="check-circle" style={{ '--sf-stagger': i } as React.CSSProperties}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="10" height="10">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   </div>
@@ -165,7 +308,7 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
           </div>
         )}
 
-        {/* Action Steps */}
+        {/* Action Steps — numbered */}
         {selectedSituation.action_steps?.length > 0 && (
           <div className="detail-section-card">
             <h3>
@@ -174,18 +317,21 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
               </svg>
               Action Steps
             </h3>
-            <div>
-              {selectedSituation.action_steps.map((step: string, i: number) => (
-                <div key={i} className="timeline-item">
-                  <div className="timeline-dot" />
-                  <div className="timeline-content">{step}</div>
+            {selectedSituation.action_steps.map((step: string, i: number) => (
+              <div key={i} className="sf-step-item" style={{ '--sf-stagger': i } as React.CSSProperties}>
+                <div className="sf-step-connector">
+                  <div className="sf-step-num">{i + 1}</div>
+                  {i < selectedSituation.action_steps.length - 1 && <div className="sf-step-line" />}
                 </div>
-              ))}
-            </div>
+                <div className="sf-step-body">
+                  <div className="sf-step-text">{step}</div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Applicable Laws */}
+        {/* Applicable Laws — expandable */}
         {selectedSituation.applicable_laws?.length > 0 && (
           <div className="detail-section-card">
             <h3>
@@ -196,22 +342,7 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
               Applicable Laws
             </h3>
             {selectedSituation.applicable_laws.map((law: any, i: number) => (
-              <div key={i} className="law-citation-row">
-                <div className="law-icon-badge">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  </svg>
-                </div>
-                <div className="law-cite-info">
-                  <strong>{law.act} — {law.section}</strong>
-                  <span>{law.section_title}</span>
-                  {LAW_DETAILS_MAP[law.section] && (
-                    <p style={{ fontSize: 11.5, color: '#6b7280', marginTop: 4, lineHeight: 1.5 }}>
-                      {LAW_DETAILS_MAP[law.section].slice(0, 120)}...
-                    </p>
-                  )}
-                </div>
-              </div>
+              <LawCitationCard key={i} law={law} LAW_DETAILS_MAP={LAW_DETAILS_MAP} />
             ))}
           </div>
         )}
@@ -229,7 +360,9 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
               <div key={i} className="deadline-item">
                 <div className="deadline-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
                   </svg>
                 </div>
                 <span>{d}</span>
@@ -237,29 +370,48 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
             ))}
           </div>
         )}
+
+        {/* Try Wizard CTA */}
+        {onOpenWizard && (
+          <button className="sf-wizard-cta" onClick={onOpenWizard}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+            Get a Personalised Action Plan →
+          </button>
+        )}
+
+        {/* Back to list */}
+        <button className="sf-restart-btn" onClick={() => setScreen('list')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          Browse More Situations
+        </button>
       </div>
     );
   }
 
+  // ── LIST SCREEN ──────────────────────────────────────────────
   if (screen === 'list') {
     return (
-      <div className="situations-screen animate-fade-in">
+      <div className="situations-screen sf-screen-enter">
+        {/* Header nav */}
         <div className="situations-header">
           <div className="situations-header-nav">
-            <button className="situations-back-btn" onClick={() => { setScreen('categories'); setSearchQuery(''); }}>
+            <button className="situations-back-btn" onClick={() => { setScreen('categories'); setSearchQuery(''); setActiveFilter('all'); }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
-            <span style={{ fontSize: 17, fontWeight: 700, color: '#1a1a5e' }}>LegalAce</span>
-            <button className="situations-back-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-              </svg>
-            </button>
+            <span style={{ fontSize: 17, fontWeight: 700, color: '#1a1a5e' }}>
+              {selectedCategory?.name || 'All Situations'}
+            </span>
+            <div style={{ width: 36 }} />
           </div>
         </div>
 
+        {/* Search */}
         <div className="situations-search-wrap">
           <div className="situations-search-box">
             <svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" width="18" height="18">
@@ -267,49 +419,70 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
             </svg>
             <input
               type="text"
-              placeholder="What happened? Describe your problem..."
+              placeholder="Search situations..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0 }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
 
-        <div style={{ padding: '8px 16px 0' }}>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: '#1a1a5e', marginBottom: 4 }}>
-            {selectedCategory?.name || 'Situations'}
-          </h2>
-          <p style={{ fontSize: 12.5, color: '#6b7280', marginBottom: 12 }}>
-            {filteredSituations.length} situations found
-          </p>
+        {/* Filter chips */}
+        <div className="sf-filter-chips">
+          <button className={`sf-chip${activeFilter === 'all' ? ' active' : ''}`} onClick={() => setActiveFilter('all')}>
+            All
+          </button>
+          {bookmarks.length > 0 && (
+            <button className={`sf-chip${activeFilter === 'bookmarked' ? ' active' : ''}`} onClick={() => setActiveFilter('bookmarked')}>
+              🔖 Saved ({bookmarks.length})
+            </button>
+          )}
+          {recentlyViewed.length > 0 && (
+            <button className={`sf-chip${activeFilter === 'recent' ? ' active' : ''}`} onClick={() => setActiveFilter('recent')}>
+              🕐 Recent
+            </button>
+          )}
+        </div>
+
+        {/* Count + list */}
+        <div className="sf-list-header">
+          <div className="sf-list-count">
+            {displayedSituations.length} situation{displayedSituations.length !== 1 ? 's' : ''} found
+          </div>
         </div>
 
         {situationsLoading ? (
-          <div className="loading-spinner">
-            <div className="spinner-ring" />
-            Loading situations...
-          </div>
-        ) : filteredSituations.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '36px 24px', color: '#6b7280' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
-            <p>No situations found for this category.</p>
+          <SkeletonList />
+        ) : displayedSituations.length === 0 ? (
+          <div className="sf-empty-state">
+            <div className="sf-empty-icon">🔍</div>
+            <h3>No situations found</h3>
+            <p>
+              {activeFilter !== 'all'
+                ? 'Try switching to "All" to see everything.'
+                : 'Try a different search term or category.'}
+            </p>
           </div>
         ) : (
           <div style={{ padding: '0 16px' }}>
-            {filteredSituations.map(sit => (
-              <div
+            {displayedSituations.map((sit, idx) => (
+              <SituationListItem
                 key={sit.situation_id}
-                className="situation-list-item"
+                sit={sit}
+                index={idx}
+                isBookmarked={bookmarks.includes(sit.situation_id)}
                 onClick={() => openSituationDetail(sit.situation_id)}
-              >
-                <SitItemIcon category={sit.category} />
-                <div className="sit-item-text">
-                  <div className="sit-item-tag">
-                    {(sit.category || '').toUpperCase().replace('_', ' ')}
-                  </div>
-                  <h4>{sit.title}</h4>
-                  <p>{sit.description?.slice(0, 75)}...</p>
-                </div>
-              </div>
+                onBookmark={e => handleToggleBookmark(e, sit.situation_id)}
+              />
             ))}
           </div>
         )}
@@ -317,30 +490,29 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
     );
   }
 
-  // Categories screen (default)
+  // ── CATEGORIES SCREEN (default) ──────────────────────────────
+  const commonSituations = situations.slice(0, 5);
+  const bookmarkedSituations = situations.filter(s => bookmarks.includes(s.situation_id));
+  const recentSituations = situations.filter(s => recentlyViewed.includes(s.situation_id)).slice(0, 5);
+
   return (
-    <div className="situations-screen animate-fade-in">
+    <div className="situations-screen sf-screen-enter">
+      {/* Header */}
       <div className="situations-header">
         <div className="situations-header-nav">
           {onBackHome ? (
-            <button className="situations-back-btn" onClick={onBackHome} title="Back to Home" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+            <button className="situations-back-btn" onClick={onBackHome} title="Back to Home">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
-          ) : (
-            <div style={{ width: 36 }} />
-          )}
+          ) : <div style={{ width: 36 }} />}
           <span style={{ fontSize: 17, fontWeight: 700, color: '#1a1a5e' }}>LegalAce</span>
-          <button className="situations-back-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-            </svg>
-          </button>
+          <div style={{ width: 36 }} />
         </div>
         <div className="situations-title-area">
           <h1>Legal Situations</h1>
-          <p className="situations-subtitle">Find clear, actionable legal information tailored to your specific circumstances.</p>
+          <p className="situations-subtitle">Find actionable legal information tailored to your circumstances.</p>
         </div>
       </div>
 
@@ -365,55 +537,99 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
         </div>
       </div>
 
+      {/* Recently Viewed */}
+      {recentSituations.length > 0 && (
+        <div className="sf-recent-section">
+          <div className="sf-recent-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" width="14" height="14">
+              <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
+            </svg>
+            Recently Viewed
+          </div>
+          <div className="sf-recent-scroll">
+            {recentSituations.map(sit => (
+              <button key={sit.situation_id} className="sf-recent-chip" onClick={() => openSituationDetail(sit.situation_id)}>
+                <CatSVG id={sit.category} color={CAT_COLORS[sit.category] || '#4f46e5'} />
+                {sit.title.length > 28 ? sit.title.slice(0, 28) + '…' : sit.title}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Categories */}
       <div className="categories-section">
         <div className="categories-section-title">Categories</div>
-        <div className="categories-grid">
-          {categories.slice(0, 8).map(cat => (
-            <div
-              key={cat.id}
-              className="category-card"
-              onClick={() => { setSelectedCategory(cat); setScreen('list'); setSearchQuery(''); }}
-            >
-              <div className="cat-icon-wrap">
-                <CatSVG id={cat.id} />
-              </div>
-              <span>{cat.name}</span>
-            </div>
+        {situationsLoading ? (
+          <SkeletonCategories />
+        ) : (
+          <div className="categories-grid">
+            {categories.slice(0, 8).map((cat, i) => {
+              const catSituationCount = situations.filter(s => s.category === cat.id).length;
+              return (
+                <div
+                  key={cat.id}
+                  className={`category-card ${cat.id}`}
+                  onClick={() => { setSelectedCategory(cat); setScreen('list'); setSearchQuery(''); setActiveFilter('all'); }}
+                  style={{ '--sf-stagger': i } as React.CSSProperties}
+                >
+                  <div className="cat-icon-wrap" style={{ '--sf-stagger': i } as React.CSSProperties}>
+                    <CatSVG id={cat.id} />
+                  </div>
+                  <div className="category-card-name">{cat.name}</div>
+                  {catSituationCount > 0 && (
+                    <div className="category-card-count">{catSituationCount} situations</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Bookmarks */}
+      {bookmarkedSituations.length > 0 && (
+        <div className="sf-bookmarks-section">
+          <div className="sf-bookmarks-label">
+            <svg viewBox="0 0 24 24" fill="#4f46e5" stroke="#4f46e5" strokeWidth="1.5" width="14" height="14">
+              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+            </svg>
+            Saved Situations
+          </div>
+          {bookmarkedSituations.slice(0, 3).map((sit, idx) => (
+            <SituationListItem
+              key={sit.situation_id}
+              sit={sit}
+              index={idx}
+              isBookmarked
+              onClick={() => openSituationDetail(sit.situation_id)}
+              onBookmark={e => handleToggleBookmark(e, sit.situation_id)}
+            />
           ))}
         </div>
-      </div>
+      )}
 
       {/* Common Situations */}
       <div className="common-situations-section">
         <div className="common-situations-header">
           <h3>Common Situations</h3>
-          <button className="view-all-text" onClick={() => { setSelectedCategory(null); setSearchQuery(''); setScreen('list'); }}>
+          <button className="view-all-text" onClick={() => { setSelectedCategory(null); setSearchQuery(''); setScreen('list'); setActiveFilter('all'); }}>
             View all
           </button>
         </div>
 
         {situationsLoading ? (
-          <div className="loading-spinner">
-            <div className="spinner-ring" />
-            Loading...
-          </div>
+          <SkeletonList />
         ) : (
-          commonSituations.map(sit => (
-            <div
+          commonSituations.map((sit, idx) => (
+            <SituationListItem
               key={sit.situation_id}
-              className="situation-list-item"
+              sit={sit}
+              index={idx}
+              isBookmarked={bookmarks.includes(sit.situation_id)}
               onClick={() => openSituationDetail(sit.situation_id)}
-            >
-              <SitItemIcon category={sit.category} />
-              <div className="sit-item-text">
-                <div className="sit-item-tag">
-                  {(sit.category || '').toUpperCase().replace('_', ' ')}
-                </div>
-                <h4>{sit.title}</h4>
-                <p>{sit.description?.slice(0, 70)}...</p>
-              </div>
-            </div>
+              onBookmark={e => handleToggleBookmark(e, sit.situation_id)}
+            />
           ))
         )}
       </div>
