@@ -1,0 +1,177 @@
+/* ============================================================
+   Daily Rights Screen — Premium UI
+   ============================================================ */
+
+/* ─── Animations ──────────────────────────────────── */
+@keyframes rights-fadeSlideUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes rights-glowPulse {
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(129, 140, 248, 0.4)); }
+  50%       { filter: drop-shadow(0 0 20px rgba(129, 140, 248, 0.7)); }
+}
+
+/* ─── Core Layout ──────────────────────────────────── */
+.rights-screen {
+  flex: 1;
+  overflow-y: auto;
+  background: #f4f5f9;
+  padding-bottom: 80px;
+  position: relative;
+}
+
+.rights-screen::-webkit-scrollbar { width: 3px; }
+.rights-screen::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 3px; }
+
+/* ─── Header ──────────────────────────────────── */
+.rights-header {
+  padding: 52px 20px 20px;
+  background: rgba(244, 245, 249, 0.85);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin-bottom: 8px;
+}
+
+.rights-header-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+/* Back/Search button (reusing the chat-menu-btn style but elevated) */
+.chat-menu-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #1a1a5e;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chat-menu-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(26,26,94,0.1);
+  background: #fff;
+}
+
+.rights-header h1 {
+  font-size: 34px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1a1a5e 0%, #4f46e5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -1px;
+  line-height: 1.15;
+  margin-bottom: 8px;
+  animation: rights-fadeSlideUp 0.4s ease both;
+}
+
+.rights-header p {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.55;
+  animation: rights-fadeSlideUp 0.4s ease both;
+  animation-delay: 0.1s;
+}
+
+/* ─── Rights Cards ──────────────────────────────────── */
+.rights-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 20px;
+  padding: 20px 18px;
+  margin: 0 16px 14px;
+  border: 1.5px solid #e8eaf0;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  
+  /* Staggered animation */
+  animation: rights-fadeSlideUp 0.4s ease both;
+  animation-delay: calc(0.2s + (var(--rights-stagger, 0) * 0.1s));
+}
+
+.rights-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.1);
+  border-color: #c7d2fe;
+  background: #fff;
+}
+
+.rights-card-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.rights-card h3 {
+  font-size: 17px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 8px;
+  line-height: 1.35;
+  letter-spacing: -0.2px;
+}
+
+.rights-card p {
+  font-size: 13.5px;
+  color: #4b5563;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+/* ─── Action Buttons ──────────────────────────────────── */
+.rights-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px dashed rgba(0,0,0,0.1);
+  padding-top: 12px;
+}
+
+.rights-action-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid #e8eaf0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+}
+
+.rights-action-btn:hover { 
+  border-color: #a5b4fc; 
+  color: #4f46e5; 
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+  background: #fff;
+}
+
+.rights-action-btn.bookmarked { 
+  background: #eef0ff; 
+  border-color: #818cf8; 
+  color: #4f46e5; 
+}

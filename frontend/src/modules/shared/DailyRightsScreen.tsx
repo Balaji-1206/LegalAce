@@ -1,4 +1,5 @@
 import React from 'react';
+import './DailyRightsScreen.css';
 
 interface DailyRightsScreenProps {
   bookmarks: string[];
@@ -72,16 +73,16 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
       <div className="rights-header">
         <div className="rights-header-nav">
           {onBackHome ? (
-            <button className="chat-menu-btn" onClick={onBackHome} title="Back to Home" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="#1a1a5e" strokeWidth="2.5" width="20" height="20">
+            <button className="chat-menu-btn" onClick={onBackHome} title="Back to Home">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
           ) : (
-            <div style={{ width: 36 }} />
+            <div style={{ width: 40 }} />
           )}
           <button className="chat-menu-btn" title="Search">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#1a1a5e" strokeWidth="2" width="20" height="20">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
             </svg>
           </button>
@@ -90,11 +91,11 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
         <p>Bite-sized, practical legal knowledge to empower your everyday life. Know what you're entitled to.</p>
       </div>
 
-      {RIGHTS_DATA.map(right => {
+      {RIGHTS_DATA.map((right, index) => {
         const isBookmarked = bookmarks.includes(right.id);
         const catColor = CATEGORY_COLORS[right.category] || '#4f46e5';
         return (
-          <div key={right.id} className="rights-card">
+          <div key={right.id} className="rights-card" style={{ '--rights-stagger': index } as React.CSSProperties}>
             <div
               className="rights-card-tag"
               style={{ background: catColor + '18', color: catColor }}

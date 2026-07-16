@@ -68,6 +68,22 @@ const getCatIcon = (cat: string) => {
   return icons[cat] || icons.general;
 };
 
+// ---- Skeleton Loader Component ----
+const SkeletonList: React.FC = () => (
+  <div className="de-skeleton-list">
+    {[0,1,2].map(i => (
+      <div key={i} className="de-skeleton-card" style={{ '--de-stagger': i } as React.CSSProperties}>
+        <div className="de-skeleton-circle" />
+        <div className="de-skeleton-body">
+          <div className="de-skeleton-line w80" />
+          <div className="de-skeleton-line w60" />
+          <div className="de-skeleton-line w40" style={{ marginTop: 8 }} />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 // ---- Health Score Ring Component ----
 interface ScoreRingProps { score: number; grade: string; stats: { active: number; completed: number; expired: number } }
 
@@ -223,7 +239,7 @@ const AddDeadlineSheet: React.FC<AddSheetProps> = ({ userId, onClose, onAdded })
               <input type="date" value={deadlineDate} onChange={e => setDeadlineDate(e.target.value)} />
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
-              <button className="form-cancel-btn" onClick={onClose} style={{ flex: 1, padding: 12, borderRadius: 12, border: '1.5px solid #e8eaf0', background: '#fff', color: '#6b7280', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button className="form-cancel-btn" onClick={onClose} style={{ flex: 1, padding: 14, borderRadius: 14, border: '1.5px solid #e8eaf0', background: '#f4f5f9', color: '#6b7280', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Exit
               </button>
               <button className="form-submit-btn" onClick={handleManualSubmit} disabled={submitting || !title || !deadlineDate} style={{ flex: 2, margin: 0 }}>
@@ -242,11 +258,11 @@ const AddDeadlineSheet: React.FC<AddSheetProps> = ({ userId, onClose, onAdded })
                 style={{ height: 120 }}
               />
             </div>
-            <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 12, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 12.5, color: '#6b7280', marginBottom: 12, lineHeight: 1.5 }}>
               AI will automatically identify deadlines, notice periods, and legal obligations from your text.
             </p>
             <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
-              <button className="form-cancel-btn" onClick={onClose} style={{ flex: 1, padding: 12, borderRadius: 12, border: '1.5px solid #e8eaf0', background: '#fff', color: '#6b7280', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button className="form-cancel-btn" onClick={onClose} style={{ flex: 1, padding: 14, borderRadius: 14, border: '1.5px solid #e8eaf0', background: '#f4f5f9', color: '#6b7280', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Exit
               </button>
               <button className="form-submit-btn" onClick={handleExtract} disabled={submitting || !extractText.trim()} style={{ flex: 2, margin: 0 }}>
@@ -301,6 +317,13 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
     fetchData();
   };
 
+  const handleDismiss = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    // Dismiss/Snooze extends the deadline by 7 days on the backend
+    await fetch(`${BACKEND_URL}/api/v1/deadlines/${id}/dismiss?user_id=${userId}`, { method: 'PUT' });
+    fetchData();
+  };
+
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (!confirm('Delete this deadline?')) return;
@@ -345,7 +368,7 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
             </div>
           </div>
           <button className="add-deadline-btn" onClick={() => setShowAddSheet(true)} title="Add Deadline">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="18" height="18">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
               <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
             </svg>
           </button>
@@ -353,7 +376,9 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
       </div>
 
       {loading ? (
-        <div className="loading-spinner"><div className="spinner-ring" /> Loading your legal health...</div>
+        <div style={{ marginTop: 24 }}>
+           <SkeletonList />
+        </div>
       ) : (
         <>
           {/* Health Score Ring */}
@@ -369,13 +394,13 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
           {healthScore && (
             <div className="health-insights">
               {healthScore.strengths.map((s: string, i: number) => (
-                <div key={i} className="insight-pill strength">
+                <div key={i} className="insight-pill strength" style={{ '--de-stagger': i } as React.CSSProperties}>
                   <span className="insight-pill-icon">✓</span>
                   {s}
                 </div>
               ))}
               {healthScore.risks.map((r: string, i: number) => (
-                <div key={i} className={`insight-pill ${r.includes('expired') || r.includes('immediate') ? 'critical' : 'risk'}`}>
+                <div key={i} className={`insight-pill ${r.includes('expired') || r.includes('immediate') ? 'critical' : 'risk'}`} style={{ '--de-stagger': healthScore.strengths.length + i } as React.CSSProperties}>
                   <span className="insight-pill-icon">⚠</span>
                   {r.replace('⚠ ', '')}
                 </div>
@@ -390,8 +415,8 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
                 <h3>Upcoming (90 days)</h3>
                 <span style={{ fontSize: 12, color: '#6b7280' }}>{upcoming.length} items</span>
               </div>
-              {upcoming.slice(0, 3).map(dl => (
-                <div key={dl.id} className={`deadline-card ${dl.priority}`}>
+              {upcoming.slice(0, 3).map((dl, idx) => (
+                <div key={dl.id} className={`deadline-card ${dl.priority}`} style={{ '--de-stagger': idx } as React.CSSProperties}>
                   <div className={`deadline-card-icon ${getCatColorClass(dl.category)}`}>
                     {getCatIcon(dl.category)}
                   </div>
@@ -409,6 +434,13 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
                         {getDaysLabel(dl.days_remaining, dl.status)}
                       </div>
                       <div className="deadline-actions">
+                        {dl.status === 'active' && (
+                          <button className="dl-action-btn snooze" onClick={e => handleDismiss(e, dl.id)} title="Snooze 7 days">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                          </button>
+                        )}
                         <button className="dl-action-btn complete" onClick={e => handleComplete(e, dl.id)} title="Mark done">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <polyline points="20 6 9 17 4 12" />
@@ -416,7 +448,7 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
                         </button>
                         <button className="dl-action-btn delete" onClick={e => handleDelete(e, dl.id)} title="Delete">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" />
+                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
                           </svg>
                         </button>
                       </div>
@@ -428,7 +460,7 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
           )}
 
           {/* All Deadlines with filters */}
-          <div className="section-heading" style={{ marginTop: 8 }}>
+          <div className="section-heading" style={{ marginTop: 16 }}>
             <h3>All Deadlines</h3>
           </div>
 
@@ -454,12 +486,12 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
                   <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
               </div>
-              <h3>No deadlines here</h3>
+              <h3>No deadlines found</h3>
               <p>Tap + to add a deadline manually or let AI extract deadlines from your legal situation.</p>
             </div>
           ) : (
-            filteredDeadlines.map(dl => (
-              <div key={dl.id} className={`deadline-card ${dl.status === 'completed' || dl.status === 'expired' ? dl.status : dl.priority}`}>
+            filteredDeadlines.map((dl, idx) => (
+              <div key={dl.id} className={`deadline-card ${dl.status === 'completed' || dl.status === 'expired' ? dl.status : dl.priority}`} style={{ '--de-stagger': idx } as React.CSSProperties}>
                 <div className={`deadline-card-icon ${getCatColorClass(dl.category)}`}>
                   {getCatIcon(dl.category)}
                 </div>
@@ -471,7 +503,7 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
                     )}
                   </div>
                   <div className="deadline-card-title">{dl.title}</div>
-                  <div className="deadline-card-desc">{dl.description?.slice(0, 80)}...</div>
+                  {dl.description && <div className="deadline-card-desc">{dl.description?.slice(0, 80)}...</div>}
                   <div className="deadline-card-footer">
                     <div className={getDaysChipClass(dl.days_remaining, dl.status)}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="11" height="11">
@@ -481,6 +513,11 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
                     </div>
                     {dl.status === 'active' && (
                       <div className="deadline-actions">
+                        <button className="dl-action-btn snooze" onClick={e => handleDismiss(e, dl.id)} title="Snooze 7 days">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                          </svg>
+                        </button>
                         <button className="dl-action-btn complete" onClick={e => handleComplete(e, dl.id)} title="Mark complete">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <polyline points="20 6 9 17 4 12" />
@@ -488,7 +525,8 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
                         </button>
                         <button className="dl-action-btn delete" onClick={e => handleDelete(e, dl.id)} title="Delete">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /></svg>
+                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
+                          </svg>
                         </button>
                       </div>
                     )}
