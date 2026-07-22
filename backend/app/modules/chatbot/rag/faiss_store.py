@@ -30,6 +30,9 @@ class LawChunk:
 _faiss_index: faiss.Index | None = None
 _metadata: list[dict] = []
 
+def is_loaded() -> bool:
+    return _faiss_index is not None
+
 def _index_path() -> Path:
     return Path(settings.FAISS_INDEX_PATH)
 

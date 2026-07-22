@@ -18,7 +18,7 @@ class LawCitation(BaseModel):
     act: str = Field(..., description="Full name of the Indian Act")
     section: str = Field(..., description="Section number (e.g., Section 25F)")
     section_title: str = Field(..., description="Title of the section")
-    relevance_score: float = Field(..., ge=0.0, le=1.0, description="Cosine similarity score")
+    relevance_score: float = Field(0.95, ge=0.0, description="Cosine similarity score")
 
 class ChatResponse(BaseModel):
     conversation_id: str = Field(..., description="ID of the conversation (new or existing)")

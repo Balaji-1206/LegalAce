@@ -10,36 +10,36 @@
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #e8eaf0;
+  background: #f4f5f9;
   min-height: 100vh;
+  margin: 0;
+  padding: 0;
   display: flex;
   justify-content: center;
-  align-items: center;
 }
 
-/* ---- Phone Shell ---- */
+/* ---- Responsive App Container ---- */
 .phone-mockup-wrapper {
   display: flex;
   justify-content: center;
-  align-items: center;
+  width: 100%;
   min-height: 100vh;
-  padding: 24px;
+  height: 100vh;
+  background: #f4f5f9;
+  padding: 0;
+  margin: 0;
 }
 
 .phone-container {
   position: relative;
-  width: 375px;
-  height: 812px;
-  max-height: calc(100vh - 48px);
+  width: 100%;
+  max-width: 480px;
+  height: 100vh;
   background: #f4f5f9;
-  border-radius: 44px;
-  box-shadow:
-    0 0 0 10px #1a1a2e,
-    0 40px 80px rgba(0, 0, 0, 0.35),
-    0 0 0 12px #2d2d3a;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.06);
 }
 
 /* ---- Workspace ---- */

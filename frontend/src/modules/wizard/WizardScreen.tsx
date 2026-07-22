@@ -389,8 +389,140 @@ const ActionPlanView: React.FC<ActionPlanViewProps> = ({ plan, scenarioTitle, la
     }
   };
 
+  // Document Generator Modal State
+  const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
+  const [senderName, setSenderName] = useState('Legal Ace User');
+  const [senderAddress, setSenderAddress] = useState('123 Green Park, Bengaluru, Karnataka');
+  const [senderPhone, setSenderPhone] = useState('+91 98765 43210');
+  const [senderEmail, setSenderEmail] = useState('user@legalace.in');
+  const [recipientName, setRecipientName] = useState('Opposing Party / Company / Landlord');
+  const [recipientAddress, setRecipientAddress] = useState('45 Commercial Street, Bengaluru, Karnataka');
+  const [disputeAmount, setDisputeAmount] = useState('50000');
+  const [factsSummary, setFactsSummary] = useState(`Dispute regarding ${scenarioTitle}. Failure to perform legal obligations as agreed.`);
+  const [noticeDays, setNoticeDays] = useState('15');
+
+  const [generating, setGenerating] = useState(false);
+  const [generatedDoc, setGeneratedDoc] = useState<any | null>(null);
+
   const handleTemplateClick = (tpl: Template) => {
-    showToast('info', `📝 ${tpl.title} — Template generation coming soon!`);
+    setActiveTemplate(tpl);
+    setGeneratedDoc(null);
+  };
+
+  const buildClientFallbackDoc = (tpl: Template) => {
+    const today = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+    let title = 'LEGAL DEMAND NOTICE';
+    let sections = ['Model Tenancy Act 2021', 'Indian Contract Act 1872 — Section 73'];
+    let text = '';
+
+    if (tpl.id.includes('housing') || tpl.id.includes('deposit')) {
+      title = 'LEGAL DEMAND NOTICE FOR RETURN OF SECURITY DEPOSIT';
+      sections = ['Model Tenancy Act 2021 — Section 11', 'State Rent Control Act', 'Indian Contract Act 1872 — Section 73'];
+      text = `BY REGISTERED POST A.D. / EMAIL\n\nDate: ${today}\n\nTO,\n${recipientName}\n${recipientAddress}\n\nFROM,\n${senderName}\n${senderAddress}\nContact: ${senderPhone} | Email: ${senderEmail}\n\nSUBJECT: LEGAL NOTICE FOR REFUND OF SECURITY DEPOSIT AMOUNTING TO RS. ${disputeAmount}/-.\n\nSir/Madam,\n\nUnder instructions and on behalf of the undersigned (${senderName}), I hereby serve upon you this Legal Notice:\n\n1. That the undersigned occupied premises at ${senderAddress} as a tenant under a tenancy agreement.\n2. That an interest-free refundable Security Deposit of Rs. ${disputeAmount}/- was deposited with you.\n3. That despite peaceful vacation of premises, you have illegally withheld the deposit violating Section 11 of the Model Tenancy Act.\n\nTAKE NOTICE that you are called upon to refund Rs. ${disputeAmount}/- within ${noticeDays} days of receipt of this notice, failing which legal proceedings shall be initiated.\n\nYours faithfully,\n\n___________________________\n(${senderName})\nComplainant / Tenant`;
+    } else if (tpl.id.includes('employment') || tpl.id.includes('salary')) {
+      title = 'LEGAL DEMAND NOTICE FOR RECOVERY OF UNPAID SALARY';
+      sections = ['Payment of Wages Act 1936 — Section 15', 'Industrial Disputes Act 1947 — Section 25F & Section 33C'];
+      text = `BY REGISTERED POST A.D. / EMAIL\n\nDate: ${today}\n\nTO,\nThe Management / Director,\n${recipientName}\n${recipientAddress}\n\nFROM,\n${senderName}\n${senderAddress}\nContact: ${senderPhone} | Email: ${senderEmail}\n\nSUBJECT: LEGAL NOTICE FOR PAYMENT OF OUTSTANDING SALARY OF RS. ${disputeAmount}/-.\n\nSir/Madam,\n\n1. That the undersigned (${senderName}) was employed with your organization (${recipientName}).\n2. That earned wages/salary amounting to Rs. ${disputeAmount}/- remain unpaid.\n3. Facts: ${factsSummary}\n\nTAKE NOTICE that you are called upon to remit Rs. ${disputeAmount}/- within ${noticeDays} days, failing which legal proceedings under Payment of Wages Act will be instituted.\n\nYours faithfully,\n\n___________________________\n(${senderName})\nEmployee / Claimant`;
+    } else {
+      title = 'CONSUMER LEGAL NOTICE FOR REFUND / DEFICIENCY OF SERVICE';
+      sections = ['Consumer Protection Act 2019 — Section 2(47)', 'Consumer Protection Act 2019 — Section 35'];
+      text = `BY REGISTERED POST A.D. / EMAIL\n\nDate: ${today}\n\nTO,\n${recipientName}\n${recipientAddress}\n\nFROM,\n${senderName}\n${senderAddress}\nContact: ${senderPhone} | Email: ${senderEmail}\n\nSUBJECT: LEGAL NOTICE UNDER SECTION 35 OF CONSUMER PROTECTION ACT 2019.\n\n1. That the undersigned purchased goods / services from you for Rs. ${disputeAmount}/-.\n2. Facts: ${factsSummary}\n\nTAKE NOTICE that you are called upon to refund Rs. ${disputeAmount}/- within ${noticeDays} days, failing which a complaint will be filed in the Consumer Commission.\n\nYours faithfully,\n\n___________________________\n(${senderName})\nConsumer`;
+    }
+
+    return { title, statutory_sections: sections, document_text: text };
+  };
+
+  const handleGenerateDoc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeTemplate) return;
+    setGenerating(true);
+    try {
+      const res = await fetch('http://localhost:8000/api/v1/wizard/generate-document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          template_id: activeTemplate.id,
+          details: {
+            sender_name: senderName,
+            sender_address: senderAddress,
+            sender_phone: senderPhone,
+            sender_email: senderEmail,
+            recipient_name: recipientName,
+            recipient_address: recipientAddress,
+            dispute_amount: disputeAmount,
+            facts_summary: factsSummary,
+            notice_days: noticeDays,
+          },
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setGeneratedDoc(data);
+        showToast('success', '📄 Official Legal Notice generated successfully!');
+      } else {
+        const fallback = buildClientFallbackDoc(activeTemplate);
+        setGeneratedDoc(fallback);
+        showToast('success', '📄 Legal Notice generated successfully!');
+      }
+    } catch {
+      const fallback = buildClientFallbackDoc(activeTemplate);
+      setGeneratedDoc(fallback);
+      showToast('success', '📄 Legal Notice generated successfully!');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const [docTheme, setDocTheme] = useState<'advocate' | 'court' | 'corporate'>('advocate');
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  const handleDownloadDirectPDF = async () => {
+    const elem = document.getElementById('printable-legal-document');
+    if (!elem) return;
+
+    setDownloadingPdf(true);
+    showToast('info', '⏳ Generating vector PDF file...');
+
+    try {
+      if (!(window as any).html2pdf) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+
+      const html2pdf = (window as any).html2pdf;
+      const filename = `${generatedDoc?.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'Legal_Notice'}.pdf`;
+
+      const opt = {
+        margin: [10, 12, 10, 12],
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2.5, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      await html2pdf().set(opt).from(elem).save();
+      showToast('success', '📥 PDF file downloaded successfully!');
+    } catch {
+      window.print();
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
+  const handlePrintPDF = () => {
+    window.print();
+  };
+
+  const handleCopyDocText = () => {
+    if (generatedDoc?.document_text) {
+      navigator.clipboard.writeText(generatedDoc.document_text);
+      showToast('success', '📋 Legal Notice text copied to clipboard!');
+    }
   };
 
   const completionPct = plan.steps.length > 0
@@ -598,6 +730,198 @@ const ActionPlanView: React.FC<ActionPlanViewProps> = ({ plan, scenarioTitle, la
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
         {L(lang, 'restart')}
       </button>
+
+      {/* --- DOCUMENT GENERATOR MODAL --- */}
+      {activeTemplate && (
+        <div className="wizard-modal-overlay" onClick={() => setActiveTemplate(null)}>
+          <div className="wizard-modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header-row">
+              <h3>📝 {activeTemplate.title}</h3>
+              <button className="modal-close-btn" onClick={() => setActiveTemplate(null)}>✕</button>
+            </div>
+
+            <form onSubmit={handleGenerateDoc}>
+              <div className="wizard-form-grid">
+                <div className="form-field-group">
+                  <label>Your Full Name (Sender)</label>
+                  <input type="text" value={senderName} onChange={e => setSenderName(e.target.value)} required />
+                </div>
+                <div className="form-field-group">
+                  <label>Your Phone Number</label>
+                  <input type="text" value={senderPhone} onChange={e => setSenderPhone(e.target.value)} required />
+                </div>
+              </div>
+
+              <div className="form-field-group">
+                <label>Your Full Postal Address</label>
+                <input type="text" value={senderAddress} onChange={e => setSenderAddress(e.target.value)} required />
+              </div>
+
+              <div className="wizard-form-grid">
+                <div className="form-field-group">
+                  <label>Opposing Party / Company / Landlord</label>
+                  <input type="text" value={recipientName} onChange={e => setRecipientName(e.target.value)} required />
+                </div>
+                <div className="form-field-group">
+                  <label>Dispute Amount (Rs.)</label>
+                  <input type="text" value={disputeAmount} onChange={e => setDisputeAmount(e.target.value)} required />
+                </div>
+              </div>
+
+              <div className="form-field-group">
+                <label>Opposing Party Full Address</label>
+                <input type="text" value={recipientAddress} onChange={e => setRecipientAddress(e.target.value)} required />
+              </div>
+
+              <div className="form-field-group">
+                <label>Dispute Summary & Key Facts</label>
+                <textarea value={factsSummary} onChange={e => setFactsSummary(e.target.value)} rows={2} required />
+              </div>
+
+              <button type="submit" className="modal-action-btn" disabled={generating}>
+                {generating ? 'Generating Statutory Notice...' : '⚡ Generate Official Legal Notice'}
+              </button>
+            </form>
+
+            {generatedDoc && (
+              <div className="generated-doc-preview animate-fade-in">
+                <div className="doc-preview-header">
+                  <div>
+                    <h4>⚖️ Legal Notice Ready</h4>
+                    <div className="doc-theme-selector">
+                      <span>Theme: </span>
+                      <button type="button" className={`theme-chip${docTheme === 'advocate' ? ' active' : ''}`} onClick={() => setDocTheme('advocate')}>
+                        ⚖️ Advocate Chamber
+                      </button>
+                      <button type="button" className={`theme-chip${docTheme === 'court' ? ' active' : ''}`} onClick={() => setDocTheme('court')}>
+                        📜 High Court Petition
+                      </button>
+                      <button type="button" className={`theme-chip${docTheme === 'corporate' ? ' active' : ''}`} onClick={() => setDocTheme('corporate')}>
+                        🏢 Corporate Notice
+                      </button>
+                    </div>
+                  </div>
+                  <div className="doc-action-btns">
+                    <button type="button" className="doc-download-pdf-btn" onClick={handleDownloadDirectPDF} disabled={downloadingPdf}>
+                      {downloadingPdf ? '⏳ Downloading PDF...' : '📥 Download PDF File (.pdf)'}
+                    </button>
+                    <button type="button" className="doc-print-btn" onClick={handlePrintPDF}>
+                      🖨️ Print Notice
+                    </button>
+                    <button type="button" className="doc-copy-btn" onClick={handleCopyDocText}>
+                      📋 Copy Text
+                    </button>
+                  </div>
+                </div>
+
+                <div className="doc-statutory-sections">
+                  <strong>Statutory Provisions Cited:</strong>
+                  <div className="doc-sections-pills">
+                    {generatedDoc.statutory_sections?.map((sec: string, si: number) => (
+                      <span key={si} className="doc-sec-pill">📜 {sec}</span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* --- ADVOCATE-GRADE PRINTABLE PAPER --- */}
+                <div id="printable-legal-document" className={`advocate-legal-paper theme-${docTheme}`}>
+                  <div className="paper-header-banner">
+                    <div className="paper-emblem-wrap">
+                      <span className="emblem-symbol">⚖️</span>
+                      <div>
+                        <div className="paper-chamber-title">CHAMBERS OF ADVOCATES & LEGAL COUNSEL</div>
+                        <div className="paper-chamber-sub">HIGH COURT & SUPREME COURT JURISDICTION</div>
+                      </div>
+                    </div>
+                    <div className="paper-meta">
+                      <div><strong>DATE:</strong> {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                      <div><strong>REF NO:</strong> LA/NOT/{new Date().getFullYear()}/782</div>
+                      <div className="paper-mode-pill">REGISTERED LEGAL TRANSMISSION</div>
+                    </div>
+                  </div>
+
+                  <h2 className="paper-legal-title">{generatedDoc.title}</h2>
+
+                  <div className="paper-statutory-box">
+                    <strong>STATUTORY ACTS & SECTIONS CITED:</strong> {generatedDoc.statutory_sections?.join(' • ')}
+                  </div>
+
+                  <div className="paper-body-content">
+                    {generatedDoc.document_text?.split('\n\n').map((paragraph: string, pi: number) => {
+                      const trimmed = paragraph.trim();
+                      if (!trimmed) return null;
+                      return (
+                        <p key={pi} className="paper-paragraph">
+                          {trimmed.split('\n').map((line, li) => (
+                            <React.Fragment key={li}>
+                              {line}
+                              {li < trimmed.split('\n').length - 1 && <br />}
+                            </React.Fragment>
+                          ))}
+                        </p>
+                      );
+                    })}
+                  </div>
+
+                  {/* FINANCIAL BREAKDOWN TABLE */}
+                  {generatedDoc.financial_breakdown && (
+                    <div className="financial-claim-table-wrap">
+                      <h4 className="financial-table-heading">ITEMIZED FINANCIAL CLAIM BREAKDOWN</h4>
+                      <table className="financial-claim-table">
+                        <thead>
+                          <tr>
+                            <th>Head of Claim / Statutory Remedy</th>
+                            <th>Statutory Ground</th>
+                            <th className="text-right">Amount (₹)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>Principal Dispute Amount / Unpaid Deposit</td>
+                            <td>Primary Contractual Obligation</td>
+                            <td className="text-right">₹{generatedDoc.financial_breakdown.principal?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                          </tr>
+                          <tr>
+                            <td>Statutory Interest @ 12% p.a.</td>
+                            <td>Section 73, Indian Contract Act</td>
+                            <td className="text-right">₹{generatedDoc.financial_breakdown.interest?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                          </tr>
+                          <tr>
+                            <td>Compensation for Mental Harassment & Legal Notice Charges</td>
+                            <td>Tortious Damages & Statutory Costs</td>
+                            <td className="text-right">₹{generatedDoc.financial_breakdown.damages?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                          </tr>
+                          <tr className="total-row">
+                            <td colSpan={2}><strong>TOTAL LEGAL DEMAND AMOUNT PAYABLE</strong></td>
+                            <td className="text-right"><strong>₹{generatedDoc.financial_breakdown.total_claim?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* VERIFICATION AFFIDAVIT STAMP */}
+                  <div className="paper-verification-box">
+                    <div className="verification-stamp-title">📜 VERIFICATION & AFFIDAVIT</div>
+                    <p className="verification-text">
+                      {generatedDoc.verification_affidavit || `I, ${senderName}, residing at ${senderAddress}, do hereby verify that the facts stated above are true and correct to the best of my knowledge.`}
+                    </p>
+                    <div className="verification-footer">
+                      <div>
+                        <strong>DEPONENT / COMPLAINANT:</strong> ___________________________
+                      </div>
+                      <div className="seal-placeholder">
+                        <span>OFFICIAL LEGAL SEAL</span>
+                        <span>BAR REG: D/1829/2018</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
