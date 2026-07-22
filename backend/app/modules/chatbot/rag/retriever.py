@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 async def retrieve_relevant_laws(
     query: str,
     top_k: int = 5,
-    min_score: float = 0.35,
+    min_score: float = 0.10,
 ) -> list[LawChunk]:
     """
     Generate query embedding, search the FAISS index, and filter by score threshold.
@@ -25,13 +25,13 @@ async def retrieve_relevant_laws(
     # Filter by score threshold
     hits = [hit for hit in all_hits if hit.score >= min_score]
 
-    # Fallback to category search if no semantic matches were found
-    if not hits:
+    # Fallback if no hits matched the min_score
+    if not hits and all_hits:
         logger.warning(
             f"No statutory text matches found above threshold ({min_score}) — "
-            "returning top 2 generic matches to prevent failure."
+            "returning top 3 hits from vector search."
         )
-        hits = all_hits[:2]
+        hits = all_hits[:3]
 
     logger.info(f"Retrieved {len(hits)} relevant law sections.")
     for h in hits:

@@ -331,6 +331,40 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
     fetchData();
   };
 
+  const handleExportICS = (e: React.MouseEvent, dl: any) => {
+    e.stopPropagation();
+    const title = dl.title || 'Legal Deadline';
+    const description = dl.description || 'Legal obligation reminder set via LegalAce';
+    const dt = new Date(dl.deadline_date || Date.now());
+    const year = dt.getUTCFullYear();
+    const month = String(dt.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(dt.getUTCDate()).padStart(2, '0');
+    const dateStr = `${year}${month}${day}T090000Z`;
+
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//LegalAce AI//EN',
+      'BEGIN:VEVENT',
+      `SUMMARY:⚖️ LegalAce: ${title}`,
+      `DESCRIPTION:${description.replace(/\n/g, ' ')}`,
+      `DTSTART:${dateStr}`,
+      `DTEND:${dateStr}`,
+      'STATUS:CONFIRMED',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${title.replace(/\s+/g, '_')}_deadline.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const filteredDeadlines = allDeadlines.filter(d => {
     if (activeFilter === 'all') return true;
     if (activeFilter === 'active') return d.status === 'active';
@@ -513,6 +547,9 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
                     </div>
                     {dl.status === 'active' && (
                       <div className="deadline-actions">
+                        <button className="dl-action-btn snooze" onClick={e => handleExportICS(e, dl)} title="Export to Calendar (.ics)">
+                          📅
+                        </button>
                         <button className="dl-action-btn snooze" onClick={e => handleDismiss(e, dl.id)} title="Snooze 7 days">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>

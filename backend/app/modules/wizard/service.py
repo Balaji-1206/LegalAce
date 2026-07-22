@@ -598,3 +598,232 @@ async def get_user_sessions(user_id: str) -> list[dict]:
         doc["id"] = str(doc.pop("_id"))
         sessions.append(doc)
     return sessions
+
+
+def generate_legal_document(template_id: str, details: dict) -> dict:
+    """
+    Generate official, formatted Indian Legal Notice or Complaint Document
+    based on template_id and user details with financial claim itemization.
+    """
+    sender_name = details.get("sender_name", "[SENDER FULL NAME]")
+    sender_address = details.get("sender_address", "[SENDER FULL ADDRESS]")
+    sender_phone = details.get("sender_phone", "[SENDER CONTACT NUMBER]")
+    sender_email = details.get("sender_email", "[SENDER EMAIL ADDRESS]")
+
+    recipient_name = details.get("recipient_name", "[RECIPIENT NAME / COMPANY / LANDLORD]")
+    recipient_address = details.get("recipient_address", "[RECIPIENT FULL ADDRESS]")
+
+    raw_amount = details.get("dispute_amount", "50000").replace(",", "").replace("Rs.", "").strip()
+    try:
+        principal = float(raw_amount)
+    except ValueError:
+        principal = 50000.0
+
+    interest = round(principal * 0.12, 2)  # 12% p.a. statutory interest
+    damages = 15000.0                       # Legal costs & mental agony compensation
+    total_claim = principal + interest + damages
+
+    incident_date = details.get("incident_date", datetime.now().strftime("%d %B %Y"))
+    facts_summary = details.get("facts_summary", "Dispute arising out of failure to comply with statutory legal obligations.")
+    notice_days = details.get("notice_days", "15")
+    today_str = datetime.now().strftime("%d %B %Y")
+
+    if "housing" in template_id or "deposit" in template_id:
+        title = "LEGAL DEMAND NOTICE FOR REFUND OF SECURITY DEPOSIT"
+        doc_text = f"""BY REGISTERED POST A.D. / EMAIL / LEGAL TRANSMISSION
+
+Date: {today_str}
+Ref No: LA/NOT/{datetime.now().year}/{(hash(sender_name) % 8999 + 1000)}
+
+TO,
+{recipient_name}
+{recipient_address}
+
+FROM,
+{sender_name}
+{sender_address}
+Contact: {sender_phone} | Email: {sender_email}
+
+SUBJECT: LEGAL DEMAND NOTICE FOR IMMEDIATE REFUND OF SECURITY DEPOSIT OF RS. {principal:,.2f}/- ALONG WITH STATUTORY INTEREST AND LEGAL DAMAGES UNDER THE MODEL TENANCY ACT, 2021 AND APPLICABLE RENT CONTROL STATUTES.
+
+Sir/Madam,
+
+Under instructions and on behalf of the undersigned Complainant ({sender_name}), I hereby issue upon you this Formal Legal Notice:
+
+1. OCCUPANCY & TENANCY OBLIGATIONS: That the Complainant ({sender_name}) occupied the residential premises situated at {sender_address} as a bonafide and lawful tenant under a valid Tenancy Agreement executed with you.
+
+2. REFUNDABLE DEPOSIT DEPOSITED: That at the commencement of the tenancy, the Complainant deposited an interest-free refundable Security Deposit of Rs. {principal:,.2f}/- ({principal:,.2f} Indian Rupees) with you, which was strictly agreed to be refunded in full upon peaceful vacation of premises.
+
+3. PEACEFUL VACATION & HANDOVER: That the Complainant vacated the aforesaid premises on {incident_date} after delivering vacant, clean, and peaceful physical possession to you, along with all keys and clearance of all utility dues.
+
+4. UNLAWFUL WITHHOLDING & STATUTORY BREACH: That despite peaceful vacation and repeated follow-up demands, you have illegally, arbitrarily, and unjustifiably withheld the security deposit amount of Rs. {principal:,.2f}/- without providing any itemized list of lawful deductions or repairs, constituting a direct violation of Section 11 of the Model Tenancy Act, 2021 and Section 73 of the Indian Contract Act, 1872.
+
+5. ITEMIZED FINANCIAL DEMAND & CLAIM:
+   a) Refund of Principal Security Deposit: Rs. {principal:,.2f}/-
+   b) Statutory Interest @ 12% p.a. from {incident_date}: Rs. {interest:,.2f}/-
+   c) Compensation for Mental Agony & Legal Notice Charges: Rs. {damages:,.2f}/-
+   TOTAL AMOUNT DEMANDED & PAYABLE: RS. {total_claim:,.2f}/-
+
+TAKE NOTICE that you are hereby called upon to pay/refund the total demand amount of Rs. {total_claim:,.2f}/- into the bank account of the Complainant within {notice_days} days of receipt of this notice.
+
+FAILING WHICH, formal legal proceedings shall be instituted against you in the Rent Authority / Rent Tribunal and competent Civil Court for recovery of money, attachment of property, and full legal costs at your sole risk and consequences.
+
+Yours faithfully,
+
+____________________________________
+({sender_name})
+Complainant / Issuing Party
+Place: Bengaluru, India"""
+
+        sections = ["Model Tenancy Act 2021 — Section 11", "State Rent Control Act", "Indian Contract Act 1872 — Section 73"]
+
+    elif "employment" in template_id or "salary" in template_id:
+        title = "LEGAL DEMAND NOTICE FOR RECOVERY OF UNPAID SALARY & DUES"
+        doc_text = f"""BY REGISTERED POST A.D. / EMAIL / LEGAL TRANSMISSION
+
+Date: {today_str}
+Ref No: LA/EMP/{datetime.now().year}/{(hash(sender_name) % 8999 + 1000)}
+
+TO,
+The Management / Board of Directors,
+{recipient_name}
+{recipient_address}
+
+FROM,
+{sender_name}
+{sender_address}
+Contact: {sender_phone} | Email: {sender_email}
+
+SUBJECT: LEGAL NOTICE UNDER PAYMENT OF WAGES ACT, 1936 & INDUSTRIAL DISPUTES ACT, 1947 FOR RECOVERY OF UNPAID SALARY AND EARNED DUES AMOUNTING TO RS. {principal:,.2f}/-.
+
+Sir/Madam,
+
+Under instructions and on behalf of the undersigned Employee ({sender_name}), I hereby issue upon you this Formal Legal Notice:
+
+1. EMPLOYMENT STANDING: That the Employee ({sender_name}) was employed with your organization ({recipient_name}) as a permanent employee and rendered loyal and diligent service.
+
+2. UNPAID WAGES & DISPUTE SUMMARY: That during employment, your organization failed to disburse earned wages, outstanding salary, and full & final settlement dues amounting to Rs. {principal:,.2f}/- due for the period ending {incident_date}. Summary: {facts_summary}
+
+3. VIOLATION OF STATUTORY RIGHTS: That non-payment of earned wages and failure to issue full & final settlement within statutory time limits violates Section 15 of the Payment of Wages Act, 1936, Section 25F of the Industrial Disputes Act, 1947, and principles of natural justice.
+
+4. ITEMIZED FINANCIAL DEMAND & CLAIM:
+   a) Outstanding Principal Wages / Salary: Rs. {principal:,.2f}/-
+   b) Statutory Interest @ 12% p.a.: Rs. {interest:,.2f}/-
+   c) Compensation for Mental Harassment & Legal Notice Fee: Rs. {damages:,.2f}/-
+   TOTAL AMOUNT DEMANDED & PAYABLE: RS. {total_claim:,.2f}/-
+
+TAKE NOTICE that you are hereby called upon to remit the total amount of Rs. {total_claim:,.2f}/- into the bank account of the undersigned within {notice_days} days of receipt of this notice.
+
+FAILING WHICH, legal proceedings shall be filed before the Labour Commissioner, Labour Court under Section 33C of the Industrial Disputes Act, and NCLT under Insolvency and Bankruptcy Code (IBC) for operational debt recovery.
+
+Yours faithfully,
+
+____________________________________
+({sender_name})
+Employee / Claimant
+Place: Bengaluru, India"""
+
+        sections = ["Payment of Wages Act 1936 — Section 15", "Industrial Disputes Act 1947 — Section 25F & Section 33C"]
+
+    elif "consumer" in template_id or "refund" in template_id:
+        title = "CONSUMER LEGAL DEMAND NOTICE FOR REFUND & COMPENSATION"
+        doc_text = f"""BY REGISTERED POST A.D. / EMAIL / LEGAL TRANSMISSION
+
+Date: {today_str}
+Ref No: LA/CON/{datetime.now().year}/{(hash(sender_name) % 8999 + 1000)}
+
+TO,
+{recipient_name}
+{recipient_address}
+
+FROM,
+{sender_name}
+{sender_address}
+Contact: {sender_phone} | Email: {sender_email}
+
+SUBJECT: LEGAL NOTICE UNDER SECTION 35 OF THE CONSUMER PROTECTION ACT, 2019 FOR DEFICIENCY OF SERVICE AND UNFAIR TRADE PRACTICE.
+
+Sir/Madam,
+
+1. CONSUMER TRANSACTION: That the Complainant ({sender_name}) purchased goods / availed services from your establishment on {incident_date} for a consideration of Rs. {principal:,.2f}/-.
+
+2. DEFICIENCY IN SERVICE & FACTS: That the product/service supplied by you suffers from severe inherent defects and deficiency of service as defined under Section 2(11) of the Consumer Protection Act, 2019. Facts: {facts_summary}
+
+3. REFUSAL OF REFUND: That despite repeated complaints, you failed to repair, replace, or issue a full refund, constituting an Unfair Trade Practice under Section 2(47) of the Act.
+
+4. ITEMIZED FINANCIAL DEMAND & CLAIM:
+   a) Refund of Product/Service Purchase Price: Rs. {principal:,.2f}/-
+   b) Statutory Interest @ 12% p.a.: Rs. {interest:,.2f}/-
+   c) Damages for Mental Agony & Litigation Costs: Rs. {damages:,.2f}/-
+   TOTAL AMOUNT DEMANDED & PAYABLE: RS. {total_claim:,.2f}/-
+
+TAKE NOTICE that you are hereby called upon to refund Rs. {total_claim:,.2f}/- within {notice_days} days of receipt of this notice, failing which a formal Consumer Complaint shall be filed before the District Consumer Disputes Redressal Commission via the e-Daakhil portal.
+
+Yours faithfully,
+
+____________________________________
+({sender_name})
+Consumer / Complainant
+Place: Bengaluru, India"""
+
+        sections = ["Consumer Protection Act 2019 — Section 2(47)", "Consumer Protection Act 2019 — Section 35"]
+
+    else:
+        title = "LEGAL DEMAND NOTICE & REPRESENTATION"
+        doc_text = f"""BY REGISTERED POST A.D. / EMAIL / LEGAL TRANSMISSION
+
+Date: {today_str}
+Ref No: LA/GEN/{datetime.now().year}/{(hash(sender_name) % 8999 + 1000)}
+
+TO,
+{recipient_name}
+{recipient_address}
+
+FROM,
+{sender_name}
+{sender_address}
+Contact: {sender_phone} | Email: {sender_email}
+
+SUBJECT: LEGAL NOTICE FOR SETTLEMENT OF FINANCIAL DISPUTE & DEMAND OF RS. {principal:,.2f}/-.
+
+Sir/Madam,
+
+1. FACTS OF THE CASE: That the undersigned ({sender_name}) serves this Legal Notice regarding: {facts_summary}
+
+2. STATUTORY VIOLATION: That on {incident_date}, your failure to perform statutory obligations resulted in severe financial loss amounting to Rs. {principal:,.2f}/-.
+
+3. ITEMIZED FINANCIAL DEMAND & CLAIM:
+   a) Principal Financial Claim: Rs. {principal:,.2f}/-
+   b) Interest & Administrative Damages: Rs. {interest + damages:,.2f}/-
+   TOTAL DEMAND PAYABLE: RS. {total_claim:,.2f}/-
+
+TAKE NOTICE that you are called upon to resolve this matter and remit Rs. {total_claim:,.2f}/- within {notice_days} days of receipt of this notice, failing which civil and criminal legal action will be initiated in the competent Court of Law.
+
+Yours faithfully,
+
+____________________________________
+({sender_name})
+Complainant / Issuing Party
+Place: Bengaluru, India"""
+
+        sections = ["Indian Contract Act 1872", "Code of Civil Procedure 1908"]
+
+    affidavit = f"VERIFICATION AFFIDAVIT: I, {sender_name}, residing at {sender_address}, do hereby solemnly verify and state that the contents of paragraphs 1 to 5 above are true and correct to the best of my knowledge, and nothing material has been concealed therefrom."
+
+    return {
+        "template_id": template_id,
+        "title": title,
+        "document_text": doc_text.strip(),
+        "statutory_sections": sections,
+        "financial_breakdown": {
+            "principal": principal,
+            "interest": interest,
+            "damages": damages,
+            "total_claim": total_claim,
+        },
+        "verification_affidavit": affidavit,
+        "notice_days": notice_days,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+

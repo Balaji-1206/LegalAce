@@ -99,6 +99,7 @@ def rule_based_extract(text: str) -> List[dict]:
             if "year" in pattern:
                 days = days * 365
             deadline_date = datetime.now(timezone.utc) + timedelta(days=days)
+            valid_warnings = [w for w in [30, 15, 7, 1] if w < days] or [1]
             deadlines.append({
                 "title": f"Legal Action Required — {category.title()}",
                 "description": f"You have {days} days to take legal action based on: \"{text[:120]}...\"",
@@ -106,7 +107,7 @@ def rule_based_extract(text: str) -> List[dict]:
                 "deadline_date": deadline_date.isoformat(),
                 "days_from_now": days,
                 "priority": priority if days <= 30 else "medium",
-                "warning_days": [min(30, days - 1), min(15, days - 1), 7, 1],
+                "warning_days": valid_warnings,
             })
             break  # One deadline per text block
 

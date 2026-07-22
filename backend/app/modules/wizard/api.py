@@ -42,9 +42,26 @@ class QuickPlanBody(BaseModel):
     answers: dict[str, str]
 
 
+class GenerateDocBody(BaseModel):
+    template_id: str
+    details: dict[str, str] = {}
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
+@router.post("/generate-document")
+async def generate_document(body: GenerateDocBody):
+    """
+    Generate an official statutory legal demand notice or complaint text.
+    """
+    try:
+        doc_result = service.generate_legal_document(body.template_id, body.details)
+        return doc_result
+    except Exception as e:
+        logger.error(f"Error generating legal document: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate legal document.")
 
 @router.get("/categories")
 async def get_categories():
