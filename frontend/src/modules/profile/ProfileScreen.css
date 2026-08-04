@@ -65,66 +65,68 @@
 
 /* --- Hero Banner Header --- */
 .profile-hero-banner {
-  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #4338ca 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
   padding: 56px 20px 24px;
   text-align: center;
   color: #ffffff;
   position: relative;
-  border-bottom-left-radius: 24px;
-  border-bottom-right-radius: 24px;
-  box-shadow: 0 10px 25px -5px rgba(49, 46, 129, 0.3);
+  border-bottom-left-radius: 28px;
+  border-bottom-right-radius: 28px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.25);
 }
 
 .profile-avatar-wrap {
   position: relative;
   display: inline-block;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .profile-avatar-large {
-  width: 84px;
-  height: 84px;
+  width: 88px;
+  height: 88px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 34px;
+  font-weight: 800;
   color: #ffffff;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25), 0 0 0 4px rgba(255, 255, 255, 0.2);
-  transition: transform 0.3s ease;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 0 0 0 4px rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .profile-avatar-wrap:hover .profile-avatar-large {
-  transform: scale(1.04);
+  transform: scale(1.05);
 }
 
 .avatar-badge-icon {
   position: absolute;
-  bottom: 0;
+  bottom: 2px;
   right: -2px;
   width: 26px;
   height: 26px;
   border-radius: 50%;
   background: #10b981;
-  border: 2px solid #312e81;
+  border: 2.5px solid #1e1b4b;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
 .profile-user-name {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 800;
   margin-bottom: 4px;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
+  color: #ffffff;
 }
 
 .profile-user-email {
   font-size: 12px;
-  color: #c7d2fe;
-  margin-bottom: 10px;
+  color: #a5b4fc;
+  margin-bottom: 12px;
 }
 
 .profile-tags-row {
@@ -139,13 +141,13 @@
 .profile-persona-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(4px);
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
   color: #e0e7ff;
 }
@@ -153,22 +155,22 @@
 .profile-state-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 12px;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
   background: rgba(16, 185, 129, 0.2);
   border: 1px solid rgba(16, 185, 129, 0.4);
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
   color: #6ee7b7;
 }
 
 /* Completion Bar */
 .profile-completion-box {
-  margin: 16px 16px 0;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.1);
+  margin: 18px 16px 0;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
   text-align: left;
 }
@@ -177,15 +179,16 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 11px;
-  color: #e0e7ff;
-  margin-bottom: 6px;
+  font-size: 11.5px;
+  color: #c7d2fe;
+  font-weight: 600;
+  margin-bottom: 8px;
 }
 
 .completion-bar-track {
   height: 6px;
   width: 100%;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -210,26 +213,26 @@
 
 .stat-card {
   background: #ffffff;
-  border-radius: 16px;
-  padding: 14px;
-  border: 1px solid #eef0f6;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  border-radius: 18px;
+  padding: 15px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
   display: flex;
   align-items: center;
   gap: 12px;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.07);
-  border-color: #c7d2fe;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  border-color: #cbd5e1;
 }
 
 .stat-card-icon {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -241,13 +244,13 @@
   display: block;
   font-size: 20px;
   font-weight: 800;
-  color: #1e1b4b;
+  color: #0f172a;
   line-height: 1.1;
 }
 
 .stat-card-info span {
-  font-size: 11px;
-  color: #6b7280;
+  font-size: 11.5px;
+  color: #64748b;
   font-weight: 500;
 }
 
@@ -257,31 +260,31 @@
 }
 
 .profile-section-title {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11.5px;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #6b7280;
-  margin: 14px 4px 8px;
+  letter-spacing: 0.8px;
+  color: #64748b;
+  margin: 16px 4px 10px;
 }
 
 .profile-card-group {
   background: #ffffff;
-  border-radius: 18px;
-  border: 1px solid #eef0f6;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
   overflow: hidden;
 }
 
 .profile-action-item {
   display: flex;
   align-items: center;
-  padding: 14px 16px;
+  padding: 15px 16px;
   gap: 14px;
   cursor: pointer;
   background: #ffffff;
-  transition: background 0.15s ease;
-  border-bottom: 1px solid #f3f4f6;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .profile-action-item:last-child {
@@ -290,6 +293,16 @@
 
 .profile-action-item:hover {
   background: #f8fafc;
+}
+
+.profile-action-item:hover .action-item-arrow {
+  transform: translateX(3px);
+  color: #0f172a;
+}
+
+.action-item-arrow {
+  transition: transform 0.2s ease, color 0.2s ease;
+  color: #94a3b8;
 }
 
 .action-item-icon {
@@ -381,17 +394,18 @@ input:checked + .toggle-slider:before {
 
 /* --- Modals Overlay --- */
 .profile-modal-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 100;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 9999;
   display: flex;
   align-items: flex-end;
+  justify-content: center;
   animation: fadeInModal 0.25s ease-out forwards;
 }
 
@@ -403,12 +417,13 @@ input:checked + .toggle-slider:before {
 .profile-modal-content {
   background: #ffffff;
   width: 100%;
+  max-width: 480px;
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
   padding: 24px;
-  max-height: 88%;
+  max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
   animation: slideUpModal 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 

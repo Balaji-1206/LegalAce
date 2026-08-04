@@ -42,6 +42,10 @@ class QuickPlanBody(BaseModel):
     answers: dict[str, str]
 
 
+class DynamicScenarioBody(BaseModel):
+    user_topic: str
+
+
 class GenerateDocBody(BaseModel):
     template_id: str
     details: dict[str, str] = {}
@@ -50,6 +54,19 @@ class GenerateDocBody(BaseModel):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
+@router.post("/generate-dynamic-scenario")
+async def generate_dynamic_scenario(body: DynamicScenarioBody):
+    """
+    Generate an on-the-fly custom legal decision tree scenario for any legal topic.
+    """
+    try:
+        scenario_data = await service.generate_dynamic_scenario(body.user_topic)
+        return scenario_data
+    except Exception as e:
+        logger.error(f"Error generating dynamic scenario: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate dynamic legal scenario.")
+
 
 @router.post("/generate-document")
 async def generate_document(body: GenerateDocBody):
@@ -126,10 +143,7 @@ async def get_history(user_id: str):
 async def quick_plan(body: QuickPlanBody):
     """
     Get an action plan directly without creating a session.
-    Useful for offline / cached scenarios.
+    Supports both predefined and dynamic AI-generated scenarios.
     """
-    scenario = scenarios_data.get_scenario(body.scenario_id)
-    if not scenario:
-        raise HTTPException(status_code=404, detail="Scenario not found")
     plan = service.generate_action_plan(body.scenario_id, body.answers)
     return plan

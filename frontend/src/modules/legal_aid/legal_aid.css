@@ -1,0 +1,257 @@
+/* ═══════════════════════════════════════════════════════════════
+   Legal Aid Checker — Feature 5 Styles
+   Eligibility form, result cards, authority directory
+   ═══════════════════════════════════════════════════════════════ */
+
+.legalaid-screen {
+  padding: 16px;
+  height: calc(100vh - 72px);
+  overflow-y: auto;
+  padding-bottom: 90px;
+  -webkit-overflow-scrolling: touch;
+  animation: legalaidFadeIn 0.4s ease;
+}
+@keyframes legalaidFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.legalaid-back-btn {
+  display: flex; align-items: center; gap: 4px;
+  background: none; border: none; color: #059669;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  padding: 6px 0; margin-bottom: 12px;
+}
+.legalaid-back-btn svg { width: 16px; height: 16px; }
+
+.legalaid-header {
+  text-align: center; margin-bottom: 20px;
+}
+.legalaid-header h2 {
+  font-size: 22px; font-weight: 800; color: #064e3b;
+  margin-bottom: 4px;
+}
+.legalaid-header p {
+  font-size: 12.5px; color: #6b7280;
+}
+
+/* ─── Eligibility Form ────────────────────────────────────────── */
+
+.legalaid-form {
+  background: white;
+  border: 1px solid #d1fae5;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(5,150,105,0.06);
+}
+
+.legalaid-field {
+  margin-bottom: 16px;
+}
+.legalaid-field label {
+  display: block;
+  font-size: 13px; font-weight: 700; color: #1e1b4b;
+  margin-bottom: 6px;
+}
+.legalaid-field select,
+.legalaid-field input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #111827;
+  background: #fafafa;
+  transition: border-color 0.2s;
+  outline: none;
+  box-sizing: border-box;
+}
+.legalaid-field select:focus,
+.legalaid-field input:focus {
+  border-color: #059669;
+  background: white;
+}
+
+.legalaid-categories-title {
+  font-size: 13px; font-weight: 700; color: #1e1b4b;
+  margin-bottom: 10px;
+}
+.legalaid-category-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.legalaid-cat-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 12px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  background: white;
+  font-size: 12px; color: #374151; font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+.legalaid-cat-btn:hover {
+  border-color: #a7f3d0;
+  background: #f0fdf4;
+}
+.legalaid-cat-btn.selected {
+  border-color: #059669;
+  background: #ecfdf5;
+  color: #064e3b;
+  font-weight: 700;
+}
+.legalaid-cat-check {
+  width: 18px; height: 18px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.legalaid-cat-btn.selected .legalaid-cat-check {
+  background: #059669;
+  border-color: #059669;
+  color: white;
+}
+
+.legalaid-submit-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 14px;
+  margin-top: 20px;
+  border: none; border-radius: 12px;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: white;
+  font-size: 15px; font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.legalaid-submit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(5,150,105,0.3);
+}
+
+/* ─── Results ─────────────────────────────────────────────────── */
+
+.legalaid-result {
+  margin-top: 20px;
+  animation: legalaidFadeIn 0.5s ease;
+}
+
+.legalaid-result-banner {
+  padding: 20px;
+  border-radius: 16px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.legalaid-result-banner.eligible {
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  border: 1.5px solid #6ee7b7;
+}
+.legalaid-result-banner.ineligible {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  border: 1.5px solid #fca5a5;
+}
+.legalaid-result-emoji {
+  font-size: 40px; margin-bottom: 8px;
+}
+.legalaid-result-title {
+  font-size: 18px; font-weight: 800;
+}
+.legalaid-result-banner.eligible .legalaid-result-title { color: #064e3b; }
+.legalaid-result-banner.ineligible .legalaid-result-title { color: #991b1b; }
+.legalaid-result-subtitle {
+  font-size: 12px; color: #6b7280; margin-top: 4px;
+}
+
+.legalaid-reasons-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.legalaid-reasons-title {
+  font-size: 14px; font-weight: 700; color: #1e1b4b;
+  margin-bottom: 10px;
+}
+.legalaid-reason-item {
+  font-size: 13px; color: #374151;
+  line-height: 1.5;
+  padding: 6px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+.legalaid-reason-item:last-child { border-bottom: none; }
+
+/* Authority Cards */
+.legalaid-authority-card {
+  background: white;
+  border: 1px solid #d1fae5;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(5,150,105,0.06);
+}
+.legalaid-auth-name {
+  font-size: 14px; font-weight: 700; color: #064e3b;
+  margin-bottom: 2px;
+}
+.legalaid-auth-type {
+  display: inline-block;
+  padding: 2px 8px; border-radius: 12px;
+  background: #d1fae5; color: #059669;
+  font-size: 10px; font-weight: 700;
+  margin-bottom: 8px;
+}
+.legalaid-auth-detail {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: #6b7280;
+  margin-bottom: 4px;
+}
+.legalaid-auth-detail svg {
+  width: 14px; height: 14px; flex-shrink: 0; color: #059669;
+}
+
+.legalaid-auth-actions {
+  display: flex; gap: 8px; margin-top: 10px;
+}
+.legalaid-call-btn,
+.legalaid-web-btn {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px;
+  border: none; border-radius: 10px;
+  font-size: 12px; font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.legalaid-call-btn {
+  background: #059669; color: white;
+}
+.legalaid-call-btn:hover { background: #047857; }
+.legalaid-web-btn {
+  background: #eef2ff; color: #4338ca;
+  border: 1px solid #c7d2fe;
+}
+.legalaid-web-btn:hover { background: #e0e7ff; }
+
+.legalaid-reset-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 13px;
+  margin-top: 16px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 12px;
+  background: white; color: #374151;
+  font-size: 14px; font-weight: 600;
+  cursor: pointer;
+}
+
+.legalaid-disclaimer {
+  font-size: 11px; color: #9ca3af;
+  font-style: italic;
+  text-align: center;
+  margin-top: 16px;
+  padding: 0 10px;
+  line-height: 1.5;
+}

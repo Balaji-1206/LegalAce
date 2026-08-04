@@ -404,6 +404,132 @@ SITUATIONS_DATA = [
             "Report immediately to prevent further harassment."
         ],
         "related_situations": ["edu_fee_refund_denial"]
+    },
+    # CHEQUE BOUNCE & DEBT
+    {
+        "situation_id": "cheque_bounce_notice",
+        "title": "Cheque dishonoured for insufficient funds (Section 138)",
+        "description": "A cheque issued to you was bounced by the bank due to insufficient funds or account closure, and the drawer is refusing to pay.",
+        "category": "cheque_debt",
+        "applicable_laws": [
+            {"act": "Negotiable Instruments Act, 1881", "section": "Section 138", "section_title": "Dishonour of Cheque for Insufficiency of Funds"},
+            {"act": "Code of Civil Procedure, 1908", "section": "Order 37", "section_title": "Summary Procedure for Debt Recovery"}
+        ],
+        "user_rights": [
+            "Right to demand payment within 30 days of receiving the Bank Return Memo.",
+            "Right to file a criminal complaint under Section 138 of the NI Act.",
+            "Drawer can face up to 2 years imprisonment or fine up to double the cheque amount."
+        ],
+        "action_steps": [
+            "Collect original cheque and official Bank Return Memo with reason code.",
+            "Send a mandatory 15-day Statutory Demand Notice via Registered Post within 30 days.",
+            "File a criminal complaint before Judicial Magistrate within 30 days if unpaid."
+        ],
+        "important_deadlines": [
+            "Send Legal Notice: Within 30 days of bank memo date.",
+            "File Court Complaint: Within 30 days after the 15-day notice period expires."
+        ],
+        "related_situations": ["emp_salary_withholding"]
+    },
+    # RTI & PUBLIC SERVICE
+    {
+        "situation_id": "rti_delayed_response",
+        "title": "Public Information Officer (PIO) delayed or refused RTI query",
+        "description": "You filed an RTI application with a government department, but 30 days have passed with no response or the information was unjustly denied.",
+        "category": "rti",
+        "applicable_laws": [
+            {"act": "Right to Information Act, 2005", "section": "Section 7(1)", "section_title": "Disposal of Request"},
+            {"act": "Right to Information Act, 2005", "section": "Section 19(1)", "section_title": "First Appeal"}
+        ],
+        "user_rights": [
+            "Right to receive information within 30 days of application (48 hours for life & liberty).",
+            "Right to file First Appeal to Appellate Authority without extra fee.",
+            "PIO can face a penalty of Rs. 250 per day up to Rs. 25,000 for unreasonable delay."
+        ],
+        "action_steps": [
+            "Verify date of original RTI application receipt / speed post tracking.",
+            "Draft and file First Appeal under Section 19(1) to First Appellate Authority.",
+            "Escalate to Central/State Information Commission (Second Appeal) if unanswered."
+        ],
+        "important_deadlines": [
+            "First Appeal: Within 30 days from expiry of the 30-day response deadline."
+        ],
+        "related_situations": ["house_illegal_eviction"]
+    },
+    # RERA REAL ESTATE
+    {
+        "situation_id": "rera_flat_possession_delay",
+        "title": "Builder delayed flat possession beyond agreement date",
+        "description": "The real estate developer/builder has missed the committed possession deadline given in your Builder-Buyer Agreement without valid force majeure.",
+        "category": "real_estate",
+        "applicable_laws": [
+            {"act": "Real Estate (Regulation and Development) Act, 2016", "section": "Section 18", "section_title": "Return of Amount and Compensation"},
+            {"act": "Consumer Protection Act, 2019", "section": "Section 35", "section_title": "Housing Deficiency of Service"}
+        ],
+        "user_rights": [
+            "Right to claim full refund with prescribed interest (SBI MCLR + 2%).",
+            "Right to claim monthly interest compensation for every month of delay if staying in project.",
+            "Right to file complaint before State RERA Authority or Consumer Forum."
+        ],
+        "action_steps": [
+            "Review Builder-Buyer Agreement for possession date and grace period.",
+            "Issue written demand for monthly delay interest compensation.",
+            "File online complaint on State RERA portal under Section 31."
+        ],
+        "important_deadlines": [
+            "File RERA complaint: As soon as promised possession date + grace period expires."
+        ],
+        "related_situations": ["house_deposit_dispute"]
+    },
+    # INSURANCE & HEALTH
+    {
+        "situation_id": "insurance_mediclaim_rejected",
+        "title": "Health insurance mediclaim rejected by insurer/TPA",
+        "description": "Your health insurance company or TPA rejected your hospitalization claim citing pre-existing disease or non-disclosure unjustly.",
+        "category": "insurance",
+        "applicable_laws": [
+            {"act": "IRDAI (Health Insurance) Regulations, 2016", "section": "Regulation 12", "section_title": "Settlement of Claims"},
+            {"act": "Redressal of Public Grievances Rules, 1998", "section": "Rule 13", "section_title": "Insurance Ombudsman Jurisdiction"}
+        ],
+        "user_rights": [
+            "Right to clear written reasons for claim rejection.",
+            "No pre-existing disease rejection allowed after 8 continuous renewal years (Moratorium Period).",
+            "Right to file free complaint before Insurance Ombudsman (Bima Lokpal) for claims up to Rs. 50 Lakhs."
+        ],
+        "action_steps": [
+            "Request formal written rejection letter with exact policy clause.",
+            "Submit representation to Insurer's Grievance Redressal Officer (GRO).",
+            "File complaint with Insurance Ombudsman (cioins.co.in) if unresolved in 30 days."
+        ],
+        "important_deadlines": [
+            "Ombudsman Complaint: Within 1 year from date of rejection by insurer GRO."
+        ],
+        "related_situations": ["con_defective_product"]
+    },
+    # FAMILY & SUPPORT
+    {
+        "situation_id": "family_maintenance_claim",
+        "title": "Spouse or family member refusing financial maintenance",
+        "description": "A spouse, child, or parent unable to maintain themselves is denied basic monthly financial support by the primary earner.",
+        "category": "family",
+        "applicable_laws": [
+            {"act": "Code of Criminal Procedure, 1973 / BNSS, 2023", "section": "Section 125", "section_title": "Order for Maintenance of Wives, Children and Parents"},
+            {"act": "Protection of Women from Domestic Violence Act, 2005", "section": "Section 20", "section_title": "Monetary Reliefs"}
+        ],
+        "user_rights": [
+            "Right to monthly maintenance allowance based on respondent's income & living standard.",
+            "Right to Interim Maintenance during pendency of petition.",
+            "Parents have right to claim maintenance under Maintenance and Welfare of Parents Act."
+        ],
+        "action_steps": [
+            "Collect income proof, bank statements, or salary slips of respondent.",
+            "File maintenance petition under Section 125 CrPC in Family Court.",
+            "Submit application for immediate Interim Maintenance."
+        ],
+        "important_deadlines": [
+            "Interim Maintenance application: Should be filed along with main petition."
+        ],
+        "related_situations": ["women_domestic_violence"]
     }
 ]
 

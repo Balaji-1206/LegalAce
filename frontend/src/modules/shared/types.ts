@@ -1,3 +1,12 @@
+export interface PendingActionItem {
+  action_id: string;
+  action_type: string;
+  title: string;
+  details: Record<string, any>;
+  prompt_text: string;
+  status?: 'pending' | 'approved' | 'rejected';
+}
+
 export interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -11,6 +20,9 @@ export interface Message {
   rights?: string[];
   action_steps?: string[];
   disclaimer?: string;
+  reasoning_trace?: string[];
+  pending_actions?: PendingActionItem[];
+  plan_objective?: string;
 }
 
 export interface ConversationSummary {

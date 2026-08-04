@@ -135,6 +135,11 @@ def generate_action_plan(scenario_id: str, answers: dict[str, str]) -> dict:
         "women_workplace": _plan_women_workplace,
         "education_admission": _plan_education_admission,
         "education_fee": _plan_education_fee,
+        "cheque_bounce_138": _plan_cheque_bounce,
+        "rti_filing": _plan_rti,
+        "rera_delay": _plan_rera,
+        "insurance_rejection": _plan_insurance,
+        "family_maintenance": _plan_family,
     }
     fn = generators.get(scenario_id)
     if fn:
@@ -540,6 +545,107 @@ def _plan_education_fee(a: dict) -> dict:
     return {"title": "Education Fee Refund Plan", "steps": steps, "required_documents": docs, "urgent": False}
 
 
+# ─── Cheque Bounce & Debt ───────────────────────────────────────────────────
+
+def _plan_cheque_bounce(a: dict) -> dict:
+    reason = a.get("q1", "Insufficient Funds")
+    under30 = a.get("q2") == "yes"
+    notice_sent = a.get("q3") == "yes"
+    enforceable = a.get("q4") == "yes"
+
+    steps = [
+        _step(1, "Obtain Bank Return Memo", f"Ensure you have the original dishonoured cheque and the official Bank Return Memo citing '{reason}'. Memo date is crucial.", "Immediate", "high", "Negotiable Instruments Act 1881, Section 138"),
+    ]
+    if under30 and not notice_sent:
+        steps.append(_step(2, "⚡ Send Statutory 15-Day Legal Demand Notice", "Under Sec 138, you MUST send a written demand notice to the drawer within 30 days of receiving the bank memo via Registered Post / Speed Post.", "Within 30 days of memo", "high", "NI Act 1881, Section 138(b)"))
+    elif notice_sent:
+        steps.append(_step(2, "Wait for 15-day statutory payment window", "The drawer gets 15 mandatory days from notice receipt to clear the cheque payment.", "15 days", "high"))
+    steps.append(_step(len(steps)+1, "File Criminal Complaint in Magistrate Court", "If no payment is received within 15 days of notice, file a criminal complaint under Sec 138 in the Judicial Magistrate Court within 30 days.", "Within 30 days post notice", "high", "NI Act 1881, Section 142"))
+    steps.append(_step(len(steps)+1, "Summary Suit for Debt Recovery", "Simultaneously file a civil Summary Suit (Order 37 CPC) for fast-track recovery of the cheque amount plus interest.", "1-2 months", "medium", "CPC 1908 Order 37"))
+
+    docs = ["Original dishonoured cheque", "Bank Return Memo", "Copy of 15-day Demand Notice + Postal Slip / Acknowledgment", "Invoices / Loan agreement proving legally enforceable debt"]
+    return {"title": "Cheque Bounce (Sec 138) Action Plan", "steps": steps, "required_documents": docs, "urgent": under30 and not notice_sent}
+
+
+# ─── RTI & Public Service ───────────────────────────────────────────────────
+
+def _plan_rti(a: dict) -> dict:
+    authority = a.get("q1", "Central Govt / Ministry")
+    over30 = a.get("q2") == "yes"
+    refused = a.get("q3") == "yes"
+
+    steps = [
+        _step(1, "Draft specific, targeted RTI questions", "List clear, objective questions. Avoid asking for opinions/reasons; ask for specific records, notesheets, or dates.", "1 day", "high", "RTI Act 2005, Section 6"),
+        _step(2, "File application on rtionline.gov.in or via post", f"Pay mandatory ₹10 fee. Address to Public Information Officer (PIO) of the concerned {authority}.", "1-2 days", "high"),
+    ]
+    if over30 or refused:
+        steps.append(_step(len(steps)+1, "File First Appeal under Section 19(1)", "Since 30 days passed or info was refused, file First Appeal to the First Appellate Authority (FAA) of the department. No fee required.", "Within 30 days of delay", "high", "RTI Act 2005, Section 19(1)"))
+        steps.append(_step(len(steps)+1, "File Second Appeal to Information Commission", "If FAA does not respond in 30-45 days, file Second Appeal to Central or State Information Commission (CIC/SIC). Penalty up to ₹25,000 can be imposed on PIO.", "Within 90 days", "high", "RTI Act 2005, Section 19(3)"))
+
+    docs = ["Original RTI application copy", "Proof of fee payment (₹10 postal order / online receipt)", "Speed post tracking receipt", "PIO reply letter (if any)"]
+    return {"title": "RTI Application & Appeal Plan", "steps": steps, "required_documents": docs, "urgent": over30 or refused}
+
+
+# ─── RERA Real Estate ───────────────────────────────────────────────────────
+
+def _plan_rera(a: dict) -> dict:
+    registered = a.get("q1") == "yes"
+    passed = a.get("q2") == "yes"
+    remedy = a.get("q3", "Full refund with interest")
+
+    steps = [
+        _step(1, "Review Builder-Buyer Agreement (BBA)", "Identify the promised date of possession and grace period clause. Calculate total delayed months.", "1 day", "high"),
+    ]
+    if registered:
+        steps.append(_step(2, "File formal complaint on State RERA Portal", f"Submit online RERA complaint claiming '{remedy}' under Section 18 of RERA Act. Attach payment receipts and BBA.", "3-5 days", "high", "Real Estate (Regulation and Development) Act 2016, Section 18"))
+    else:
+        steps.append(_step(2, "File complaint for unregistered project", "Report non-registration to RERA Authority — heavy penalties apply to builders for un-registered projects under Sec 3 & 59.", "3-5 days", "high", "RERA Act Section 59"))
+    steps.append(_step(3, "Claim monthly delay compensation", "Under RERA Sec 18, builder must pay interest at SBI MCLR + 2% for every month of delay until possession.", "Ongoing", "high"))
+    steps.append(_step(4, "Approach Consumer Forum if needed", "Homebuyers are recognised as consumers. You can also file parallel complaint in Consumer Disputes Redressal Commission.", "15-30 days", "medium", "Consumer Protection Act 2019"))
+
+    docs = ["Builder-Buyer Agreement", "Payment receipts / Bank loan disbursement letters", "All correspondence with builder regarding possession", "RERA Project registration copy (if available)"]
+    return {"title": "RERA Possession Delay Plan", "steps": steps, "required_documents": docs, "urgent": passed}
+
+
+# ─── Insurance & Health ─────────────────────────────────────────────────────
+
+def _plan_insurance(a: dict) -> dict:
+    policy_type = a.get("q1", "Health / Mediclaim")
+    cited_preexisting = a.get("q2") == "yes"
+    filed_grievance = a.get("q3") == "yes"
+
+    steps = [
+        _step(1, "Obtain formal Claim Rejection Letter", "Ensure the insurer provides a formal written letter detailing specific policy exclusion clauses invoked.", "1-2 days", "high"),
+    ]
+    if not filed_grievance:
+        steps.append(_step(2, "Submit representation to Insurance Grievance Officer", "Write to the insurer's Grievance Redressal Officer (GRO) challenging the rejection with medical/expert evidence. Insurer must respond in 15 days.", " Within 15 days", "high"))
+    steps.append(_step(3, "Approach Insurance Ombudsman (Bima Lokpal)", "If GRO rejects or doesn't reply in 30 days, file complaint with Insurance Ombudsman (cioins.co.in). Free, fast-track binding resolution for claims up to ₹50 Lakhs.", "Within 1 year", "high", "Redressal of Public Grievances Rules 1998"))
+    if cited_preexisting:
+        steps.append(_step(4, "Challenge Pre-existing Exclusion", "IRDAI guidelines state pre-existing conditions cannot be cited if policy has been continuously renewed for 8 years (Moratorium Period).", "1-3 days", "medium", "IRDAI Health Insurance Regulations"))
+
+    docs = ["Policy document & schedule", "Claim rejection letter from insurer", "Hospital discharge summary & doctor notes", "All medical bills and test reports", "Representation sent to GRO + acknowledgment"]
+    return {"title": "Insurance Claim Dispute Plan", "steps": steps, "required_documents": docs, "urgent": not filed_grievance}
+
+
+# ─── Family & Support ───────────────────────────────────────────────────────
+
+def _plan_family(a: dict) -> dict:
+    claimant = a.get("q1", "Wife")
+    has_income = a.get("q2") == "yes"
+    refused = a.get("q3") == "yes"
+
+    steps = [
+        _step(1, "Gather proof of income of respondent", "Collect bank statements, salary slips, property details, or IT returns of the spouse/child showing financial capacity.", "1-3 days", "high"),
+        _step(2, "File Maintenance Application under Sec 125 CrPC / BNSS", f"File application before Family Court / Judicial Magistrate for monthly maintenance for {claimant}.", "1-2 weeks", "high", "Code of Criminal Procedure Sec 125 / BNSS Sec 144"),
+        _step(3, "Apply for Interim Maintenance", "Request immediate interim monthly relief while the main petition is pending. Courts decide interim applications within 60 days.", "Along with petition", "high"),
+    ]
+    if claimant == "Wife":
+        steps.append(_step(4, "File application under Domestic Violence Act", "Can claim right of residence, monetary relief, and protection order simultaneously under DV Act Sec 12.", "1-2 weeks", "medium", "Protection of Women from Domestic Violence Act 2005"))
+
+    docs = ["Marriage certificate / Birth certificate (for children)", "ID proof of applicant", "Proof of respondent's income (salary slips, Form 16, social media posts)", "Bank statement showing lack of self-income"]
+    return {"title": "Maintenance Claim Plan", "steps": steps, "required_documents": docs, "urgent": refused}
+
+
 def _generic_plan(scenario_id: str, answers: dict) -> dict:
     steps = [
         _step(1, "Document everything", "Collect all relevant documents, receipts, and communications related to your issue. Written evidence is crucial.", "1-2 days", "high"),
@@ -548,6 +654,117 @@ def _generic_plan(scenario_id: str, answers: dict) -> dict:
         _step(4, "Seek legal assistance if needed", "For complex matters, consult a Legal Aid clinic (free for eligible citizens) or an advocate.", "As needed", "medium"),
     ]
     return {"title": "General Legal Action Plan", "steps": steps, "required_documents": ["All relevant documents", "ID proof", "Written correspondence"], "urgent": False}
+
+
+# ---------------------------------------------------------------------------
+# Dynamic AI Decision Tree Generator (On-The-Fly for Any Custom Topic)
+# ---------------------------------------------------------------------------
+
+async def generate_dynamic_scenario(user_topic: str) -> dict:
+    """
+    Generate a dynamic 3-4 node decision tree scenario and custom action plan
+    for any legal topic provided by the user using the active LLM provider chain.
+    """
+    logger.info(f"Generating dynamic AI legal wizard scenario for topic: '{user_topic}'...")
+    from app.core.config import settings
+    from app.api.llm_settings import get_active_provider
+
+    prompt = f"""You are an Indian Legal Decision Tree Architect.
+Given the user's legal issue: "{user_topic}", generate a structured decision tree with 3 targeted questions and a comprehensive action plan.
+
+Return ONLY a valid JSON matching this schema:
+{{
+  "scenario_id": "custom_dynamic_scenario",
+  "category": "custom",
+  "title": "Short title describing the legal scenario",
+  "icon": "⚖️",
+  "questions": [
+    {{
+      "id": "q1",
+      "text": "Clear question to understand legal standing?",
+      "type": "boolean"
+    }},
+    {{
+      "id": "q2",
+      "text": "Specific question about documents or time limit?",
+      "type": "choice",
+      "options": ["Option A", "Option B", "Option C"]
+    }},
+    {{
+      "id": "q3",
+      "text": "Action taken so far?",
+      "type": "boolean"
+    }}
+  ],
+  "default_plan": {{
+    "title": "Personalized Action Plan",
+    "urgent": true,
+    "steps": [
+      {{
+        "step_number": 1,
+        "title": "Action step title",
+        "description": "Clear step explanation with statutory guidance under Indian law",
+        "estimated_time": "1-2 days",
+        "importance": "high",
+        "applicable_law": "Relevant Act/Section"
+      }}
+    ],
+    "required_documents": ["Document 1", "Document 2"],
+    "authorities": [
+      {{"name": "Relevant Court/Authority", "helpline": "1800-XXX-XXXX", "url": "", "action": "Filing complaint"}}
+    ]
+  }}
+}}"""
+
+    llm_provider = get_active_provider()
+
+    # Tier 1: Gemini
+    if settings.GEMINI_API_KEY and llm_provider in ("auto", "gemini"):
+        try:
+            import asyncio
+            from google import genai
+            from google.genai import types
+
+            client = genai.Client(api_key=settings.GEMINI_API_KEY)
+            loop = asyncio.get_running_loop()
+            res = await loop.run_in_executor(
+                None,
+                lambda: client.models.generate_content(
+                    model=settings.GEMINI_MODEL or "gemini-2.0-flash",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(response_mime_type="application/json", temperature=0.2)
+                )
+            )
+            data = json.loads(res.text)
+            if "questions" in data and "default_plan" in data:
+                return data
+        except Exception as e:
+            logger.warning(f"Dynamic scenario LLM generation (Gemini) failed: {e}")
+
+    # Fallback / Rule-based dynamic scenario
+    clean_topic = user_topic.strip().capitalize()
+    return {
+        "scenario_id": f"dynamic_{hash(user_topic) % 10000}",
+        "category": "custom",
+        "title": f"Custom Dispute: {clean_topic[:40]}",
+        "icon": "⚖️",
+        "questions": [
+            {"id": "q1", "text": f"Do you have written proof/receipts regarding '{clean_topic}'?", "type": "boolean"},
+            {"id": "q2", "text": "What is the timeline of this dispute?", "type": "choice", "options": ["Within 30 days", "1-6 months ago", "More than 1 year ago"]},
+            {"id": "q3", "text": "Have you sent a formal notice or complaint to the counterparty?", "type": "boolean"},
+        ],
+        "default_plan": {
+            "title": f"Action Plan for {clean_topic[:40]}",
+            "urgent": False,
+            "steps": [
+                _step(1, "Preserve and organize all evidence", f"Collect all receipts, contracts, and digital records proving '{clean_topic}'.", "1-2 days", "high"),
+                _step(2, "Issue formal Legal Demand Notice", "Send a 15-day statutory demand notice via Speed Post or Registered Post.", "3-5 days", "high", "Indian Contract Act / Relevant Statute"),
+                _step(3, "Escalate to jurisdictional Authority", "File formal complaint with the appropriate statutory commission or court if un-resolved.", "15 days", "medium"),
+            ],
+            "required_documents": ["All written correspondence", "Bank receipts / contracts", "Government ID proof"],
+            "authorities": [{"name": "District Legal Services Authority (DLSA)", "helpline": "15100", "url": "https://nalsa.gov.in", "action": "Free legal aid & mediation"}]
+        }
+    }
 
 
 # ---------------------------------------------------------------------------
