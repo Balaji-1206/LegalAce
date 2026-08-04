@@ -290,6 +290,90 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string>('all');
 
+  // OTP Reminder State (Feature 4)
+  const [reminderTarget, setReminderTarget] = useState<any | null>(null);
+  const [reminderChannel, setReminderChannel] = useState<'whatsapp' | 'push' | 'sms'>('whatsapp');
+  const [otpStep, setOtpStep] = useState<'phone' | 'otp'>('phone');
+  const [reminderPhone, setReminderPhone] = useState('');
+  const [reminderOtp, setReminderOtp] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpMsg, setOtpMsg] = useState<string | null>(null);
+
+  const handleOpenReminderModal = (e: React.MouseEvent, dl: any) => {
+    e.stopPropagation();
+    setReminderTarget(dl);
+    setReminderChannel('whatsapp');
+    setOtpStep('phone');
+    setReminderPhone(dl.notification_preferences?.phone_number || '');
+    setReminderOtp('');
+    setOtpMsg(null);
+  };
+
+  const handleSendOTP = async () => {
+    if (!reminderPhone) return;
+    setOtpLoading(true);
+    setOtpMsg(null);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/v1/notifications/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone_number: reminderPhone }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOtpStep('otp');
+        setOtpMsg(`OTP sent to ${reminderPhone}. (Demo OTP: ${data.debug_otp || 'check server log'})`);
+      } else {
+        setOtpMsg(data.detail || 'Failed to send OTP');
+      }
+    } catch {
+      setOtpMsg('Error connecting to notification service');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOTPAndSetReminder = async () => {
+    if (!reminderOtp || !reminderTarget) return;
+    setOtpLoading(true);
+    setOtpMsg(null);
+    try {
+      const verifyRes = await fetch(`${BACKEND_URL}/api/v1/notifications/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone_number: reminderPhone, otp: reminderOtp }),
+      });
+      if (!verifyRes.ok) {
+        const err = await verifyRes.json();
+        throw new Error(err.detail || 'Invalid OTP');
+      }
+
+      // Save notification preferences
+      const prefRes = await fetch(`${BACKEND_URL}/api/v1/deadlines/${reminderTarget.id}/notification-preferences`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          channel: 'whatsapp',
+          phone_number: reminderPhone,
+          reminder_offsets_days: [7, 3, 1],
+        }),
+      });
+
+      if (prefRes.ok) {
+        setOtpMsg('✅ WhatsApp reminders enabled successfully!');
+        setTimeout(() => {
+          setReminderTarget(null);
+          fetchData();
+        }, 1200);
+      }
+    } catch (err: any) {
+      setOtpMsg(err.message || 'OTP verification failed');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -442,60 +526,9 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
             </div>
           )}
 
-          {/* Upcoming Deadlines */}
-          {upcoming.length > 0 && (
-            <>
-              <div className="section-heading">
-                <h3>Upcoming (90 days)</h3>
-                <span style={{ fontSize: 12, color: '#6b7280' }}>{upcoming.length} items</span>
-              </div>
-              {upcoming.slice(0, 3).map((dl, idx) => (
-                <div key={dl.id} className={`deadline-card ${dl.priority}`} style={{ '--de-stagger': idx } as React.CSSProperties}>
-                  <div className={`deadline-card-icon ${getCatColorClass(dl.category)}`}>
-                    {getCatIcon(dl.category)}
-                  </div>
-                  <div className="deadline-card-body">
-                    <div className="deadline-card-meta">
-                      <span className="deadline-cat-tag">{dl.category}</span>
-                      <span className={`priority-badge ${dl.priority}`}>{dl.priority}</span>
-                    </div>
-                    <div className="deadline-card-title">{dl.title}</div>
-                    <div className="deadline-card-footer">
-                      <div className={getDaysChipClass(dl.days_remaining, dl.status)}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="11" height="11">
-                          <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
-                        </svg>
-                        {getDaysLabel(dl.days_remaining, dl.status)}
-                      </div>
-                      <div className="deadline-actions">
-                        {dl.status === 'active' && (
-                          <button className="dl-action-btn snooze" onClick={e => handleDismiss(e, dl.id)} title="Snooze 7 days">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                            </svg>
-                          </button>
-                        )}
-                        <button className="dl-action-btn complete" onClick={e => handleComplete(e, dl.id)} title="Mark done">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        </button>
-                        <button className="dl-action-btn delete" onClick={e => handleDelete(e, dl.id)} title="Delete">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
-
-          {/* All Deadlines with filters */}
+          {/* Filing Deadlines & Action Items */}
           <div className="section-heading" style={{ marginTop: 16 }}>
-            <h3>All Deadlines</h3>
+            <h3>Filing Deadlines & Action Items</h3>
           </div>
 
           <div className="timeline-filters">
@@ -547,6 +580,9 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
                     </div>
                     {dl.status === 'active' && (
                       <div className="deadline-actions">
+                        <button className="dl-action-btn snooze" onClick={e => handleOpenReminderModal(e, dl)} title="Set WhatsApp / SMS Reminders">
+                          🔔
+                        </button>
                         <button className="dl-action-btn snooze" onClick={e => handleExportICS(e, dl)} title="Export to Calendar (.ics)">
                           📅
                         </button>
@@ -568,6 +604,11 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
                       </div>
                     )}
                   </div>
+                  {dl.notification_preferences?.phone_number && (
+                    <div style={{ marginTop: 6, fontSize: 11, color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      💬 WhatsApp alerts active ({dl.notification_preferences.phone_number.slice(-4)})
+                    </div>
+                  )}
                 </div>
               </div>
             ))
@@ -582,6 +623,171 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
           onClose={() => setShowAddSheet(false)}
           onAdded={fetchData}
         />
+      )}
+
+      {/* Reminder Setup Modal */}
+      {reminderTarget && (
+        <div className="profile-modal-overlay" onClick={() => setReminderTarget(null)}>
+          <div className="profile-modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header-row">
+              <h3>💬 Deadline Reminder Setup</h3>
+              <button className="modal-close-btn" onClick={() => setReminderTarget(null)}>✕</button>
+            </div>
+            <p style={{ fontSize: 12.5, color: '#6b7280', marginBottom: 16 }}>
+              Set automated reminders for <strong>"{reminderTarget.title}"</strong> ({reminderTarget.days_remaining}d remaining).
+            </p>
+
+            {/* Channel Tabs */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 18, background: '#f1f5f9', padding: 4, borderRadius: 12 }}>
+              <button
+                style={{
+                  flex: 1, padding: '8px 4px', border: 'none', borderRadius: 9,
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
+                  background: reminderChannel === 'whatsapp' ? '#ffffff' : 'transparent',
+                  color: reminderChannel === 'whatsapp' ? '#059669' : '#64748b',
+                  boxShadow: reminderChannel === 'whatsapp' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                }}
+                onClick={() => setReminderChannel('whatsapp')}
+              >
+                💬 WhatsApp
+              </button>
+              <button
+                style={{
+                  flex: 1, padding: '8px 4px', border: 'none', borderRadius: 9,
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
+                  background: reminderChannel === 'push' ? '#ffffff' : 'transparent',
+                  color: reminderChannel === 'push' ? '#4f46e5' : '#64748b',
+                  boxShadow: reminderChannel === 'push' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                }}
+                onClick={() => setReminderChannel('push')}
+              >
+                🔔 Push Alerts
+              </button>
+              <button
+                style={{
+                  flex: 1, padding: '8px 4px', border: 'none', borderRadius: 9,
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
+                  background: reminderChannel === 'sms' ? '#ffffff' : 'transparent',
+                  color: reminderChannel === 'sms' ? '#2563eb' : '#64748b',
+                  boxShadow: reminderChannel === 'sms' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                }}
+                onClick={() => setReminderChannel('sms')}
+              >
+                📱 SMS OTP
+              </button>
+            </div>
+
+            {/* TAB 1: WHATSAPP */}
+            {reminderChannel === 'whatsapp' && (
+              <div>
+                <div className="form-field-group">
+                  <label>WhatsApp Number</label>
+                  <input
+                    type="tel"
+                    placeholder="+91 9655018485"
+                    value={reminderPhone}
+                    onChange={e => setReminderPhone(e.target.value)}
+                  />
+                </div>
+                <button
+                  className="modal-action-btn"
+                  style={{ background: '#059669', marginTop: 12 }}
+                  onClick={() => {
+                    const cleanPhone = reminderPhone.replace(/\D/g, '');
+                    const msg = encodeURIComponent(`⚖️ LegalAce Deadline Reminder:\n📋 Title: ${reminderTarget.title}\n⏳ Days remaining: ${reminderTarget.days_remaining}\n📅 Due date: ${reminderTarget.deadline_date?.slice(0,10)}\n\nTake statutory action to protect your legal rights!`);
+                    window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
+                  }}
+                >
+                  💬 Open in WhatsApp
+                </button>
+              </div>
+            )}
+
+            {/* TAB 2: PUSH ALERTS */}
+            {reminderChannel === 'push' && (
+              <div>
+                <p style={{ fontSize: 13, color: '#4b5563', lineHeight: 1.5, marginBottom: 16 }}>
+                  Receive native browser notification banners and sound alerts directly on your phone or PC when this filing deadline approaches.
+                </p>
+                <button
+                  className="modal-action-btn"
+                  style={{ background: '#4f46e5' }}
+                  onClick={async () => {
+                    if ('Notification' in window) {
+                      const perm = await Notification.requestPermission();
+                      if (perm === 'granted') {
+                        new Notification(`⚖️ LegalAce Alert: ${reminderTarget.title}`, {
+                          body: `${reminderTarget.days_remaining} days remaining until deadline. Take action!`,
+                        });
+                        setOtpMsg('✅ Browser System Push Notifications enabled!');
+                      } else {
+                        setOtpMsg('⚠️ Notification permission denied');
+                      }
+                    } else {
+                      setOtpMsg('⚠️ Browser does not support push notifications');
+                    }
+                  }}
+                >
+                  🔔 Enable Browser Alerts
+                </button>
+              </div>
+            )}
+
+            {/* TAB 3: SMS OTP */}
+            {reminderChannel === 'sms' && (
+              <div>
+                {otpStep === 'phone' ? (
+                  <div>
+                    <div className="form-field-group">
+                      <label>Mobile Number for SMS</label>
+                      <input
+                        type="tel"
+                        placeholder="+91 9655018485"
+                        value={reminderPhone}
+                        onChange={e => setReminderPhone(e.target.value)}
+                      />
+                    </div>
+                    <button
+                      className="modal-action-btn"
+                      style={{ background: '#2563eb', marginTop: 12 }}
+                      onClick={handleSendOTP}
+                      disabled={otpLoading || !reminderPhone}
+                    >
+                      {otpLoading ? 'Sending...' : '📲 Send Verification Code'}
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="form-field-group">
+                      <label>Enter 6-Digit Code</label>
+                      <input
+                        type="text"
+                        placeholder="123456"
+                        maxLength={6}
+                        value={reminderOtp}
+                        onChange={e => setReminderOtp(e.target.value)}
+                      />
+                    </div>
+                    <button
+                      className="modal-action-btn"
+                      style={{ background: '#2563eb', marginTop: 12 }}
+                      onClick={handleVerifyOTPAndSetReminder}
+                      disabled={otpLoading || reminderOtp.length < 6}
+                    >
+                      {otpLoading ? 'Verifying...' : '✅ Enable SMS Alerts'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {otpMsg && (
+              <div style={{ marginTop: 14, fontSize: 12, fontWeight: 600, color: otpMsg.includes('success') || otpMsg.includes('sent') || otpMsg.includes('enabled') || otpMsg.includes('✅') ? '#059669' : '#dc2626', textAlign: 'center' }}>
+                {otpMsg}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

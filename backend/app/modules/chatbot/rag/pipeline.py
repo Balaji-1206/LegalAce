@@ -3,7 +3,7 @@ RAG Pipeline — Coordinates:
   1. Intent classification
   2. Legal text retrieval from FAISS
   3. System prompt construction
-  4. OpenAI Chat Completion call
+  4. LLM Chat Completion call (Gemini / OpenAI)
   5. JSON response validation, cleanup, and parsing
   6. Resilient Legal AI Engine fallback
 """
@@ -59,23 +59,42 @@ def generate_smart_fallback(query: str, intent: str, law_chunks: list) -> dict:
     """
     logger.info(f"Generating smart statutory response for intent '{intent}'...")
 
-    # Build statutory text highlights
+    # Build statutory text highlights (only include high-relevance matches)
     law_citations = []
     chunk_highlights = []
     if law_chunks:
-        for chunk in law_chunks[:3]:
-            chunk_highlights.append(f"• **{chunk.act_name} — {chunk.section_number} ({chunk.section_title})**: {chunk.section_text}")
-            law_citations.append({
-                "act": chunk.act_name,
-                "section": chunk.section_number,
-                "section_title": chunk.section_title,
-                "relevance_score": float(chunk.score)
-            })
+        for chunk in law_chunks:
+            if getattr(chunk, 'score', 0.0) >= 0.45:
+                chunk_highlights.append(f"• **{chunk.act_name} — {chunk.section_number} ({chunk.section_title})**: {chunk.section_text}")
+                law_citations.append({
+                    "act": chunk.act_name,
+                    "section": chunk.section_number,
+                    "section_title": chunk.section_title,
+                    "relevance_score": float(chunk.score)
+                })
 
     # Domain specific guidance generators
     query_l = query.lower()
 
-    if "tenancy" in intent or "landlord" in query_l or "deposit" in query_l or "rent" in query_l:
+    if any(k in query_l for k in ["petition", "court", "summons", "case", "lawsuit", "suit", "hearing", "notice"]):
+        answer = (
+            f"Under Indian Judicial Procedure (Code of Civil Procedure, 1908 & BNSS / CrPC):\n\n"
+            f"1. **Receiving Court Petition / Summons**: If you have received a court petition or summons, inspect the document carefully for the **Court Name**, **Case Number**, **Next Hearing Date**, and the specific **Relief Claimed** by the petitioner.\n\n"
+            f"2. **Statutory Timeline (Written Statement)**: Under Order VIII Rule 1 of the Code of Civil Procedure (CPC), a respondent or defendant must file a formal **Written Statement / Reply Affidavit** within 30 days of receiving court notice.\n\n"
+            + ("\n\n**Relevant Statutory Provisions**:\n" + "\n".join(chunk_highlights) if chunk_highlights else "")
+        )
+        rights = [
+            "Right to receive a complete copy of the petition along with all annexed documents & affidavits.",
+            "Right to 30 days to file a Written Statement / Reply under Order VIII Rule 1 of CPC.",
+            "Right to legal representation by an advocate before the Court or Tribunal."
+        ]
+        action_steps = [
+            "Step 1: Check the summons/petition for the Court Name, Case Number, and exact Hearing Date.",
+            "Step 2: Engage a licensed advocate immediately to draft a Written Statement / Objections.",
+            "Step 3: Appear before the court on the scheduled date or submit an interim application through your advocate."
+        ]
+
+    elif "tenancy" in intent or "landlord" in query_l or "deposit" in query_l or "rent" in query_l:
         answer = (
             f"Under Indian Tenancy Law (Model Tenancy Act & State Rent Control Acts):\n\n"
             f"1. **Security Deposit Rights**: Landlords are legally required to refund security deposits upon vacating, deducting only legitimate, documented dues or repair costs. Retaining deposits without itemized proof is illegal.\n\n"
@@ -83,14 +102,14 @@ def generate_smart_fallback(query: str, intent: str, law_chunks: list) -> dict:
             + ("\n\n**Relevant Statutory Provisions**:\n" + "\n".join(chunk_highlights) if chunk_highlights else "")
         )
         rights = [
-          "Right to refund of security deposit within agreed timeframe (Section 11, Model Tenancy Act).",
-          "Right against arbitrary eviction or disconnection of essential utility services.",
-          "Right to written notice prior to lease termination."
+            "Right to refund of security deposit within agreed timeframe (Section 11, Model Tenancy Act).",
+            "Right against arbitrary eviction or disconnection of essential utility services.",
+            "Right to written notice prior to lease termination."
         ]
         action_steps = [
-          "Step 1: Send a formal written Demand Letter / Email requesting deposit return within 7-14 days.",
-          "Step 2: Gather rental agreement, payment receipts, and inspection photographs.",
-          "Step 3: Issue a Legal Notice through an advocate or approach the Rent Authority / Small Causes Court."
+            "Step 1: Send a formal written Demand Letter / Email requesting deposit return within 7-14 days.",
+            "Step 2: Gather rental agreement, payment receipts, and inspection photographs.",
+            "Step 3: Issue a Legal Notice through an advocate or approach the Rent Authority / Small Causes Court."
         ]
 
     elif "employment" in intent or "fired" in query_l or "salary" in query_l or "job" in query_l:
@@ -101,14 +120,14 @@ def generate_smart_fallback(query: str, intent: str, law_chunks: list) -> dict:
             + ("\n\n**Relevant Statutory Provisions**:\n" + "\n".join(chunk_highlights) if chunk_highlights else "")
         )
         rights = [
-          "Right to 30 days notice or 1 month salary in lieu of notice (Section 25F, Industrial Disputes Act).",
-          "Right to full and final wage settlement including earned leave encashment and gratuity.",
-          "Right against wrongful termination without procedure established by law."
+            "Right to 30 days notice or 1 month salary in lieu of notice (Section 25F, Industrial Disputes Act).",
+            "Right to full and final wage settlement including earned leave encashment and gratuity.",
+            "Right against wrongful termination without procedure established by law."
         ]
         action_steps = [
-          "Step 1: Preserve appointment letter, salary slips, termination email, and HR communications.",
-          "Step 2: Send a formal letter demanding payment of unpaid wages and statutory dues.",
-          "Step 3: File a complaint before the Labour Commissioner under the Payment of Wages Act or Labour Court."
+            "Step 1: Preserve appointment letter, salary slips, termination email, and HR communications.",
+            "Step 2: Send a formal letter demanding payment of unpaid wages and statutory dues.",
+            "Step 3: File a complaint before the Labour Commissioner under the Payment of Wages Act or Labour Court."
         ]
 
     elif "consumer" in intent or "product" in query_l or "refund" in query_l or "defective" in query_l:
@@ -119,14 +138,14 @@ def generate_smart_fallback(query: str, intent: str, law_chunks: list) -> dict:
             + ("\n\n**Relevant Statutory Provisions**:\n" + "\n".join(chunk_highlights) if chunk_highlights else "")
         )
         rights = [
-          "Right to replacement or full refund for defective goods or deficient services (Section 39, Consumer Protection Act).",
-          "Right to be protected against unfair trade practices and misleading advertisements.",
-          "Right to file a complaint electronically via NCH (National Consumer Helpline)."
+            "Right to replacement or full refund for defective goods or deficient services (Section 39, Consumer Protection Act).",
+            "Right to be protected against unfair trade practices and misleading advertisements.",
+            "Right to file a complaint electronically via NCH (National Consumer Helpline)."
         ]
         action_steps = [
-          "Step 1: Keep invoice, serial numbers, photographs of defect, and chat support logs.",
-          "Step 2: Log a formal complaint on National Consumer Helpline (1915 or consumerhelpline.gov.in).",
-          "Step 3: File a consumer complaint in District Consumer Disputes Redressal Commission."
+            "Step 1: Keep invoice, serial numbers, photographs of defect, and chat support logs.",
+            "Step 2: Log a formal complaint on National Consumer Helpline (1915 or consumerhelpline.gov.in).",
+            "Step 3: File a consumer complaint in District Consumer Disputes Redressal Commission."
         ]
 
     elif "criminal" in intent or "police" in query_l or "fir" in query_l or "arrest" in query_l:
@@ -137,14 +156,14 @@ def generate_smart_fallback(query: str, intent: str, law_chunks: list) -> dict:
             + ("\n\n**Relevant Statutory Provisions**:\n" + "\n".join(chunk_highlights) if chunk_highlights else "")
         )
         rights = [
-          "Right to be informed of grounds of arrest and right to bail (Section 50 CrPC / Section 47 BNSS).",
-          "Right to legal consultation and right against self-incrimination (Article 20(3), Constitution).",
-          "Special protection for women: Restriction on arrest between sunset and sunrise (Section 46(4) CrPC)."
+            "Right to be informed of grounds of arrest and right to bail (Section 50 CrPC / Section 47 BNSS).",
+            "Right to legal consultation and right against self-incrimination (Article 20(3), Constitution).",
+            "Special protection for women: Restriction on arrest between sunset and sunrise (Section 46(4) CrPC)."
         ]
         action_steps = [
-          "Step 1: Request police officers to produce official ID and state written grounds for search/arrest.",
-          "Step 2: Inform family members or a legal advocate immediately.",
-          "Step 3: Submit written complaint to Senior Superintendent of Police (SSP) or Magistrate if police refuse FIR."
+            "Step 1: Request police officers to produce official ID and state written grounds for search/arrest.",
+            "Step 2: Inform family members or a legal advocate immediately.",
+            "Step 3: Submit written complaint to Senior Superintendent of Police (SSP) or Magistrate if police refuse FIR."
         ]
 
     else:
@@ -155,14 +174,14 @@ def generate_smart_fallback(query: str, intent: str, law_chunks: list) -> dict:
             + ("**Relevant Statutory Provisions**:\n" + "\n".join(chunk_highlights) if chunk_highlights else "Review applicable state and central statutes to safeguard your interests.")
         )
         rights = [
-          "Right to due process and fair treatment under Indian law.",
-          "Right to issue formal legal representations and seek judicial remedy.",
-          "Right to access legal counsel and statutory authorities."
+            "Right to due process and fair treatment under Indian law.",
+            "Right to issue formal legal representations and seek judicial remedy.",
+            "Right to access legal counsel and statutory authorities."
         ]
         action_steps = [
-          "Step 1: Gather all written evidence, contracts, receipts, and communication records.",
-          "Step 2: Draft and serve a formal Legal Demand Notice stating specific statutory grounds.",
-          "Step 3: Approach the appropriate tribunal, commissioner, or civil court if unaddressed."
+            "Step 1: Gather all written evidence, contracts, receipts, and communication records.",
+            "Step 2: Draft and serve a formal Legal Demand Notice stating specific statutory grounds.",
+            "Step 3: Approach the appropriate tribunal, commissioner, or civil court if unaddressed."
         ]
 
     if not law_citations and law_chunks:
@@ -182,6 +201,30 @@ def generate_smart_fallback(query: str, intent: str, law_chunks: list) -> dict:
         "disclaimer": "This information is provided for educational purposes under Indian Law."
     }
 
+async def call_gemini_llm(prompt: str) -> dict:
+    """Call Google Gemini API with native JSON output mode."""
+    import asyncio
+    from google import genai
+    from google.genai import types
+
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    model_name = settings.GEMINI_MODEL or "gemini-2.0-flash"
+
+    loop = asyncio.get_running_loop()
+    def _generate():
+        return client.models.generate_content(
+            model=model_name,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.2,
+            )
+        )
+
+    response = await loop.run_in_executor(None, _generate)
+    raw_text = response.text or "{}"
+    return clean_and_parse_json(raw_text)
+
 async def run_rag_pipeline(
     query: str,
     conversation_history: list[dict],
@@ -189,7 +232,10 @@ async def run_rag_pipeline(
     """
     Run the query through RAG pipeline with fail-safe legal fallback execution.
     """
-    from app.modules.chatbot.rag import faiss_store
+    from app.modules.chatbot.rag import embedder, faiss_store
+    if not embedder.is_loaded():
+        embedder.load_embedder()
+
     if not faiss_store.is_loaded():
         faiss_store.load_index()
 
@@ -219,8 +265,8 @@ async def run_rag_pipeline(
         }
         return parsed_out_of_scope, "out_of_scope", []
 
-    # 2. FAISS Document Retrieval
-    law_chunks = await retrieve_relevant_laws(query, top_k=5, min_score=0.10)
+    # 2. FAISS Document Retrieval (strict 0.48 minimum similarity to eliminate noise)
+    law_chunks = await retrieve_relevant_laws(query, top_k=5, min_score=0.48)
 
     # 3. Prompt Construction
     context_block = build_context_block(law_chunks)
@@ -235,8 +281,23 @@ async def run_rag_pipeline(
     logger.info(f"Executing LLM generation for query: '{query[:80]}'")
     parsed = {}
     
-    if _openai_client and settings.OPENAI_API_KEY:
+    # ── Add-on: Runtime provider override ──
+    from app.api.llm_settings import get_active_provider as _get_llm_provider
+    _llm_override = _get_llm_provider()  # "auto" | "gemini" | "openai" | "ollama"
+
+    # 1. Primary: Try Gemini API
+    if settings.GEMINI_API_KEY and _llm_override in ("auto", "gemini"):
         try:
+            logger.info(f"Executing Gemini LLM ({settings.GEMINI_MODEL}) generation [override={_llm_override}]...")
+            parsed = await call_gemini_llm(prompt)
+        except Exception as e:
+            logger.error(f"Gemini LLM API call error: {e}")
+            parsed = {}
+
+    # 2. Secondary: OpenAI
+    if not parsed and _openai_client and settings.OPENAI_API_KEY and _llm_override in ("auto", "openai"):
+        try:
+            logger.info(f"Executing OpenAI LLM generation [override={_llm_override}]...")
             response = await _openai_client.chat.completions.create(
                 model=settings.OPENAI_MODEL,
                 messages=[{"role": "user", "content": prompt}],
@@ -246,27 +307,80 @@ async def run_rag_pipeline(
             raw_content = response.choices[0].message.content or "{}"
             parsed = clean_and_parse_json(raw_content)
         except Exception as e:
-            logger.error(f"OpenAI LLM API call error: {e}. Triggering smart fallback generator.")
+            logger.error(f"OpenAI LLM API call error: {e}")
             parsed = {}
 
-    # 4. Fallback Execution if LLM API is unavailable, quota exceeded, or JSON parsing failed
-    if not parsed or "answer" not in parsed:
-        # Check database for exact matching situation if MongoDB is connected
-        matched_sit = None
+    # 3. Tier 3: Ollama local LLM — GPU-accelerated on RTX 4060, fully private
+    if not parsed and settings.OLLAMA_BASE_URL and _llm_override in ("auto", "ollama"):
         try:
-            from app.database.mongodb import get_database
-            db = get_database()
-            words = [w for w in re.split(r'\W+', query.lower()) if len(w) > 3]
-            if words:
-                query_filter = {
-                    "$or": [
-                        {"title": {"$regex": "|".join(words), "$options": "i"}},
-                        {"description": {"$regex": "|".join(words), "$options": "i"}}
-                    ]
-                }
-                matched_sit = await db["situations"].find_one(query_filter)
-        except Exception as db_err:
-            logger.debug(f"Database query skipped in fallback: {db_err}")
+            from openai import AsyncOpenAI as AsyncOpenAIClient
+            logger.info(f"Executing Ollama ({settings.OLLAMA_MODEL}) local LLM generation...")
+            ollama_client = AsyncOpenAIClient(
+                base_url=settings.OLLAMA_BASE_URL,
+                api_key="ollama",
+            )
+            # Trim context block for local model context window safety
+            trimmed_context = build_context_block(law_chunks[:3])
+            trimmed_history = build_history_block(conversation_history[-4:])
+            ollama_prompt = SYSTEM_PROMPT.format(
+                context=trimmed_context,
+                history=trimmed_history,
+                question=query,
+            )
+            ollama_response = await ollama_client.chat.completions.create(
+                model=settings.OLLAMA_MODEL,
+                messages=[{"role": "user", "content": ollama_prompt}],
+                temperature=0.2,
+            )
+            raw_ollama = ollama_response.choices[0].message.content or "{}"
+            parsed = clean_and_parse_json(raw_ollama)
+            if parsed and "answer" in parsed:
+                logger.info(f"Ollama ({settings.OLLAMA_MODEL}) generated response successfully.")
+            else:
+                parsed = {}
+                logger.warning("Ollama response could not be parsed as JSON — falling back to rule-based.")
+        except Exception as e:
+            logger.error(f"Ollama LLM API call error: {e}")
+            parsed = {}
+
+    # 4. Fallback Execution if all LLMs unavailable or parsing failed
+    if not parsed or "answer" not in parsed:
+        GENERIC_WORDS = {
+
+            "without", "notice", "about", "from", "with", "have", "that", "this", 
+            "your", "what", "which", "where", "some", "been", "there", "their",
+            "them", "they", "will", "would", "could", "should", "does", "done",
+            "please", "help", "need", "know", "tell", "received", "receive",
+            "getting", "give", "take", "send", "sent", "file", "filed", "case",
+            "letter", "petition", "about"
+        }
+        matched_sit = None
+        category_map = {
+            "tenancy": "housing",
+            "employment": "employment",
+            "consumer": "consumer",
+            "criminal": "criminal",
+            "cyber": "cyber_crime",
+            "banking": "banking"
+        }
+        target_cat = category_map.get(intent)
+        
+        # Only query situations collection if an explicit category intent was detected
+        if target_cat:
+            try:
+                from app.database.mongodb import get_database
+                db = get_database()
+                words = [w for w in re.split(r'\W+', query.lower()) if len(w) > 3 and w not in GENERIC_WORDS]
+                if words:
+                    matched_sit = await db["situations"].find_one({
+                        "category": target_cat,
+                        "$or": [
+                            {"title": {"$regex": "|".join(words), "$options": "i"}},
+                            {"description": {"$regex": "|".join(words), "$options": "i"}}
+                        ]
+                    })
+            except Exception as db_err:
+                logger.debug(f"Database query skipped in fallback: {db_err}")
 
         if matched_sit:
             parsed = {
@@ -295,7 +409,7 @@ async def run_rag_pipeline(
         else:
             parsed = generate_smart_fallback(query, intent, law_chunks)
 
-    # Ensure law_citations are populated if retrieved law_chunks exist
+    # Ensure law_citations are populated if retrieved law_chunks exist and meet relevance threshold
     if not parsed.get("law_citations") and law_chunks:
         parsed["law_citations"] = [
             {
@@ -304,7 +418,8 @@ async def run_rag_pipeline(
                 "section_title": chunk.section_title,
                 "relevance_score": float(chunk.score),
             }
-            for chunk in law_chunks[:3]
+            for chunk in law_chunks
+            if getattr(chunk, 'score', 0.0) >= 0.45
         ]
 
     return parsed, intent, law_chunks

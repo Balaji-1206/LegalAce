@@ -34,6 +34,11 @@ const CAT_COLORS: Record<string, string> = {
   banking:     '#06b6d4',
   traffic:     '#f43f5e',
   education:   '#14b8a6',
+  cheque_debt: '#ef4444',
+  rti:         '#f97316',
+  real_estate: '#6366f1',
+  insurance:   '#ec4899',
+  family:      '#84cc16',
 };
 
 // ─── Category SVG icons ─────────────────────────────────────────────────────
@@ -88,6 +93,31 @@ const CatSVG: React.FC<{ id: string; color?: string }> = ({ id, color }) => {
         <path d="M6 12v5c3 3 9 3 12 0v-5" />
       </svg>
     ),
+    cheque_debt: (
+      <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" width="24" height="24">
+        <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
+      </svg>
+    ),
+    rti: (
+      <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" width="24" height="24">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+      </svg>
+    ),
+    real_estate: (
+      <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" width="24" height="24">
+        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18" /><path d="M6 12H4a2 2 0 0 0-2 2v8h20v-8a2 2 0 0 0-2-2h-2" /><line x1="10" y1="6" x2="14" y2="6" /><line x1="10" y1="10" x2="14" y2="10" />
+      </svg>
+    ),
+    insurance: (
+      <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" width="24" height="24">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><line x1="12" y1="8" x2="12" y2="14" /><line x1="9" y1="11" x2="15" y2="11" />
+      </svg>
+    ),
+    family: (
+      <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" width="24" height="24">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
   };
   return <>{iconMap[id] || (
     <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" width="24" height="24">
@@ -123,10 +153,62 @@ const SkeletonList: React.FC = () => (
   </div>
 );
 
+// ─── Official Portals & Helplines Mapping ──────────────────────────────────
+const AUTHORITY_PORTALS: Record<string, Array<{ name: string; url?: string; phone?: string; desc: string }>> = {
+  employment: [
+    { name: 'Ministry of Labour & Employment', url: 'https://labour.gov.in', phone: '1800-11-1800', desc: 'Labour Conciliation & Grievance Portal' },
+    { name: 'Samadhan Portal', url: 'https://samadhan.labour.gov.in', desc: 'Online Industrial Dispute Filing' },
+  ],
+  housing: [
+    { name: 'State Rent Control Authority', url: 'https://mohua.gov.in', desc: 'Model Tenancy & Rent Authority' },
+    { name: 'National Consumer Helpline', url: 'https://consumerhelpline.gov.in', phone: '1915', desc: 'Security Deposit & Lease Grievance' },
+  ],
+  consumer: [
+    { name: 'National Consumer Helpline (NCH)', url: 'https://consumerhelpline.gov.in', phone: '1915', desc: 'Instant Consumer Complaints' },
+    { name: 'e-Daakhil Portal', url: 'https://edaakhil.nic.in', desc: 'Online Consumer Court Case Filing' },
+  ],
+  cyber_crime: [
+    { name: 'National Cyber Crime Portal', url: 'https://cybercrime.gov.in', phone: '1930', desc: 'Report Financial Phishing & Cyber Fraud' },
+  ],
+  women_rights: [
+    { name: 'National Commission for Women (NCW)', url: 'http://ncw.nic.in', phone: '7827170170', desc: '24/7 Women Helpline & Abuse Support' },
+    { name: 'SHe-Box Portal', url: 'https://shebox.wcd.gov.in', desc: 'Sexual Harassment e-Box' },
+  ],
+  banking: [
+    { name: 'RBI Complaint Management System', url: 'https://cms.rbi.org.in', phone: '14448', desc: 'Banking Ombudsman Online Portal' },
+  ],
+  traffic: [
+    { name: 'mParivahan Portal', url: 'https://parivahan.gov.in', desc: 'Digital Driving License & RC Validity' },
+    { name: 'National Highways Helpline', phone: '1033', desc: 'Emergency Road Accident Assistance' },
+  ],
+  education: [
+    { name: 'National Anti-Ragging Helpline', url: 'https://www.antiragging.in', phone: '1800-180-5522', desc: 'UGC 24x7 Anti-Ragging Cell' },
+    { name: 'UGC e-Samadhaan Portal', url: 'https://samadhaan.ugc.ac.in', desc: 'Higher Education Fee Refund Grievances' },
+  ],
+  cheque_debt: [
+    { name: 'NALSA Legal Services Authority', url: 'https://nalsa.gov.in', phone: '15100', desc: 'Free Legal Aid & Pre-Litigation Notice' },
+  ],
+  rti: [
+    { name: 'RTI Online Portal', url: 'https://rtionline.gov.in', desc: 'Central & State RTI Online Filing & Appeal' },
+    { name: 'Central Information Commission', url: 'https://cic.gov.in', desc: 'Second Appeal & Penalty Tribunal' },
+  ],
+  real_estate: [
+    { name: 'State RERA Portal', url: 'https://rera.mohua.gov.in', desc: 'Register Builder Complaints & Delayed Possession' },
+  ],
+  insurance: [
+    { name: 'Bima Bharosa (IRDAI Portal)', url: 'https://bimabharosa.irdai.gov.in', phone: '155255', desc: 'Insurance Grievance Redressal Portal' },
+    { name: 'Council for Insurance Ombudsmen', url: 'https://www.cioins.co.in', desc: 'Free Health Insurance Ombudsman Filing' },
+  ],
+  family: [
+    { name: 'NALSA Legal Aid Helpline', url: 'https://nalsa.gov.in', phone: '15100', desc: 'Free Legal Aid for Maintenance & Family Court' },
+  ],
+};
+
 // ─── Law Citation Accordion ──────────────────────────────────────────────────
 const LawCitationCard: React.FC<{ law: any; LAW_DETAILS_MAP: Record<string, string> }> = ({ law, LAW_DETAILS_MAP }) => {
   const [open, setOpen] = useState(false);
   const detail = LAW_DETAILS_MAP[law.section];
+
   return (
     <div className="law-citation-row">
       <div className="law-citation-header" onClick={() => setOpen(o => !o)}>
@@ -136,20 +218,28 @@ const LawCitationCard: React.FC<{ law: any; LAW_DETAILS_MAP: Record<string, stri
           </svg>
         </div>
         <div className="law-cite-info">
-          <strong>{law.act} — {law.section}</strong>
+          <div className="law-title-row">
+            <strong>{law.act} — {law.section}</strong>
+            <span className="statutory-badge">Statutory Protection</span>
+          </div>
           <span>{law.section_title}</span>
         </div>
-        {detail && (
-          <svg className={`law-expand-chevron${open ? ' open' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        )}
+        <svg className={`law-expand-chevron${open ? ' open' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
       </div>
-      {detail && (
-        <div className={`law-citation-body${open ? ' open' : ''}`}>
-          <div className="law-citation-body-inner">{detail}</div>
+      <div className={`law-citation-body${open ? ' open' : ''}`}>
+        <div className="law-citation-body-inner">
+          {detail ? (
+            <p>{detail}</p>
+          ) : (
+            <p>Protected under statutory provisions of {law.act} ({law.section}). Enforceable before competent courts/commissions.</p>
+          )}
+          <div className="law-remedy-callout">
+            ⚖️ <strong>Legal Remedy:</strong> Failure to comply with {law.section} grants affected individuals right to issue statutory notice and file petitions for compensation, reinstatement, or penalty before competent authority.
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
@@ -203,11 +293,53 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
   LAW_DETAILS_MAP, onBackHome, onOpenWizard,
 }) => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'bookmarked' | 'recent'>('all');
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const handleToggleBookmark = useCallback((e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     toggleBookmark(id);
   }, [toggleBookmark]);
+
+  // Voice Assist Speech Synthesis — Young Girl Voice Selection
+  const handleToggleVoiceAssist = (situation: any) => {
+    if (!('speechSynthesis' in window)) {
+      alert('Voice assist is not supported on this browser.');
+      return;
+    }
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+    const rightsText = (situation.user_rights || []).join('. ');
+    const stepsText = (situation.action_steps || []).join('. ');
+    const speechText = `${situation.title}. ${situation.description}. Your Rights: ${rightsText}. Action Steps: ${stepsText}.`;
+    
+    const utterance = new SpeechSynthesisUtterance(speechText);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.3; // Higher pitch & bright cadence for young girl voice tone
+
+    // Filter available voices for youthful female voice profiles (Jenny, Aria, Samantha, Victoria, Zira, etc.)
+    const voices = window.speechSynthesis.getVoices();
+    const youngGirlVoice = voices.find(v => 
+      /jenny|aria|girl|young|samantha|victoria|zira|sonia|hazel|catherine|karen|eva|natural/i.test(v.name)
+    ) || voices.find(v => v.lang.startsWith('en'));
+
+    if (youngGirlVoice) {
+      utterance.voice = youngGirlVoice;
+    }
+
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    
+    window.speechSynthesis.speak(utterance);
+    setIsSpeaking(true);
+  };
+
+  // Printable Summary Card
+  const handlePrintSummary = () => {
+    window.print();
+  };
 
   const handleShare = async (situation: any) => {
     const text = [
@@ -245,17 +377,35 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
   // ── DETAIL SCREEN ────────────────────────────────────────────
   if (screen === 'detail' && selectedSituation) {
     const isBookmarked = bookmarks.includes(selectedSituation.situation_id);
+    const portals = AUTHORITY_PORTALS[selectedSituation.category] || [];
+
     return (
       <div className="situation-detail-screen sf-screen-enter">
+        {/* Printable Letterhead Header */}
+        <div className="printable-header">
+          <h2>⚖️ LegalAce — Know Your Statutory Rights Guide</h2>
+          <p>Official Information Reference & Action Blueprint</p>
+        </div>
+
         {/* Dark gradient hero */}
         <div className="sit-detail-hero">
           <div className="sit-detail-hero-nav">
-            <button className="sit-detail-back-btn" onClick={() => setScreen('list')}>
+            <button className="sit-detail-back-btn" onClick={() => { window.speechSynthesis?.cancel(); setIsSpeaking(false); setScreen('list'); }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <button
+                className={`sit-detail-audio-btn${isSpeaking ? ' active' : ''}`}
+                onClick={() => handleToggleVoiceAssist(selectedSituation)}
+                title={isSpeaking ? 'Stop Voice Assist' : 'Listen to Rights Audio'}
+              >
+                {isSpeaking ? '⏹️ Stop' : '🔊 Listen'}
+              </button>
+              <button className="sit-detail-print-btn" onClick={handlePrintSummary} title="Print or Save PDF Summary Card">
+                🖨️ Save PDF
+              </button>
               <button className="sit-detail-share-btn" onClick={() => handleShare(selectedSituation)}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
@@ -339,11 +489,46 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
               </svg>
-              Applicable Laws
+              Applicable Laws & Remedies
             </h3>
             {selectedSituation.applicable_laws.map((law: any, i: number) => (
               <LawCitationCard key={i} law={law} LAW_DETAILS_MAP={LAW_DETAILS_MAP} />
             ))}
+          </div>
+        )}
+
+        {/* Official Portals & Helplines Hub */}
+        {portals.length > 0 && (
+          <div className="detail-section-card portals-card">
+            <h3>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" width="18" height="18">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+              Official Portals & Helplines
+            </h3>
+            <div className="portals-grid">
+              {portals.map((p, idx) => (
+                <div key={idx} className="portal-item">
+                  <div className="portal-info">
+                    <strong>{p.name}</strong>
+                    <span>{p.desc}</span>
+                  </div>
+                  <div className="portal-actions">
+                    {p.phone && (
+                      <a href={`tel:${p.phone}`} className="portal-btn phone" title={`Call ${p.phone}`}>
+                        📞 {p.phone}
+                      </a>
+                    )}
+                    {p.url && (
+                      <a href={p.url} target="_blank" rel="noreferrer" className="portal-btn web">
+                        🌐 Open Portal ↗
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -564,7 +749,7 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
           <SkeletonCategories />
         ) : (
           <div className="categories-grid">
-            {categories.slice(0, 8).map((cat, i) => {
+            {categories.map((cat, i) => {
               const catSituationCount = situations.filter(s => s.category === cat.id).length;
               return (
                 <div

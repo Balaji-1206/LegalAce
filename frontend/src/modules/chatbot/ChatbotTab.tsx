@@ -115,9 +115,9 @@ export const ChatbotTab: React.FC<ChatbotTabProps> = ({
   messagesEndRef,
   onBack,
   startNewChat,
-  conversations,
-  selectConversation,
-  deleteConversation,
+  conversations: _conversations,
+  selectConversation: _selectConversation,
+  deleteConversation: _deleteConversation,
   userId,
   backendUrl,
 }) => {

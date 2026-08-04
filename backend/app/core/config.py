@@ -8,8 +8,16 @@ class Settings(BaseSettings):
     DATABASE_NAME: str
 
     # OpenAI
-    OPENAI_API_KEY: str
+    OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o"
+
+    # Gemini
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.0-flash"
+
+    # Ollama Local LLM (Tier-3 fallback)
+    OLLAMA_BASE_URL: str = "http://localhost:11434/v1"
+    OLLAMA_MODEL: str = "qwen2.5:7b"
 
     # Embeddings
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
@@ -17,6 +25,13 @@ class Settings(BaseSettings):
     # FAISS / Law Corpus
     FAISS_INDEX_PATH: str = "faiss_index"
     LAW_CORPUS_PATH: str = "data/indian_law_corpus.json"
+
+    # Notifications & Reminders (Feature 4)
+    FAST2SMS_API_KEY: str = ""
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_WHATSAPP_FROM: str = ""
+    TWILIO_SMS_FROM: str = ""
 
     class Config:
         env_file = ".env"

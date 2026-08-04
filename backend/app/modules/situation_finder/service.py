@@ -18,11 +18,16 @@ CATEGORIES_METADATA = [
     {"id": "employment", "name": "Employment", "icon": "💼", "color_gradient": ["#3b82f6", "#1d4ed8"]},
     {"id": "housing", "name": "Housing & Renting", "icon": "🏠", "color_gradient": ["#10b981", "#047857"]},
     {"id": "consumer", "name": "Consumer Rights", "icon": "🛒", "color_gradient": ["#f59e0b", "#d97706"]},
-    {"id": "cyber_crime", "name": "Cyber Crime", "icon": "🛡️", "color_gradient": ["#ec4899", "#be185d"]},
-    {"id": "women_rights", "name": "Women Rights", "icon": "👩", "color_gradient": ["#a855f7", "#7e22ce"]},
     {"id": "banking", "name": "Banking & Finance", "icon": "🏦", "color_gradient": ["#06b6d4", "#0891b2"]},
+    {"id": "cyber_crime", "name": "Cyber Crime", "icon": "🛡️", "color_gradient": ["#ec4899", "#be185d"]},
     {"id": "traffic", "name": "Traffic Rules", "icon": "🚗", "color_gradient": ["#f43f5e", "#e11d48"]},
+    {"id": "women_rights", "name": "Women Rights", "icon": "👩", "color_gradient": ["#a855f7", "#7e22ce"]},
     {"id": "education", "name": "Education", "icon": "🎓", "color_gradient": ["#14b8a6", "#0d9488"]},
+    {"id": "cheque_debt", "name": "Cheque Bounce & Debt", "icon": "💳", "color_gradient": ["#ef4444", "#b91c1c"]},
+    {"id": "rti", "name": "RTI & Public Service", "icon": "📜", "color_gradient": ["#f97316", "#c2410c"]},
+    {"id": "real_estate", "name": "RERA Real Estate", "icon": "🏢", "color_gradient": ["#6366f1", "#4338ca"]},
+    {"id": "insurance", "name": "Insurance & Health", "icon": "🏥", "color_gradient": ["#ec4899", "#be185d"]},
+    {"id": "family", "name": "Family & Support", "icon": "👨‍👩‍👧", "color_gradient": ["#84cc16", "#4d7c0f"]},
 ]
 
 async def get_all_situations() -> list[SituationResponse]:

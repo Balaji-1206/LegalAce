@@ -198,6 +198,11 @@
 .category-card.banking     { background: linear-gradient(145deg, rgba(6,182,212,0.12), rgba(8,145,178,0.06));   box-shadow: 0 2px 12px rgba(6,182,212,0.1); }
 .category-card.traffic     { background: linear-gradient(145deg, rgba(244,63,94,0.12), rgba(225,29,72,0.06));   box-shadow: 0 2px 12px rgba(244,63,94,0.1); }
 .category-card.education   { background: linear-gradient(145deg, rgba(20,184,166,0.12), rgba(13,148,136,0.06)); box-shadow: 0 2px 12px rgba(20,184,166,0.1); }
+.category-card.cheque_debt { background: linear-gradient(145deg, rgba(239,68,68,0.12), rgba(220,38,38,0.06));   box-shadow: 0 2px 12px rgba(239,68,68,0.1); }
+.category-card.rti         { background: linear-gradient(145deg, rgba(249,115,22,0.12), rgba(194,65,12,0.06));   box-shadow: 0 2px 12px rgba(249,115,22,0.1); }
+.category-card.real_estate { background: linear-gradient(145deg, rgba(99,102,241,0.12), rgba(67,56,202,0.06));  box-shadow: 0 2px 12px rgba(99,102,241,0.1); }
+.category-card.insurance   { background: linear-gradient(145deg, rgba(236,72,153,0.12), rgba(219,39,119,0.06));  box-shadow: 0 2px 12px rgba(236,72,153,0.1); }
+.category-card.family      { background: linear-gradient(145deg, rgba(132,204,22,0.12), rgba(101,163,13,0.06));  box-shadow: 0 2px 12px rgba(132,204,22,0.1); }
 
 .category-card:hover {
   transform: translateY(-3px) scale(1.02);
@@ -854,6 +859,262 @@
   margin-bottom: 4px;
 }
 .sf-list-count {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* ─── Hero Buttons (Audio & Print PDF) ───────────────────────── */
+.sit-detail-audio-btn,
+.sit-detail-print-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.sit-detail-audio-btn:hover,
+.sit-detail-print-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+.sit-detail-audio-btn.active {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border-color: #fca5a5 !important;
+  animation: sf-pulseRing 1.5s infinite;
+}
+
+/* ─── Official Portals & Helplines Hub ────────────────────────── */
+.portals-card {
+  border: 1.5px solid #e0e7ff;
+}
+.portals-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.portal-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+}
+.portal-item:hover {
+  border-color: #cbd5e1;
+  background: #ffffff;
+}
+.portal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.portal-info strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+}
+.portal-info span {
+  font-size: 11.5px;
+  color: #64748b;
+}
+.portal-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.portal-btn {
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+.portal-btn.phone {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+.portal-btn.phone:hover {
+  background: #bbf7d0;
+}
+.portal-btn.web {
+  background: #eef2ff;
+  color: #4f46e5;
+  border: 1px solid #c7d2fe;
+}
+.portal-btn.web:hover {
+  background: #e0e7ff;
+}
+
+/* ─── Law Citation Deep-Dive & Statutory Badges ───────────────── */
+.law-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.statutory-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #4f46e5;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  padding: 2px 7px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.law-remedy-callout {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #92400e;
+  line-height: 1.5;
+}
+
+/* ─── Multi-Page Printable Summary Card PDF Engine ─────────────── */
+.printable-header {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
+
+  html, body, #root, .app, .app-container, .main-content, .situations-screen {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .situation-detail-screen,
+  .situation-detail-screen * {
+    visibility: visible !important;
+  }
+
+  .situation-detail-screen {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .printable-header {
+    display: block !important;
+    padding: 12px 0;
+    margin-bottom: 16px;
+    border-bottom: 2pt solid #1a1a5e;
+    text-align: center;
+  }
+  .printable-header h2 {
+    font-size: 18pt !important;
+    color: #1a1a5e !important;
+    margin-bottom: 4px !important;
+  }
+  .printable-header p {
+    font-size: 11pt !important;
+    color: #4b5563 !important;
+  }
+
+  .sit-detail-hero-nav,
+  .sf-wizard-cta,
+  .sf-restart-btn,
+  .sit-item-bookmark,
+  .situations-back-btn,
+  .portal-btn,
+  .sit-detail-audio-btn,
+  .sit-detail-print-btn,
+  .sit-detail-share-btn {
+    display: none !important;
+  }
+
+  .sit-detail-hero {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 10px 0 16px !important;
+  }
+  .sit-detail-cat-tag {
+    color: #4f46e5 !important;
+    border-color: #c7d2fe !important;
+    background: #eef2ff !important;
+  }
+  .sit-detail-hero h1 { color: #111827 !important; font-size: 18pt !important; margin-bottom: 8px !important; }
+  .sit-detail-hero p { color: #374151 !important; font-size: 11pt !important; }
+
+  .detail-section-card {
+    border: 1pt solid #cbd5e1 !important;
+    box-shadow: none !important;
+    margin: 14px 0 !important;
+    padding: 14px !important;
+    background: #ffffff !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .detail-section-card h3 {
+    color: #1a1a5e !important;
+    font-size: 13pt !important;
+  }
+  .detail-section-card ul li,
+  .sf-step-text,
+  .deadline-item span {
+    color: #111827 !important;
+    font-size: 11pt !important;
+  }
+
+  /* Force all law accordions to expand fully in printed PDF */
+  .law-citation-body {
+    max-height: none !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+  .law-citation-body-inner {
+    padding-left: 12px !important;
+  }
+  .law-expand-chevron {
+    display: none !important;
+  }
+}
   font-size: 12.5px;
   color: #6b7280;
   margin-bottom: 8px;

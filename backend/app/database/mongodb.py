@@ -27,6 +27,9 @@ async def connect_to_mongo() -> None:
         await _db["deadlines"].create_index("user_id")
         await _db["deadlines"].create_index("status")
         await _db["deadlines"].create_index([("user_id", 1), ("status", 1), ("deadline_date", 1)])
+        # Feature 3 — Document X-Ray indexes
+        await _db["document_xray_uploads"].create_index("user_id")
+        await _db["document_xray_uploads"].create_index("created_at")
         logger.info(f"Connected to MongoDB — database: '{settings.DATABASE_NAME}'")
     except Exception as e:
         logger.warning(f"MongoDB index creation skipped — DB may not be available: {e}")
@@ -43,7 +46,13 @@ async def close_mongo_connection() -> None:
 
 
 def get_database() -> AsyncIOMotorDatabase:
-    """Return the active database instance."""
+    """Return the active database instance, initializing if needed."""
+    global _client, _db
     if _db is None:
-        raise RuntimeError("Database not initialized. Call connect_to_mongo() first.")
+        logger.info("MongoDB client not initialized — auto-connecting now...")
+        _client = AsyncIOMotorClient(
+            settings.MONGODB_URL,
+            serverSelectionTimeoutMS=5000,
+        )
+        _db = _client[settings.DATABASE_NAME]
     return _db

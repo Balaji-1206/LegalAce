@@ -1,5 +1,6 @@
 """
 LegalAce FastAPI Application Entry Point.
+Updated with expanded Guided Legal Wizard modules & AI tree generators.
 
 Startup sequence (lifespan):
   1. Setup structured logging
@@ -114,15 +115,25 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 # Routers
 # ---------------------------------------------------------------------------
 from app.api.health import router as health_router
+from app.api.llm_settings import router as llm_settings_router
 from app.modules.chatbot.api import router as chat_router
 from app.modules.chatbot.conversation_api import router as conversation_router
 from app.modules.situation_finder.api import router as situations_router
 from app.modules.deadline_engine.api import router as deadline_router
 from app.modules.wizard.api import router as wizard_router
- 
+from app.modules.agent.api import router as agent_router
+from app.modules.document_xray.api import router as document_xray_router
+from app.modules.notifications.api import router as notifications_router
+from app.modules.legal_aid.api import router as legal_aid_router
+
 app.include_router(health_router)
+app.include_router(llm_settings_router)
 app.include_router(chat_router)
 app.include_router(conversation_router)
 app.include_router(situations_router)
 app.include_router(deadline_router)
 app.include_router(wizard_router)
+app.include_router(agent_router)
+app.include_router(document_xray_router)
+app.include_router(notifications_router)
+app.include_router(legal_aid_router)

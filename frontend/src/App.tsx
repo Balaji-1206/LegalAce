@@ -3,11 +3,13 @@ import './App.css';
 import type { Message, ConversationSummary } from './modules/shared/types';
 import HomeScreen from './modules/shared/HomeScreen';
 import DailyRightsScreen from './modules/shared/DailyRightsScreen';
-import { ChatbotTab } from './modules/chatbot/ChatbotTab';
+import { FloatingChatWidget } from './modules/chatbot/FloatingChatWidget';
 import { SituationFinderTab } from './modules/situation_finder/SituationFinderTab';
 import { DeadlineDashboard } from './modules/deadline_engine/DeadlineDashboard';
 import { WizardScreen } from './modules/wizard/WizardScreen';
 import ProfileScreen from './modules/profile/ProfileScreen';
+import { DocumentXRayTab } from './modules/document_xray/DocumentXRayTab';
+import { LegalAidChecker } from './modules/legal_aid/LegalAidChecker';
 
 const BACKEND_URL = 'http://localhost:8000';
 
@@ -43,14 +45,19 @@ const FALLBACK_CATEGORIES = [
   { id: "employment", name: "Employment", icon: "💼", color_gradient: ["#3b82f6", "#1d4ed8"], situation_count: 2 },
   { id: "housing", name: "Housing & Renting", icon: "🏠", color_gradient: ["#10b981", "#047857"], situation_count: 2 },
   { id: "consumer", name: "Consumer Rights", icon: "🛒", color_gradient: ["#f59e0b", "#d97706"], situation_count: 2 },
-  { id: "cyber_crime", name: "Cyber Crime", icon: "🛡️", color_gradient: ["#ec4899", "#be185d"], situation_count: 2 },
-  { id: "women_rights", name: "Women Rights", icon: "👩", color_gradient: ["#a855f7", "#7e22ce"], situation_count: 2 },
   { id: "banking", name: "Banking & Finance", icon: "🏦", color_gradient: ["#06b6d4", "#0891b2"], situation_count: 2 },
+  { id: "cyber_crime", name: "Cyber Crime", icon: "🛡️", color_gradient: ["#ec4899", "#be185d"], situation_count: 2 },
   { id: "traffic", name: "Traffic Rules", icon: "🚗", color_gradient: ["#f43f5e", "#e11d48"], situation_count: 2 },
+  { id: "women_rights", name: "Women Rights", icon: "👩", color_gradient: ["#a855f7", "#7e22ce"], situation_count: 2 },
   { id: "education", name: "Education", icon: "🎓", color_gradient: ["#14b8a6", "#0d9488"], situation_count: 2 },
+  { id: "cheque_debt", name: "Cheque Bounce & Debt", icon: "💳", color_gradient: ["#ef4444", "#b91c1c"], situation_count: 1 },
+  { id: "rti", name: "RTI & Public Service", icon: "📜", color_gradient: ["#f97316", "#c2410c"], situation_count: 1 },
+  { id: "real_estate", name: "RERA Real Estate", icon: "🏢", color_gradient: ["#6366f1", "#4338ca"], situation_count: 1 },
+  { id: "insurance", name: "Insurance & Health", icon: "🏥", color_gradient: ["#ec4899", "#be185d"], situation_count: 1 },
+  { id: "family", name: "Family & Support", icon: "👨‍👩‍👧", color_gradient: ["#84cc16", "#4d7c0f"], situation_count: 1 },
 ];
 
-type ActiveTab = 'home' | 'chat' | 'situations' | 'deadlines' | 'wizard' | 'rights' | 'profile';
+type ActiveTab = 'home' | 'situations' | 'deadlines' | 'wizard' | 'rights' | 'profile' | 'xray' | 'legalaid';
 
 export default function App() {
   const [userId, setUserId] = useState<string>('');
@@ -69,7 +76,7 @@ export default function App() {
   const [bookmarks, setBookmarks] = useState<string[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
-  const [selectedSituationId, setSelectedSituationId] = useState<string | null>(null);
+  const [, setSelectedSituationId] = useState<string | null>(null);
   const [selectedSituation, setSelectedSituation] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [situationsLoading, setSituationsLoading] = useState<boolean>(false);
@@ -217,6 +224,24 @@ export default function App() {
     } catch { alert('Failed to delete.'); }
   };
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const handleStopResponse = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setLoading(false);
+    setMessages(prev => [
+      ...prev,
+      {
+        role: 'assistant',
+        content: '⏹️ *Response generation stopped by user.*',
+        timestamp: new Date().toISOString(),
+      }
+    ]);
+  };
+
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputValue).trim();
     if (!text) return;
@@ -227,12 +252,26 @@ export default function App() {
     setLoading(true);
     setErrorMessage(null);
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
-      const res = await fetch(`${BACKEND_URL}/api/v1/chat`, {
+      let res = await fetch(`${BACKEND_URL}/api/v1/agent/execute-sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, conversation_id: currentConversationId, message: text }),
+        signal: controller.signal,
+        body: JSON.stringify({ user_id: userId, conversation_id: currentConversationId, message: text, agent_mode: 'general' }),
       });
+
+      if (res.status === 404) {
+        // Server running pre-agent route cache — fallback to /api/v1/chat
+        res = await fetch(`${BACKEND_URL}/api/v1/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({ user_id: userId, conversation_id: currentConversationId, message: text }),
+        });
+      }
 
       if (res.ok) {
         const data = await res.json();
@@ -242,21 +281,33 @@ export default function App() {
         }
         const aiMsg: Message = {
           role: 'assistant',
-          content: data.answer,
+          content: data.final_answer || data.answer || '',
           timestamp: new Date().toISOString(),
-          citations: data.law_citations,
+          citations: data.law_citations || [],
           rights: data.rights || [],
           action_steps: data.action_steps || [],
-          disclaimer: data.disclaimer,
+          disclaimer: data.disclaimer || 'For educational purposes under Indian law.',
+          reasoning_trace: data.reasoning_trace || [],
+          pending_actions: (data.pending_actions || []).map((p: any) => ({ ...p, status: 'pending' })),
+          plan_objective: data.objective || '',
         };
         setMessages(prev => [...prev, aiMsg]);
       } else {
         const data = await res.json();
         setErrorMessage(data.detail || 'Failed to generate response.');
       }
-    } catch { setErrorMessage('Network error: Cannot reach the backend API.'); }
-    finally { setLoading(false); }
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        // Aborted cleanly by stop button
+        return;
+      }
+      setErrorMessage('Network error: Cannot reach the backend API.');
+    } finally {
+      setLoading(false);
+      abortControllerRef.current = null;
+    }
   };
+
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); }
@@ -288,12 +339,13 @@ export default function App() {
   const filteredSituations = getFilteredSituations();
 
   const handleNavigate = (tab: string) => {
-    if (tab === 'chat') { setActiveTab('chat'); }
-    else if (tab === 'situations') { setActiveTab('situations'); setSitScreen('categories'); setSearchQuery(''); }
+    if (tab === 'situations') { setActiveTab('situations'); setSitScreen('categories'); setSearchQuery(''); }
     else if (tab === 'rights') setActiveTab('rights');
     else if (tab === 'deadlines') setActiveTab('deadlines');
     else if (tab === 'wizard') setActiveTab('wizard');
     else if (tab === 'profile') setActiveTab('profile');
+    else if (tab === 'xray') setActiveTab('xray');
+    else if (tab === 'legalaid') setActiveTab('legalaid');
     else if (tab === 'home') setActiveTab('home');
   };
 
@@ -302,10 +354,6 @@ export default function App() {
     {
       key: 'home', label: 'Home',
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
-    },
-    {
-      key: 'chat', label: 'Chat',
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
     },
     {
       key: 'wizard', label: 'Wizard',
@@ -337,31 +385,6 @@ export default function App() {
               situations={situations}
               recentlyViewed={recentlyViewed}
               openSituationDetail={(id) => { openSituationDetail(id); setActiveTab('situations'); }}
-            />
-          )}
-
-          {/* === CHAT SCREEN === */}
-          {activeTab === 'chat' && (
-            <ChatbotTab
-              messages={messages}
-              inputValue={inputValue}
-              setInputValue={setInputValue}
-              loading={loading}
-              errorMessage={errorMessage}
-              expandedCitation={expandedCitation}
-              toggleCitation={toggleCitation}
-              LAW_DETAILS_MAP={LAW_DETAILS_MAP}
-              handleSendMessage={handleSendMessage}
-              handleKeyPress={handleKeyPress}
-              suggestions={suggestions}
-              messagesEndRef={messagesEndRef}
-              onBack={() => setActiveTab('home')}
-              startNewChat={startNewChat}
-              conversations={conversations}
-              selectConversation={selectConversation}
-              deleteConversation={deleteConversation}
-              userId={userId}
-              backendUrl={BACKEND_URL}
             />
           )}
 
@@ -410,6 +433,21 @@ export default function App() {
             <WizardScreen userId={userId} onBackHome={() => handleNavigate('home')} />
           )}
 
+          {/* === FEATURE 3: DOCUMENT X-RAY === */}
+          {activeTab === 'xray' && (
+            <DocumentXRayTab
+              userId={userId}
+              onBackHome={() => handleNavigate('home')}
+              onNavigateDeadlines={() => handleNavigate('deadlines')}
+              onNavigateWizard={() => handleNavigate('wizard')}
+            />
+          )}
+
+          {/* === FEATURE 5: LEGAL AID CHECKER === */}
+          {activeTab === 'legalaid' && (
+            <LegalAidChecker onBack={() => handleNavigate('profile')} />
+          )}
+
           {/* === PROFILE SCREEN === */}
           {activeTab === 'profile' && (
             <ProfileScreen
@@ -425,6 +463,24 @@ export default function App() {
               }}
             />
           )}
+
+          {/* === FLOATING AGENTIC AI CHATBOT WIDGET === */}
+          <FloatingChatWidget
+            messages={messages}
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            loading={loading}
+            errorMessage={errorMessage}
+            expandedCitation={expandedCitation}
+            toggleCitation={toggleCitation}
+            LAW_DETAILS_MAP={LAW_DETAILS_MAP}
+            handleSendMessage={handleSendMessage}
+            handleKeyPress={handleKeyPress}
+            suggestions={suggestions}
+            startNewChat={startNewChat}
+            userId={userId}
+            backendUrl={BACKEND_URL}
+          />
 
           {/* === BOTTOM NAVIGATION BAR === */}
           <div className="bottom-navigation-bar">
