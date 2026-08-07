@@ -5,10 +5,10 @@ interface HeaderProps {
   screen: 'categories' | 'list' | 'detail';
   setSidebarOpen: (open: boolean) => void;
   backendStatus: string;
-  selectedCategory: any | null;
+  selectedCategory: { id: string; name: string } | null;
   setScreen: (screen: 'categories' | 'list' | 'detail') => void;
   setSearchQuery: (query: string) => void;
-  selectedSituation: any | null;
+  selectedSituation: { situation_id: string; title: string; category: string } | null;
   bookmarks: string[];
   toggleBookmark: (id: string) => void;
   getCategoryIcon: (cat: string) => string;

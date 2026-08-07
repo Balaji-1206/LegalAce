@@ -5,7 +5,7 @@ Chat API endpoints for Floating Agentic Chatbot.
   GET  /api/v1/chat/prompts           — Quick prompts for floating chatbot ribbon
 """
 from typing import List
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from app.core.logging import get_logger
 from app.modules.chatbot.schemas import (
     ChatRequest,
@@ -60,8 +60,6 @@ async def analyze_document(request: DocAnalysisRequest) -> DocAnalysisResponse:
 async def get_prompts() -> List[QuickPromptItem]:
     return chat_service.get_quick_prompts()
 
-
-from fastapi import UploadFile, File
 
 @router.post(
     "/upload-document",

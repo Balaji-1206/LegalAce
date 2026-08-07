@@ -2,7 +2,7 @@ export interface PendingActionItem {
   action_id: string;
   action_type: string;
   title: string;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   prompt_text: string;
   status?: 'pending' | 'approved' | 'rejected';
 }

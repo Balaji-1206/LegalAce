@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { Message } from '../shared/types';
+import type { Message, PendingActionItem } from '../shared/types';
 import './FloatingChatWidget.css';
 
 interface FloatingChatWidgetProps {
@@ -46,7 +46,7 @@ const ActionStepItem: React.FC<{ userId: string; stepText: string; backendUrl: s
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: userId,
-          title: stepText.replace(/^\d+[\.\-\s]*/, '').slice(0, 80),
+          title: stepText.replace(/^\d+[.\s-]*/, '').slice(0, 80),
           description: `Action step item from Floating AI Agent: "${stepText}"`,
           category: 'general',
           deadline_date: dueDate.toISOString(),
@@ -92,13 +92,13 @@ const ActionStepItem: React.FC<{ userId: string; stepText: string; backendUrl: s
 };
 
 const PendingActionCard: React.FC<{
-  action: any;
+  action: PendingActionItem;
   userId: string;
   backendUrl: string;
 }> = ({ action, userId, backendUrl }) => {
   const [status, setStatus] = useState<'pending' | 'approved' | 'rejected' | 'loading'>(action.status || 'pending');
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [resultData, setResultData] = useState<any | null>(null);
+  const [resultData, setResultData] = useState<Record<string, unknown> | null>(null);
   const [copiedDoc, setCopiedDoc] = useState<boolean>(false);
   const [showDocText, setShowDocText] = useState<boolean>(true);
 
@@ -151,7 +151,7 @@ const PendingActionCard: React.FC<{
     document.body.removeChild(element);
   };
 
-  const docText = resultData?.document_text || resultData?.doc_text || action.details?.document_text;
+  const docText = String(resultData?.document_text || resultData?.doc_text || action.details?.document_text || '');
 
   return (
     <div className="pending-action-card" style={{ marginTop: '8px', padding: '10px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '10px' }}>
@@ -189,7 +189,7 @@ const PendingActionCard: React.FC<{
             <div style={{ marginTop: '8px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: '#f1f5f9', borderBottom: '1px solid #e2e8f0' }}>
                 <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#0f172a' }}>
-                  📄 {resultData?.title || 'Generated Legal Notice Document'}
+                  📄 {(resultData?.title as string) || 'Generated Legal Notice Document'}
                 </span>
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <button
@@ -199,7 +199,7 @@ const PendingActionCard: React.FC<{
                     {copiedDoc ? '✓ Copied' : '📋 Copy'}
                   </button>
                   <button
-                    onClick={() => handleDownloadDoc(resultData?.title || 'legal_notice', docText)}
+                    onClick={() => handleDownloadDoc((resultData?.title as string) || 'legal_notice', docText)}
                     style={{ padding: '3px 8px', fontSize: '0.68rem', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
                   >
                     📥 Download
@@ -258,7 +258,7 @@ const FormattedText: React.FC<{ text: string }> = ({ text }) => {
         }
 
         if (trimmed.startsWith('•') || trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
-          const bulletContent = trimmed.replace(/^[\•\*\-]\s*/, '');
+          const bulletContent = trimmed.replace(/^[-•*]\s*/, '');
           return (
             <div key={pIdx} className="msg-bullet-item">
               <span className="bullet-dot">•</span>
@@ -391,15 +391,15 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
   ];
 
   useEffect(() => {
-    let timer: ReturnType<typeof setInterval>;
-    if (loading) {
+    if (!loading) return;
+    const timer = setInterval(() => {
+      setReasoningStepIndex((prev) => (prev < agenticSteps.length - 1 ? prev + 1 : prev));
+    }, 1000);
+    return () => {
+      clearInterval(timer);
       setReasoningStepIndex(0);
-      timer = setInterval(() => {
-        setReasoningStepIndex((prev) => (prev < agenticSteps.length - 1 ? prev + 1 : prev));
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [loading]);
+    };
+  }, [loading, agenticSteps.length]);
 
   useEffect(() => {
     if (isOpen) {
@@ -542,13 +542,23 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
       return;
     }
     try {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
+      const win = window as unknown as Record<string, new () => {
+        continuous: boolean;
+        interimResults: boolean;
+        lang: string;
+        onstart: () => void;
+        onresult: (e: { results: { transcript: string }[][] }) => void;
+        onerror: () => void;
+        onend: () => void;
+        start: () => void;
+      }>;
+      const SpeechRec = win.SpeechRecognition || win.webkitSpeechRecognition;
+      const recognition = new SpeechRec();
       recognition.continuous = false;
       recognition.interimResults = false;
       recognition.lang = 'en-IN';
       recognition.onstart = () => setIsListening(true);
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event: { results: { transcript: string }[][] }) => {
         const transcript = event.results[0][0].transcript;
         setInputValue(inputValue ? `${inputValue} ${transcript}` : transcript);
         setIsListening(false);

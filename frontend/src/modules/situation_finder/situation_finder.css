@@ -1000,11 +1000,12 @@
   display: none;
 }
 
+@page {
+  size: A4 portrait;
+  margin: 12mm 15mm;
+}
+
 @media print {
-  @page {
-    size: A4 portrait;
-    margin: 12mm 15mm;
-  }
 
   html, body, #root, .app, .app-container, .main-content, .situations-screen {
     height: auto !important;

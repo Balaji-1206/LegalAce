@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './ProfileScreen.css';
 import type { ConversationSummary } from '../shared/types';
 
@@ -45,11 +45,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onOpenSaved,
 }) => {
   // Local profile state persisted in localStorage
-  const [userName, setUserName] = useState<string>('Legal Ace User');
-  const [userEmail, setUserEmail] = useState<string>('user@legalace.in');
-  const [avatarColor, setAvatarColor] = useState<string>('#4338ca');
-  const [persona, setPersona] = useState<string>('Individual Consumer');
-  const [preferredState, setPreferredState] = useState<string>('Karnataka');
+  const [userName, setUserName] = useState<string>(() => localStorage.getItem('legalace_user_name') || 'LegalAce User');
+  const [userEmail, setUserEmail] = useState<string>(() => localStorage.getItem('legalace_user_email') || 'user@legalace.in');
+  const [avatarColor, setAvatarColor] = useState<string>(() => localStorage.getItem('legalace_avatar_color') || '#4338ca');
+  const [persona, setPersona] = useState<string>(() => localStorage.getItem('legalace_persona') || 'Individual Consumer');
+  const [preferredState, setPreferredState] = useState<string>(() => localStorage.getItem('legalace_preferred_state') || 'Karnataka');
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
 
   // Modal visibility states
@@ -57,23 +57,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const [isHelplineModalOpen, setIsHelplineModalOpen] = useState<boolean>(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState<boolean>(false);
   const [copiedNumber, setCopiedNumber] = useState<string | null>(null);
-
-  useEffect(() => {
-    const savedName = localStorage.getItem('legalace_user_name');
-    if (savedName) setUserName(savedName);
-
-    const savedEmail = localStorage.getItem('legalace_user_email');
-    if (savedEmail) setUserEmail(savedEmail);
-
-    const savedColor = localStorage.getItem('legalace_avatar_color');
-    if (savedColor) setAvatarColor(savedColor);
-
-    const savedPersona = localStorage.getItem('legalace_persona');
-    if (savedPersona) setPersona(savedPersona);
-
-    const savedState = localStorage.getItem('legalace_preferred_state');
-    if (savedState) setPreferredState(savedState);
-  }, []);
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,55 +122,74 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   return (
     <div className="profile-screen animate-fade-in">
-      {/* Back Button */}
-      <button className="profile-back-btn" onClick={() => onNavigate('home')} title="Back to Home">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
-      </button>
-
-      {/* Edit Profile Header Action */}
-      <button className="profile-edit-trigger" onClick={() => setIsEditModalOpen(true)}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-        </svg>
-        Edit Profile
-      </button>
-
       {/* Hero Header */}
       <div className="profile-hero-banner">
-        <div className="profile-avatar-wrap">
-          <div className="profile-avatar-large" style={{ backgroundColor: avatarColor }}>
-            {getInitials(userName)}
-          </div>
-          <div className="avatar-badge-icon" title="Active Member">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="12" height="12">
-              <polyline points="20 6 9 17 4 12" />
+        <div className="profile-hero-ambient-glow"></div>
+        <div className="profile-hero-mesh"></div>
+
+        {/* Action Header Navigation Bar */}
+        <div className="profile-header-nav-row">
+          <button className="profile-back-btn" onClick={() => onNavigate('home')} title="Back to Home">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
+              <polyline points="15 18 9 12 15 6" />
             </svg>
-          </div>
+          </button>
+          <span className="profile-header-title">Citizen Profile</span>
+          <button className="profile-edit-trigger" onClick={() => setIsEditModalOpen(true)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+            Edit Profile
+          </button>
         </div>
 
-        <h2 className="profile-user-name">{userName}</h2>
-        <p className="profile-user-email">{userEmail} • {userId}</p>
-
-        <div className="profile-tags-row">
-          <span className="profile-persona-chip">
-            ⚖️ {persona}
-          </span>
-          <span className="profile-state-chip">
-            📍 {preferredState}
-          </span>
-        </div>
-
-        {/* Profile Setup Bar */}
-        <div className="profile-completion-box">
-          <div className="completion-header">
-            <span>Profile Setup Strength</span>
-            <span>{completionPercentage}%</span>
+        <div className="profile-hero-content">
+          <div className="profile-avatar-wrap">
+            <div className="profile-avatar-ring"></div>
+            <div className="profile-avatar-large" style={{ backgroundColor: avatarColor }}>
+              {getInitials(userName)}
+            </div>
+            <div className="avatar-badge-icon" title="Verified Indian Citizen Profile">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="12" height="12">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
           </div>
-          <div className="completion-bar-track">
-            <div className="completion-bar-fill" style={{ width: `${completionPercentage}%` }}></div>
+
+          <h2 className="profile-user-name">
+            {userName}
+            <span className="verified-shield-badge" title="Verified Account">🛡️</span>
+          </h2>
+          <div className="profile-id-pill">
+            <span className="email-text">{userEmail}</span>
+            <span className="pill-divider">•</span>
+            <span className="id-text">{userId}</span>
+          </div>
+
+          <div className="profile-tags-row">
+            <span className="profile-persona-chip">
+              <span className="chip-icon">⚖️</span>
+              {persona}
+            </span>
+            <span className="profile-state-chip">
+              <span className="chip-icon">📍</span>
+              {preferredState}
+            </span>
+          </div>
+
+          {/* Profile Setup Bar */}
+          <div className="profile-completion-box">
+            <div className="completion-header">
+              <div className="completion-title-wrap">
+                <span className="completion-icon">⚡</span>
+                <span>Profile Setup Strength</span>
+              </div>
+              <span className="completion-percentage-badge">{completionPercentage}%</span>
+            </div>
+            <div className="completion-bar-track">
+              <div className="completion-bar-fill" style={{ width: `${completionPercentage}%` }}></div>
+            </div>
           </div>
         </div>
       </div>

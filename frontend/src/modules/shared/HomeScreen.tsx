@@ -1,9 +1,16 @@
 import React from 'react';
 import './HomeScreen.css';
 
+export interface SituationItem {
+  situation_id: string;
+  title: string;
+  category: string;
+  description?: string;
+}
+
 interface HomeScreenProps {
   onNavigate: (tab: string) => void;
-  situations: any[];
+  situations: SituationItem[];
   recentlyViewed: string[];
   openSituationDetail: (id: string) => void;
 }
@@ -32,7 +39,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 }) => {
   const recentSituations = recentlyViewed
     .map(id => situations.find(s => s.situation_id === id))
-    .filter(Boolean)
+    .filter((s): s is SituationItem => Boolean(s))
     .slice(0, 5);
 
   const fallbackRecent = situations.slice(0, 4);
@@ -183,7 +190,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       </div>
 
       <div className="recent-scroll" style={{ marginBottom: 16 }}>
-        {displayRecent.map((sit: any, i: number) => (
+        {displayRecent.map((sit: SituationItem, i: number) => (
           <div
             key={sit.situation_id || i}
             className="recent-sit-card"

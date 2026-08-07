@@ -47,7 +47,7 @@ const ActionStepItem: React.FC<{ userId: string; stepText: string; backendUrl: s
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: userId,
-          title: stepText.replace(/^\d+[\.\-\s]*/, '').slice(0, 80),
+          title: stepText.replace(/^\d+[.\s-]*/, '').slice(0, 80),
           description: `Action step checklist item: "${stepText}"`,
           category: 'general',
           deadline_date: dueDate.toISOString(),
@@ -115,12 +115,16 @@ export const ChatbotTab: React.FC<ChatbotTabProps> = ({
   messagesEndRef,
   onBack,
   startNewChat,
-  conversations: _conversations,
-  selectConversation: _selectConversation,
-  deleteConversation: _deleteConversation,
+  conversations,
+  selectConversation,
+  deleteConversation,
   userId,
   backendUrl,
 }) => {
+  void conversations;
+  void selectConversation;
+  void deleteConversation;
+
   const [copiedMsgIdx, setCopiedMsgIdx] = useState<number | null>(null);
 
   const handleCopyMessage = (text: string, idx: number) => {

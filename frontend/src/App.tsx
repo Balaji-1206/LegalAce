@@ -59,8 +59,50 @@ const FALLBACK_CATEGORIES = [
 
 type ActiveTab = 'home' | 'situations' | 'deadlines' | 'wizard' | 'rights' | 'profile' | 'xray' | 'legalaid';
 
+interface CategoryItem {
+  id: string;
+  name: string;
+  icon: string;
+  color_gradient?: string[];
+  situation_count?: number;
+}
+
+interface SituationData {
+  situation_id: string;
+  title: string;
+  category: string;
+  description?: string;
+  [key: string]: unknown;
+}
+
+interface PendingActionRaw {
+  action_id?: string;
+  action_type?: string;
+  title?: string;
+  details?: Record<string, unknown>;
+  prompt_text?: string;
+}
+
+interface RawMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp?: string;
+  citations?: { act: string; section: string; section_title: string; relevance_score: number }[];
+  rights?: string[];
+  action_steps?: string[];
+  disclaimer?: string;
+}
+
 export default function App() {
-  const [userId, setUserId] = useState<string>('');
+  const [userId] = useState<string>(() => {
+    let id = localStorage.getItem('legalace_user_id');
+    if (!id) {
+      id = 'user_' + Math.random().toString(36).substring(2, 11);
+      localStorage.setItem('legalace_user_id', id);
+    }
+    return id;
+  });
+
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -71,71 +113,71 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [sitScreen, setSitScreen] = useState<'categories' | 'list' | 'detail'>('categories');
-  const [categories, setCategories] = useState<any[]>([]);
-  const [situations, setSituations] = useState<any[]>([]);
-  const [bookmarks, setBookmarks] = useState<string[]>([]);
-  const [recentlyViewed, setRecentlyViewed] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
+  const [categories, setCategories] = useState<CategoryItem[]>(() => {
+    const cachedCats = localStorage.getItem('legalace_cached_categories');
+    return cachedCats ? JSON.parse(cachedCats) : FALLBACK_CATEGORIES;
+  });
+  const [situations, setSituations] = useState<SituationData[]>(() => {
+    const cachedSits = localStorage.getItem('legalace_cached_situations');
+    return cachedSits ? JSON.parse(cachedSits) : [];
+  });
+  const [bookmarks, setBookmarks] = useState<string[]>(() => {
+    const savedBookmarks = localStorage.getItem('legalace_bookmarks');
+    return savedBookmarks ? JSON.parse(savedBookmarks) : [];
+  });
+  const [recentlyViewed, setRecentlyViewed] = useState<string[]>(() => {
+    const savedRecents = localStorage.getItem('legalace_recently_viewed');
+    return savedRecents ? JSON.parse(savedRecents) : [];
+  });
+  const [selectedCategory, setSelectedCategory] = useState<CategoryItem | null>(null);
   const [, setSelectedSituationId] = useState<string | null>(null);
-  const [selectedSituation, setSelectedSituation] = useState<any | null>(null);
+  const [selectedSituation, setSelectedSituation] = useState<SituationData | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [situationsLoading, setSituationsLoading] = useState<boolean>(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    let id = localStorage.getItem('legalace_user_id');
-    if (!id) {
-      id = 'user_' + Math.random().toString(36).substring(2, 11);
-      localStorage.setItem('legalace_user_id', id);
+    let ignore = false;
+
+    async function loadInitialData() {
+      try {
+        const histRes = await fetch(`${BACKEND_URL}/api/v1/conversation/history/${userId}`);
+        if (histRes.ok && !ignore) {
+          const data = await histRes.json();
+          setConversations(data.conversations || []);
+        }
+      } catch { /* offline */ }
+
+      try {
+        setSituationsLoading(true);
+        const catRes = await fetch(`${BACKEND_URL}/api/v1/situations/categories`);
+        if (catRes.ok && !ignore) {
+          const fetchedCats = await catRes.json();
+          setCategories(fetchedCats);
+          localStorage.setItem('legalace_cached_categories', JSON.stringify(fetchedCats));
+        }
+        const sitRes = await fetch(`${BACKEND_URL}/api/v1/situations`);
+        if (sitRes.ok && !ignore) {
+          const fetchedSits = await sitRes.json();
+          setSituations(fetchedSits);
+          localStorage.setItem('legalace_cached_situations', JSON.stringify(fetchedSits));
+        }
+      } catch {
+        /* fallback handled by lazy initial state */
+      } finally {
+        if (!ignore) setSituationsLoading(false);
+      }
     }
-    setUserId(id);
 
-    const savedBookmarks = localStorage.getItem('legalace_bookmarks');
-    if (savedBookmarks) setBookmarks(JSON.parse(savedBookmarks));
-
-    const savedRecents = localStorage.getItem('legalace_recently_viewed');
-    if (savedRecents) setRecentlyViewed(JSON.parse(savedRecents));
-
-    const cachedCats = localStorage.getItem('legalace_cached_categories');
-    const cachedSits = localStorage.getItem('legalace_cached_situations');
-    if (cachedCats) setCategories(JSON.parse(cachedCats));
-    else setCategories(FALLBACK_CATEGORIES);
-    if (cachedSits) setSituations(JSON.parse(cachedSits));
-
-    fetchHistory(id);
-    fetchSituationsData();
-  }, []);
+    loadInitialData();
+    return () => { ignore = true; };
+  }, [userId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  const fetchSituationsData = async () => {
-    setSituationsLoading(true);
-    try {
-      const catRes = await fetch(`${BACKEND_URL}/api/v1/situations/categories`);
-      if (catRes.ok) {
-        const fetchedCats = await catRes.json();
-        setCategories(fetchedCats);
-        localStorage.setItem('legalace_cached_categories', JSON.stringify(fetchedCats));
-      }
-      const sitRes = await fetch(`${BACKEND_URL}/api/v1/situations`);
-      if (sitRes.ok) {
-        const fetchedSits = await sitRes.json();
-        setSituations(fetchedSits);
-        localStorage.setItem('legalace_cached_situations', JSON.stringify(fetchedSits));
-      }
-    } catch {
-      const cachedCats = localStorage.getItem('legalace_cached_categories');
-      const cachedSits = localStorage.getItem('legalace_cached_situations');
-      if (cachedCats) setCategories(JSON.parse(cachedCats));
-      else setCategories(FALLBACK_CATEGORIES);
-      if (cachedSits) setSituations(JSON.parse(cachedSits));
-    } finally {
-      setSituationsLoading(false);
-    }
-  };
 
   const openSituationDetail = async (situationId: string) => {
     setSelectedSituationId(situationId);
@@ -172,16 +214,6 @@ export default function App() {
     return found ? found.icon : '🛡️';
   };
 
-  const fetchHistory = async (uid: string) => {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/v1/conversation/history/${uid}`);
-      if (res.ok) {
-        const data = await res.json();
-        setConversations(data.conversations || []);
-      }
-    } catch { /* offline */ }
-  };
-
   const selectConversation = async (conversationId: string) => {
     setLoading(true);
     setErrorMessage(null);
@@ -190,10 +222,10 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         setCurrentConversationId(data.conversation_id);
-        const formattedMessages: Message[] = data.messages.map((m: any) => ({
+        const formattedMessages: Message[] = (data.messages || []).map((m: RawMessage) => ({
           role: m.role,
           content: m.content,
-          timestamp: m.timestamp,
+          timestamp: m.timestamp || new Date().toISOString(),
           citations: m.citations,
           rights: m.rights || [],
           action_steps: m.action_steps || [],
@@ -224,8 +256,6 @@ export default function App() {
     } catch { alert('Failed to delete.'); }
   };
 
-  const abortControllerRef = useRef<AbortController | null>(null);
-
   const handleStopResponse = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -240,6 +270,16 @@ export default function App() {
         timestamp: new Date().toISOString(),
       }
     ]);
+  };
+
+  const fetchHistory = async (uid: string) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/v1/conversation/history/${uid}`);
+      if (res.ok) {
+        const data = await res.json();
+        setConversations(data.conversations || []);
+      }
+    } catch { /* offline */ }
   };
 
   const handleSendMessage = async (textToSend?: string) => {
@@ -288,7 +328,14 @@ export default function App() {
           action_steps: data.action_steps || [],
           disclaimer: data.disclaimer || 'For educational purposes under Indian law.',
           reasoning_trace: data.reasoning_trace || [],
-          pending_actions: (data.pending_actions || []).map((p: any) => ({ ...p, status: 'pending' })),
+          pending_actions: (data.pending_actions || []).map((p: PendingActionRaw) => ({
+            action_id: p.action_id || '',
+            action_type: p.action_type || '',
+            title: p.title || '',
+            details: p.details || {},
+            prompt_text: p.prompt_text || '',
+            status: 'pending' as const,
+          })),
           plan_objective: data.objective || '',
         };
         setMessages(prev => [...prev, aiMsg]);
@@ -296,8 +343,8 @@ export default function App() {
         const data = await res.json();
         setErrorMessage(data.detail || 'Failed to generate response.');
       }
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') {
         // Aborted cleanly by stop button
         return;
       }
@@ -328,7 +375,7 @@ export default function App() {
     if (searchQuery.trim()) {
       return situations.filter(s =>
         s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.category.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
@@ -372,6 +419,9 @@ export default function App() {
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
     },
   ];
+
+  void selectConversation;
+  void deleteConversation;
 
   return (
     <div className="phone-mockup-wrapper">
@@ -459,7 +509,7 @@ export default function App() {
               onOpenSaved={() => {
                 setActiveTab('situations');
                 setSitScreen('categories');
-                setSelectedCategory({ id: 'bookmarks', name: 'Bookmarks' });
+                setSelectedCategory({ id: 'bookmarks', name: 'Bookmarks', icon: '⭐' });
               }}
             />
           )}
@@ -480,6 +530,7 @@ export default function App() {
             startNewChat={startNewChat}
             userId={userId}
             backendUrl={BACKEND_URL}
+            handleStopResponse={handleStopResponse}
           />
 
           {/* === BOTTOM NAVIGATION BAR === */}

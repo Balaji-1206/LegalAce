@@ -53,6 +53,19 @@ async def _job_send_reminders():
         logger.error(f"[Scheduler] send_reminders job failed: {e}")
 
 
+async def _job_purge_stale_temp_data():
+    """Purge temporary document uploads older than 30 days for data privacy compliance."""
+    try:
+        from datetime import datetime, timedelta
+        from app.database.mongodb import get_database
+        db = get_database()
+        cutoff = datetime.utcnow() - timedelta(days=30)
+        res = await db["document_xray_uploads"].delete_many({"created_at": {"$lt": cutoff}})
+        logger.info(f"[Scheduler] Purged {res.deleted_count} stale document upload(s) >30 days old")
+    except Exception as e:
+        logger.error(f"[Scheduler] purge_stale_temp_data job failed: {e}")
+
+
 def start_scheduler() -> AsyncIOScheduler:
     """Initialize and start the APScheduler. Call once on app startup."""
     global _scheduler
@@ -89,6 +102,16 @@ def start_scheduler() -> AsyncIOScheduler:
         trigger=CronTrigger(hour=2, minute=30),
         id="send_reminders",
         name="Daily Deadline Reminders",
+        replace_existing=True,
+        misfire_grace_time=600,
+    )
+
+    # Job 4: Daily 8:30AM IST data retention purge
+    _scheduler.add_job(
+        _job_purge_stale_temp_data,
+        trigger=CronTrigger(hour=3, minute=0),
+        id="purge_stale_temp_data",
+        name="Purge Stale Temporary Data",
         replace_existing=True,
         misfire_grace_time=600,
     )

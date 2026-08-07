@@ -2,23 +2,50 @@ import React, { useState, useCallback } from 'react';
 import './situation_finder.css';
 
 // ─── Props ──────────────────────────────────────────────────────────────────
+export interface SituationCategory {
+  id: string;
+  name: string;
+  icon: string;
+  color_gradient?: string[];
+  situation_count?: number;
+}
+
+export interface LawCitation {
+  act: string;
+  section: string;
+  section_title: string;
+}
+
+export interface SituationDetail {
+  situation_id: string;
+  title: string;
+  category: string;
+  description?: string;
+  user_rights?: string[];
+  action_steps?: string[];
+  applicable_laws?: LawCitation[];
+  important_deadlines?: string[];
+  [key: string]: unknown;
+}
+
+// ─── Props ──────────────────────────────────────────────────────────────────
 interface SituationFinderTabProps {
   screen: 'categories' | 'list' | 'detail';
   setScreen: (screen: 'categories' | 'list' | 'detail') => void;
-  categories: any[];
-  situations: any[];
+  categories: SituationCategory[];
+  situations: SituationDetail[];
   bookmarks: string[];
   recentlyViewed: string[];
-  selectedCategory: any | null;
-  setSelectedCategory: (cat: any | null) => void;
-  selectedSituation: any | null;
+  selectedCategory: SituationCategory | null;
+  setSelectedCategory: (cat: SituationCategory | null) => void;
+  selectedSituation: SituationDetail | null;
   openSituationDetail: (id: string) => void;
   toggleBookmark: (id: string) => void;
   getCategoryIcon: (cat: string) => string;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   situationsLoading: boolean;
-  filteredSituations: any[];
+  filteredSituations: SituationDetail[];
   LAW_DETAILS_MAP: Record<string, string>;
   onBackHome?: () => void;
   onOpenWizard?: () => void;
@@ -205,7 +232,7 @@ const AUTHORITY_PORTALS: Record<string, Array<{ name: string; url?: string; phon
 };
 
 // ─── Law Citation Accordion ──────────────────────────────────────────────────
-const LawCitationCard: React.FC<{ law: any; LAW_DETAILS_MAP: Record<string, string> }> = ({ law, LAW_DETAILS_MAP }) => {
+const LawCitationCard: React.FC<{ law: LawCitation; LAW_DETAILS_MAP: Record<string, string> }> = ({ law, LAW_DETAILS_MAP }) => {
   const [open, setOpen] = useState(false);
   const detail = LAW_DETAILS_MAP[law.section];
 
@@ -246,7 +273,7 @@ const LawCitationCard: React.FC<{ law: any; LAW_DETAILS_MAP: Record<string, stri
 
 // ─── Situation List Item ─────────────────────────────────────────────────────
 const SituationListItem: React.FC<{
-  sit: any;
+  sit: SituationDetail;
   index: number;
   isBookmarked: boolean;
   onClick: () => void;
@@ -301,7 +328,7 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
   }, [toggleBookmark]);
 
   // Voice Assist Speech Synthesis — Young Girl Voice Selection
-  const handleToggleVoiceAssist = (situation: any) => {
+  const handleToggleVoiceAssist = (situation: SituationDetail) => {
     if (!('speechSynthesis' in window)) {
       alert('Voice assist is not supported on this browser.');
       return;
@@ -341,7 +368,7 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
     window.print();
   };
 
-  const handleShare = async (situation: any) => {
+  const handleShare = async (situation: SituationDetail) => {
     const text = [
       `⚖️ ${situation.title}`,
       '',
@@ -357,7 +384,7 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
     ].join('\n');
     try {
       await navigator.clipboard.writeText(text);
-    } catch {}
+    } catch { /* clipboard permission unavailable */ }
   };
 
   // Compute displayed situations based on active filter
@@ -435,7 +462,7 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
         </div>
 
         {/* Your Rights */}
-        {selectedSituation.user_rights?.length > 0 && (
+        {(selectedSituation.user_rights?.length || 0) > 0 && (
           <div className="detail-section-card">
             <h3>
               <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="2" width="18" height="18">
@@ -444,7 +471,7 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
               Your Rights
             </h3>
             <ul>
-              {selectedSituation.user_rights.map((r: string, i: number) => (
+              {selectedSituation.user_rights?.map((r: string, i: number) => (
                 <li key={i} style={{ '--sf-stagger': i } as React.CSSProperties}>
                   <div className="check-circle" style={{ '--sf-stagger': i } as React.CSSProperties}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="10" height="10">
@@ -459,7 +486,7 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
         )}
 
         {/* Action Steps — numbered */}
-        {selectedSituation.action_steps?.length > 0 && (
+        {(selectedSituation.action_steps?.length || 0) > 0 && (
           <div className="detail-section-card">
             <h3>
               <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="2" width="18" height="18">
@@ -467,11 +494,11 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
               </svg>
               Action Steps
             </h3>
-            {selectedSituation.action_steps.map((step: string, i: number) => (
+            {selectedSituation.action_steps?.map((step: string, i: number) => (
               <div key={i} className="sf-step-item" style={{ '--sf-stagger': i } as React.CSSProperties}>
                 <div className="sf-step-connector">
                   <div className="sf-step-num">{i + 1}</div>
-                  {i < selectedSituation.action_steps.length - 1 && <div className="sf-step-line" />}
+                  {i < (selectedSituation.action_steps?.length || 0) - 1 && <div className="sf-step-line" />}
                 </div>
                 <div className="sf-step-body">
                   <div className="sf-step-text">{step}</div>
@@ -482,7 +509,7 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
         )}
 
         {/* Applicable Laws — expandable */}
-        {selectedSituation.applicable_laws?.length > 0 && (
+        {(selectedSituation.applicable_laws?.length || 0) > 0 && (
           <div className="detail-section-card">
             <h3>
               <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="2" width="18" height="18">
@@ -491,7 +518,7 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
               </svg>
               Applicable Laws & Remedies
             </h3>
-            {selectedSituation.applicable_laws.map((law: any, i: number) => (
+            {selectedSituation.applicable_laws?.map((law: LawCitation, i: number) => (
               <LawCitationCard key={i} law={law} LAW_DETAILS_MAP={LAW_DETAILS_MAP} />
             ))}
           </div>
@@ -533,7 +560,7 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
         )}
 
         {/* Important Deadlines */}
-        {selectedSituation.important_deadlines?.length > 0 && (
+        {(selectedSituation.important_deadlines?.length || 0) > 0 && (
           <div className="detail-section-card">
             <h3>
               <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" width="18" height="18">
@@ -541,7 +568,7 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
               </svg>
               Important Deadlines
             </h3>
-            {selectedSituation.important_deadlines.map((d: string, i: number) => (
+            {selectedSituation.important_deadlines?.map((d: string, i: number) => (
               <div key={i} className="deadline-item">
                 <div className="deadline-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
@@ -714,7 +741,7 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
             onChange={e => {
               setSearchQuery(e.target.value);
               if (e.target.value.trim()) {
-                setSelectedCategory({ id: '__search__', name: 'Search Results' });
+                setSelectedCategory({ id: '__search__', name: 'Search Results', icon: '🔍' });
                 setScreen('list');
               }
             }}

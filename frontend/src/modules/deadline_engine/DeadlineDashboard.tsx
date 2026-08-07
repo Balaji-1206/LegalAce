@@ -277,21 +277,49 @@ const AddDeadlineSheet: React.FC<AddSheetProps> = ({ userId, onClose, onAdded })
 };
 
 // ---- Main Dashboard Component ----
+interface DeadlineItem {
+  id: string;
+  title: string;
+  description?: string;
+  category?: string;
+  deadline_date: string;
+  priority?: 'high' | 'medium' | 'low';
+  status?: string;
+  days_remaining?: number;
+  notification_preferences?: { phone_number?: string; channel?: string; verified?: boolean };
+  [key: string]: unknown;
+}
+
+interface HealthScoreData {
+  score: number;
+  grade?: string;
+  summary?: string;
+  urgent_count?: number;
+  completed_count?: number;
+  total_tracked?: number;
+  active?: number;
+  completed?: number;
+  expired?: number;
+  strengths?: string[];
+  risks?: string[];
+  [key: string]: unknown;
+}
+
 interface DeadlineDashboardProps {
   userId: string;
   onBackHome?: () => void;
 }
 
 export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, onBackHome }) => {
-  const [healthScore, setHealthScore] = useState<any>(null);
-  const [upcoming, setUpcoming] = useState<any[]>([]);
-  const [allDeadlines, setAllDeadlines] = useState<any[]>([]);
+  const [healthScore, setHealthScore] = useState<HealthScoreData | null>(null);
+  const [, setUpcoming] = useState<DeadlineItem[]>([]);
+  const [allDeadlines, setAllDeadlines] = useState<DeadlineItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string>('all');
 
   // OTP Reminder State (Feature 4)
-  const [reminderTarget, setReminderTarget] = useState<any | null>(null);
+  const [reminderTarget, setReminderTarget] = useState<DeadlineItem | null>(null);
   const [reminderChannel, setReminderChannel] = useState<'whatsapp' | 'push' | 'sms'>('whatsapp');
   const [otpStep, setOtpStep] = useState<'phone' | 'otp'>('phone');
   const [reminderPhone, setReminderPhone] = useState('');
@@ -299,7 +327,7 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpMsg, setOtpMsg] = useState<string | null>(null);
 
-  const handleOpenReminderModal = (e: React.MouseEvent, dl: any) => {
+  const handleOpenReminderModal = (e: React.MouseEvent, dl: DeadlineItem) => {
     e.stopPropagation();
     setReminderTarget(dl);
     setReminderChannel('whatsapp');
@@ -367,8 +395,8 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
           fetchData();
         }, 1200);
       }
-    } catch (err: any) {
-      setOtpMsg(err.message || 'OTP verification failed');
+    } catch (err: unknown) {
+      setOtpMsg(err instanceof Error ? err.message : 'OTP verification failed');
     } finally {
       setOtpLoading(false);
     }
@@ -415,7 +443,7 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
     fetchData();
   };
 
-  const handleExportICS = (e: React.MouseEvent, dl: any) => {
+  const handleExportICS = (e: React.MouseEvent, dl: DeadlineItem) => {
     e.stopPropagation();
     const title = dl.title || 'Legal Deadline';
     const description = dl.description || 'Legal obligation reminder set via LegalAce';
@@ -502,23 +530,23 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
           {/* Health Score Ring */}
           {healthScore && (
             <ScoreRing
-              score={healthScore.score}
-              grade={healthScore.grade}
-              stats={{ active: healthScore.active, completed: healthScore.completed, expired: healthScore.expired }}
+              score={healthScore.score || 0}
+              grade={healthScore.grade || 'C'}
+              stats={{ active: healthScore.active || 0, completed: healthScore.completed || 0, expired: healthScore.expired || 0 }}
             />
           )}
 
           {/* Strengths & Risks */}
           {healthScore && (
             <div className="health-insights">
-              {healthScore.strengths.map((s: string, i: number) => (
+              {(healthScore.strengths || []).map((s: string, i: number) => (
                 <div key={i} className="insight-pill strength" style={{ '--de-stagger': i } as React.CSSProperties}>
                   <span className="insight-pill-icon">✓</span>
                   {s}
                 </div>
               ))}
-              {healthScore.risks.map((r: string, i: number) => (
-                <div key={i} className={`insight-pill ${r.includes('expired') || r.includes('immediate') ? 'critical' : 'risk'}`} style={{ '--de-stagger': healthScore.strengths.length + i } as React.CSSProperties}>
+              {(healthScore.risks || []).map((r: string, i: number) => (
+                <div key={i} className={`insight-pill ${r.includes('expired') || r.includes('immediate') ? 'critical' : 'risk'}`} style={{ '--de-stagger': (healthScore.strengths?.length || 0) + i } as React.CSSProperties}>
                   <span className="insight-pill-icon">⚠</span>
                   {r.replace('⚠ ', '')}
                 </div>
@@ -559,8 +587,8 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
           ) : (
             filteredDeadlines.map((dl, idx) => (
               <div key={dl.id} className={`deadline-card ${dl.status === 'completed' || dl.status === 'expired' ? dl.status : dl.priority}`} style={{ '--de-stagger': idx } as React.CSSProperties}>
-                <div className={`deadline-card-icon ${getCatColorClass(dl.category)}`}>
-                  {getCatIcon(dl.category)}
+                <div className={`deadline-card-icon ${getCatColorClass(dl.category || 'general')}`}>
+                  {getCatIcon(dl.category || 'general')}
                 </div>
                 <div className="deadline-card-body">
                   <div className="deadline-card-meta">
@@ -572,11 +600,11 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
                   <div className="deadline-card-title">{dl.title}</div>
                   {dl.description && <div className="deadline-card-desc">{dl.description?.slice(0, 80)}...</div>}
                   <div className="deadline-card-footer">
-                    <div className={getDaysChipClass(dl.days_remaining, dl.status)}>
+                    <div className={getDaysChipClass(dl.days_remaining ?? 0, dl.status || 'active')}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="11" height="11">
                         <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
                       </svg>
-                      {getDaysLabel(dl.days_remaining, dl.status)}
+                      {getDaysLabel(dl.days_remaining ?? 0, dl.status || 'active')}
                     </div>
                     {dl.status === 'active' && (
                       <div className="deadline-actions">

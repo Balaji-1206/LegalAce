@@ -23,10 +23,12 @@ type ToastType = 'success' | 'error' | 'info';
 interface ToastData { id: number; type: ToastType; message: string; exiting?: boolean; }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-const getLabel = (obj: any, key: string, lang: Lang) => {
-  if (lang === 'ta' && obj[`${key}_ta`]) return obj[`${key}_ta`];
-  if (lang === 'hi' && obj[`${key}_hi`]) return obj[`${key}_hi`];
-  return obj[key] || '';
+const getLabel = (obj: unknown, key: string, lang: Lang): string => {
+  if (!obj || typeof obj !== 'object') return '';
+  const record = obj as Record<string, unknown>;
+  if (lang === 'ta' && record[`${key}_ta`]) return String(record[`${key}_ta`]);
+  if (lang === 'hi' && record[`${key}_hi`]) return String(record[`${key}_hi`]);
+  return String(record[key] || '');
 };
 
 const LANG_LABELS: Record<Lang, { name: string; yes: string; no: string }> = {
@@ -389,7 +391,7 @@ const ActionPlanView: React.FC<ActionPlanViewProps> = ({ plan, scenarioTitle, la
 
   const handleCallAuthority = (auth: Authority) => {
     if (auth.helpline) {
-      window.location.href = `tel:${auth.helpline}`;
+      window.open(`tel:${auth.helpline}`, '_self');
     }
   };
 
@@ -414,7 +416,13 @@ const ActionPlanView: React.FC<ActionPlanViewProps> = ({ plan, scenarioTitle, la
   const [noticeDays] = useState('15');
 
   const [generating, setGenerating] = useState(false);
-  const [generatedDoc, setGeneratedDoc] = useState<any | null>(null);
+  const [generatedDoc, setGeneratedDoc] = useState<{
+    title: string;
+    statutory_sections: string[];
+    document_text: string;
+    financial_breakdown?: { principal?: number; interest?: number; legal_costs?: number; total_claim?: number; damages?: number };
+    verification_affidavit?: string;
+  } | null>(null);
 
   const handleTemplateClick = (tpl: Template) => {
     setActiveTemplate(tpl);
@@ -423,9 +431,9 @@ const ActionPlanView: React.FC<ActionPlanViewProps> = ({ plan, scenarioTitle, la
 
   const buildClientFallbackDoc = (tpl: Template) => {
     const today = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-    let title = 'LEGAL DEMAND NOTICE';
-    let sections = ['Model Tenancy Act 2021', 'Indian Contract Act 1872 — Section 73'];
-    let text = '';
+    let title: string;
+    let sections: string[];
+    let text: string;
 
     if (tpl.id.includes('housing') || tpl.id.includes('deposit')) {
       title = 'LEGAL DEMAND NOTICE FOR RETURN OF SECURITY DEPOSIT';
@@ -496,7 +504,8 @@ const ActionPlanView: React.FC<ActionPlanViewProps> = ({ plan, scenarioTitle, la
     showToast('info', '⏳ Generating vector PDF file...');
 
     try {
-      if (!(window as any).html2pdf) {
+      const win = window as unknown as Record<string, unknown>;
+      if (!win.html2pdf) {
         await new Promise((resolve, reject) => {
           const script = document.createElement('script');
           script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
@@ -506,7 +515,13 @@ const ActionPlanView: React.FC<ActionPlanViewProps> = ({ plan, scenarioTitle, la
         });
       }
 
-      const html2pdf = (window as any).html2pdf;
+      const html2pdf = win.html2pdf as () => {
+        set: (opt: unknown) => {
+          from: (elem: HTMLElement) => {
+            save: () => Promise<void>;
+          };
+        };
+      };
       const filename = `${generatedDoc?.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'Legal_Notice'}.pdf`;
 
       const opt = {
@@ -957,6 +972,13 @@ interface WizardScreenProps {
   onBackHome?: () => void;
 }
 
+interface WizardSessionItem {
+  id?: string;
+  scenario_id?: string;
+  created_at?: string;
+  [key: string]: unknown;
+}
+
 export const WizardScreen: React.FC<WizardScreenProps> = ({ userId, onBackHome }) => {
   const [lang, setLang] = useState<Lang>('en');
   const [screen, setScreen] = useState<Screen>('categories');
@@ -966,7 +988,7 @@ export const WizardScreen: React.FC<WizardScreenProps> = ({ userId, onBackHome }
   const [selectedCat, setSelectedCat] = useState<Category | null>(null);
   const [currentScenario, setCurrentScenario] = useState<Scenario | null>(null);
   const [currentPlan, setCurrentPlan] = useState<ActionPlan | null>(null);
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<WizardSessionItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [transitionKey, setTransitionKey] = useState(0);
@@ -1024,7 +1046,6 @@ export const WizardScreen: React.FC<WizardScreenProps> = ({ userId, onBackHome }
 
   // Load categories (always fetch fresh)
   useEffect(() => {
-    setCategoriesLoading(true);
     fetch(`${BACKEND}/categories`)
       .then(r => r.json())
       .then(d => {
@@ -1036,7 +1057,7 @@ export const WizardScreen: React.FC<WizardScreenProps> = ({ userId, onBackHome }
       .catch(() => {
         const cached = localStorage.getItem(CACHE_KEY);
         if (cached) {
-          try { setCategories(JSON.parse(cached).categories || []); } catch {}
+          try { setCategories(JSON.parse(cached).categories || []); } catch { /* ignore cache parse error */ }
         }
       })
       .finally(() => setCategoriesLoading(false));
@@ -1350,7 +1371,7 @@ export const WizardScreen: React.FC<WizardScreenProps> = ({ userId, onBackHome }
                 <p>Complete a wizard flow and your cases will appear here.</p>
               </div>
             ) : (
-              history.map((session: any, i: number) => (
+              history.map((session: WizardSessionItem, i: number) => (
                 <div key={session.id || i} className="history-item" style={{ '--stagger-index': i } as React.CSSProperties}>
                   <div className="history-timeline">
                     <div className="history-dot" />

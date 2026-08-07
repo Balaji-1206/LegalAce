@@ -86,8 +86,8 @@ export const DocumentXRayTab: React.FC<DocumentXRayTabProps> = ({
 
       const data = await res.json();
       setResult(data.result as XRayResult);
-    } catch (err: any) {
-      setError(err.message || 'Failed to analyze document');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to analyze document');
     } finally {
       setAnalyzing(false);
     }

@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     MONGODB_URL: str
     DATABASE_NAME: str
 
+    # Security & CORS
+    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"]
+
     # OpenAI
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o"

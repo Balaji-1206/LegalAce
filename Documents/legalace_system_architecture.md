@@ -1,6 +1,6 @@
-# 🏛️ LegalAce — Full System Architecture & 5-Module Technical Reference
+# 🏛️ LegalAce — Full System Architecture & Technical Reference
 
-**LegalAce** is a full-stack, AI-powered citizen legal assistant built specifically for the Indian Legal System. It translates complex Indian statutes (IPC, CrPC/BNSS, Consumer Protection Act, RERA, NI Act, Model Tenancy Act, Labour Laws) into plain-English rights, interactive action blueprints, advocate-grade legal notice generation, and statutory deadline monitoring.
+**LegalAce** is a full-stack, AI-powered citizen legal assistant built specifically for the Indian Legal System. It translates complex Indian statutes (IPC/BNSS, CrPC, Consumer Protection Act, RERA, NI Act, Model Tenancy Act, Labour Laws, NALSA Act) into plain-English rights, interactive action blueprints, advocate-grade legal notice generation, statutory deadline monitoring, contract X-Ray analysis, and free legal aid eligibility checking.
 
 ---
 
@@ -8,11 +8,12 @@
 
 | Layer | Technologies & Frameworks | Key Responsibilities |
 |---|---|---|
-| **Frontend Core** | React (TypeScript), Vite, Vanilla CSS | Single-page application, custom mobile-friendly design system, glassmorphism, zero external UI libraries. |
-| **Speech & Media** | Web Speech Synthesis API, Browser Print Engine | Native offline Female/Young-Girl Text-to-Speech audio reader, A4 multi-page PDF generation engine. |
-| **Backend API** | Python 3.10+, FastAPI, Uvicorn | High-performance async REST APIs, CORS middleware, strict Pydantic schemas. |
-| **AI / LLM Engine** | LangChain, LangGraph, OpenAI / Gemini, RAG Vector Search | Context-aware legal agent tool execution, dynamic scenario generation, legal notice drafting. |
-| **Database Layer** | MongoDB (Motor AsyncIOMotorClient) | Document store for situations, limitation rules, wizard scenarios, daily rights, user bookmarks, and chat history. |
+| **Frontend Core** | React (TypeScript), Vite, Vanilla CSS | Single-page application, custom mobile-friendly glassmorphism design system, zero external UI libraries. |
+| **Speech & Media** | Web Speech Synthesis API, Browser Print Engine, html2pdf.js | Native offline Female/Young-Girl Text-to-Speech audio reader, A4 multi-page PDF generation engine. |
+| **Backend API** | Python 3.10+, FastAPI, Uvicorn | High-performance async REST APIs, CORS middleware, strict Pydantic request & response schemas. |
+| **AI / LLM Engine** | LangChain ReAct Agent, RAG Pipeline, OpenAI / Gemini / Ollama | Context-aware legal agent tool execution, dynamic scenario generation, legal notice drafting. |
+| **Vector Database** | SentenceTransformers (`all-MiniLM-L6-v2`), FAISS Index | 384-dimensional vector embeddings, flat inner-product vector search across Indian law statutory corpus. |
+| **Database Layer** | MongoDB (Motor AsyncIOMotorClient) | Async document store for situations, limitation rules, wizard scenarios, bookmarks, deadlines, and chat logs. |
 
 ---
 
@@ -22,180 +23,121 @@
 flowchart TD
     User([👤 User / Citizen]) --> TabBar{App Navigation Tabs}
 
-    TabBar -->|Tab 1: Chat| M1[🤖 Module 1: AI Legal Assistant Chatbot]
-    TabBar -->|Tab 2: Situations| M2[🛡️ Module 2: Situation Finder & Rights Engine]
-    TabBar -->|Tab 3: Monitor| M3[⏳ Module 3: Statutory Deadline & Limitation Engine]
-    TabBar -->|Tab 4: Wizard| M4[⚡ Module 4: Action Plan & Legal Notice Generator Wizard]
-    TabBar -->|Tab 5: Profile/Home| M5[👤 Module 5: Daily Rights, Bookmarks & Profile]
+    TabBar -->|Tab 1: Home| M5[👤 Module 5: Home, Daily Rights & Profile]
+    TabBar -->|Tab 2: Wizard| M4[⚡ Module 4: Action Plan & Legal Notice Generator Wizard]
+    TabBar -->|Tab 3: Situations| M2[🛡️ Module 2: Situation Finder & Rights Engine]
+    TabBar -->|Tab 4: Monitor| M3[⏳ Module 3: Statutory Deadline Engine & Health Score]
+    TabBar -->|Tab 5: Profile| M5
+    
+    %% Feature Overlays
+    TabBar -->|Floating AI Button| M1[🤖 Module 1: AI Assistant Floating Chatbot]
+    TabBar -->|Document Upload| M6[🔍 Feature 6: Document X-Ray Clause Analyzer]
+    TabBar -->|Legal Aid Check| M7[🏛️ Feature 7: Free Legal Aid Eligibility Checker]
 
     %% Backend Connections
-    M1 -->|REST / Chat Stream| B_Agent[app/modules/agent/api.py]
+    M1 -->|REST / Sync Execution| B_Agent[app/modules/agent/api.py]
     M2 -->|REST / API| B_Sit[app/modules/situation_finder/api.py]
     M3 -->|REST / API| B_Dead[app/modules/deadline_engine/api.py]
     M4 -->|REST / API| B_Wiz[app/modules/wizard/api.py]
-    M5 -->|REST / API| B_Daily[app/modules/daily_rights/api.py]
+    M6 -->|REST / Upload| B_XRay[app/modules/document_xray/api.py]
+    M7 -->|REST / API| B_Aid[app/modules/legal_aid/api.py]
 
     %% Database Connections
     B_Sit --> DB[(MongoDB: situations)]
-    B_Dead --> DB[(MongoDB: limitation_rules)]
+    B_Dead --> DB[(MongoDB: deadlines & limitation_rules)]
     B_Wiz --> DB[(MongoDB: wizard_scenarios)]
-    B_Daily --> DB[(MongoDB: daily_rights)]
-    B_Agent --> VectorDB[(FAISS / Chroma Vector Index)]
+    B_Agent --> VectorDB[(FAISS Vector Index)]
+    B_XRay --> LLM_Engine[LLM Clause Analyzer]
+    B_Aid --> DB_Aid[(MongoDB: legal_aid_authorities)]
 ```
 
 ---
 
-## 📦 Detailed Breakdown of the 5 Core Modules
+## 📦 Detailed Breakdown of Core Modules
 
----
-
-### 🤖 Module 1: AI Legal Assistant & Floating Chatbot
-* **Primary Role**: Conversational legal Q&A assistant and interactive guide for instant legal queries.
+### 🤖 Module 1: AI Assistant & Floating Agentic Chatbot
+* **Primary Role**: Conversational legal Q&A assistant with real-time reasoning transparency and human-in-the-loop pending action approvals.
 * **Frontend Location**: [ChatbotTab.tsx](file:///c:/Projects/LegalAce/frontend/src/modules/chatbot/ChatbotTab.tsx) & [FloatingChatWidget.tsx](file:///c:/Projects/LegalAce/frontend/src/modules/chatbot/FloatingChatWidget.tsx)
-* **Backend Location**: `backend/app/modules/agent/` (`api.py`, `agent.py`, `tools.py`)
+* **Backend Location**: `backend/app/modules/agent/` (`api.py`, `executor.py`, `planner.py`, `tools.py`, `synthesizer.py`)
 
 #### Key Features:
-1. **Conversational Legal QA**: Answers queries on Indian civil, criminal, labour, and consumer law using plain-English explanations.
-2. **Context-Aware Citation**: Automatically attaches relevant IPC / CrPC / Act citations with expandable summaries.
-3. **Floating Floating Widget**: Accessible from anywhere in the app via a floating action button (`FloatingChatWidget.tsx`).
-4. **Chat History Persistence**: Maintains multi-turn conversation logs in MongoDB and local storage.
-
-#### Tech & Data Flow:
-* **Frontend**: React state `messages`, Markdown rendering, auto-scrolling chat window.
-* **Backend Endpoint**: `POST /api/v1/agent/chat`
-* **Under the Hood**: Uses LangChain ReAct agent + custom vector search tool over Indian statutory corpus.
+1. **Agentic Reasoning Trace**: Visualizes reasoning steps (*Deconstructing query -> Vector Search -> Building resolution plan*) for enhanced AI transparency.
+2. **Pending Action Confirmation Cards**: Enables users to review and confirm high-impact actions (e.g. generating legal demand notices) directly in the chat interface.
+3. **Conversational Legal Q&A**: Answers queries on Indian civil, criminal, labour, and consumer law using plain-English explanations.
+4. **Expandable Law Citations**: Attaches IPC / CrPC / Act citations with expandable statutory summaries.
 
 ---
 
 ### 🛡️ Module 2: Situation Finder & Rights Engine
-* **Primary Role**: Situation-first legal knowledge repository mapping everyday human problems directly to rights, laws, and action steps.
-* **Frontend Location**: [SituationFinderTab.tsx](file:///c:/Projects/LegalAce/frontend/src/modules/situation_finder/SituationFinderTab.tsx) & [situation_finder.css](file:///c:/Projects/LegalAce/frontend/src/modules/situation_finder/situation_finder.css)
-* **Backend Location**: `backend/app/modules/situation_finder/` (`api.py`, `service.py`, `models.py`)
+* **Primary Role**: Situation-first legal repository mapping human problems directly to rights, laws, and action steps.
+* **Frontend Location**: [SituationFinderTab.tsx](file:///c:/Projects/LegalAce/frontend/src/modules/situation_finder/SituationFinderTab.tsx)
+* **Backend Location**: `backend/app/modules/situation_finder/` (`api.py`, `service.py`)
 
 #### Key Features:
-1. **13 Specialized Legal Categories**:
-   - `Employment`, `Housing`, `Consumer Rights`, `Banking & Finance`, `Cyber Crime`, `Traffic Rules`, `Women Rights`, `Education`, `Cheque Bounce & Debt`, `RTI & Public Service`, `RERA Real Estate`, `Insurance & Health`, `Family & Support`.
-2. **4-Pillar Action Blueprint**:
-   - **Statutory Rights**: Enforceable protections under Indian law.
-   - **Action Steps**: Chronological numbered checklist.
-   - **Expandable Law Citations**: Detailed act section breakdowns & remedy callouts.
-   - **Urgency Deadlines**: Expiry warnings.
-3. **Official Portals & Helplines Hub**:
-   - Clickable web portal links (`e-Daakhil`, `Cybercrime.gov.in`, `RERA`, `SHe-Box`, `RTI Online`) and direct telephone dial buttons (`1915`, `1930`, `1800-180-5522`, `14448`, `15100`).
-4. **Multilingual Voice Assist (Female / Young Girl Tone)**:
-   - Built-in Web Speech Synthesis reader with configurable pitch (`1.3`) and female voice filtering (*Jenny*, *Aria*, *Samantha*, *Zira*).
-5. **Multi-Page "Save PDF" Engine**:
-   - Generates an A4 printable "Know Your Statutory Rights Guide" PDF sheet complete with LegalAce letterhead.
-
-#### Tech & Data Flow:
-* **Backend Endpoints**:
-  - `GET /api/v1/situations/categories` (Category summaries + situation counts)
-  - `GET /api/v1/situations` (Full scenario list)
-  - `GET /api/v1/situations/{id}` (Single scenario details)
-* **Database Collection**: MongoDB `situations` collection (seeded via `seed_situations.py`).
+1. **13 Core Legal Categories**: Covers Employment, Housing, Consumer Rights, Cyber Crime, Women Rights, Banking & Finance, Traffic Rules, Education, Cheque Bounce & Debt, RTI & Public Service, RERA Real Estate, Insurance, and Family Support.
+2. **4-Pillar Action Blueprint**: Details User Rights, Action Steps, Statutory Law Citation Cards, and Urgency Warnings.
+3. **Official Portals & Helplines Hub**: Telephone dial buttons (`15100`, `1915`, `1930`, `181`, `14567`) and links to official portals (`e-Daakhil`, `RTI Online`, `CyberCrime.gov.in`).
+4. **Multilingual Voice Assist**: Offline Web Speech Synthesis reader with young-female voice pitch customization.
 
 ---
 
-### ⏳ Module 3: Statutory Deadline & Limitation Engine ("Monitor")
-* **Primary Role**: Helps citizens track legal limitation periods, calculate exact expiration dates under the Indian Limitation Act, 1963, and set reminder alerts.
+### ⏳ Module 3: Statutory Deadline Engine & Health Score
+* **Primary Role**: Helps citizens track legal limitation periods under the Indian Limitation Act, 1963, calculate exact expiration dates, and monitor overall legal health.
 * **Frontend Location**: [DeadlineDashboard.tsx](file:///c:/Projects/LegalAce/frontend/src/modules/deadline_engine/DeadlineDashboard.tsx)
-* **Backend Location**: `backend/app/modules/deadline_engine/` (`api.py`, `service.py`, `limitation_calculator.py`)
+* **Backend Location**: `backend/app/modules/deadline_engine/` (`api.py`, `service.py`, `extractor.py`, `scheduler.py`)
 
 #### Key Features:
-1. **Limitation Period Calculator**:
-   - Selects legal action type (e.g. *Cheque Bounce Notice - 30 days*, *Consumer Complaint - 2 years*, *Payment of Wages - 12 months*, *Labour Dispute - 3 years*).
-   - User inputs cause of action date → system computes exact expiration date, remaining days, and urgency status (*Normal*, *Urgent*, *Expired*).
-2. **Interactive Deadline Tracker**:
-   - Allows users to save active deadlines to their personal dashboard.
-3. **Reminders & Alert Notifications**:
-   - Visual countdown badges and status progress bars.
-
-#### Tech & Data Flow:
-* **Backend Endpoints**:
-  - `POST /api/v1/deadlines/calculate` (Calculates deadline from start date + rule ID)
-  - `GET /api/v1/deadlines/rules` (Fetches all statutory limitation rules)
-* **Database Collection**: MongoDB `limitation_rules` collection.
+1. **Limitation Period Calculator**: Computes exact expiration dates, remaining days, and urgency status (*Normal*, *Urgent*, *Expired*).
+2. **Health Score Ring (0–100)**: Visual gauge evaluating risk metrics based on pending, active, completed, and overdue legal deadlines.
+3. **OTP WhatsApp & SMS Reminders**: Multi-channel reminder preferences with OTP verification workflows.
+4. **ICS Calendar Export**: One-tap export to Google Calendar and Apple iCal.
 
 ---
 
 ### ⚡ Module 4: Action Plan & Legal Notice Generator Wizard
-* **Primary Role**: The core execution engine. Guides users through an interactive decision tree to build a custom Action Plan and generate printable, advocate-grade legal demand notices.
-* **Frontend Location**: [WizardScreen.tsx](file:///c:/Projects/LegalAce/frontend/src/modules/wizard/WizardScreen.tsx) & [wizard.css](file:///c:/Projects/LegalAce/frontend/src/modules/wizard/wizard.css)
+* **Primary Role**: Guides users through interactive decision trees to build custom Action Plans and generate printable, advocate-grade legal demand notices.
+* **Frontend Location**: [WizardScreen.tsx](file:///c:/Projects/LegalAce/frontend/src/modules/wizard/WizardScreen.tsx)
 * **Backend Location**: `backend/app/modules/wizard/` (`api.py`, `service.py`, `scenarios_data.py`)
 
 #### Key Features:
-1. **Interactive Decision Tree Wizard**:
-   - Asks 3 tailored questions (e.g. *"Did you vacate?"*, *"Do you have a written notice?"*, *"Was a cheque issued?"*) to branch logic dynamically.
-2. **Custom AI Situation Input Card**:
-   - Full-width prompt field with example chips (*Cheque bounce*, *RTI file*, *RERA possession*, *Mediclaim rejected*, *POSH complaint*).
-   - Generates dynamic decision trees on-the-fly for unlisted custom scenarios using AI.
-3. **Action Plan View**:
-   - Interactive step completion checklist.
-   - Required document checklist.
-   - Authority contact directories.
-4. **Advocate-Grade PDF Notice Generator**:
-   - Renders a formal Indian legal demand notice complete with advocate header, facts, statutory section citations, financial claim table, verification clause, and advocate seal.
-   - Multi-page A4 print engine with `@media print` support.
-
-#### Tech & Data Flow:
-* **Backend Endpoints**:
-  - `GET /api/v1/wizard/categories` (Wizard categories)
-  - `POST /api/v1/wizard/plan` (Deterministic plan generation from scenario ID + answers)
-  - `POST /api/v1/wizard/quick-plan` (Dynamic AI plan generation from custom text query)
-* **Database / Engine**: Hybrid engine (Deterministic rule matcher in `service.py` + fallback dynamic plan generator `createFallbackPlan`).
+1. **Multilingual Decision Trees**: Tailored question series in English, Tamil (`_ta`), and Hindi (`_hi`).
+2. **AI Dynamic Scenario Generator**: Generates custom decision tree question nodes for non-standard user legal topics.
+3. **Advocate-Grade PDF Notice Generator**: Drafts official Indian legal demand notices (*Security Deposit Recovery*, *Salary Recovery*, *Consumer Complaint*) with advocate, court, or corporate letterhead styling.
 
 ---
 
-### 👤 Module 5: Daily Rights, Bookmarks & User Profile
-* **Primary Role**: Engagement, daily legal literacy, bookmark management, and offline cache synchronization.
-* **Frontend Location**: [DailyRightsScreen.tsx](file:///c:/Projects/LegalAce/frontend/src/modules/shared/DailyRightsScreen.tsx) & [ProfileScreen.tsx](file:///c:/Projects/LegalAce/frontend/src/modules/profile/ProfileScreen.tsx)
-* **Backend Location**: `backend/app/modules/daily_rights/` (`api.py`, `service.py`)
-
-#### Key Features:
-1. **Daily Legal Tip / Right Card**:
-   - Rotating daily card highlighting everyday legal rights (e.g. *Digital Driving License validity*, *Women arrest rules*, *No-fault accident assistance*).
-2. **Bookmarks & Saved Situations**:
-   - One-tap bookmarking synced across local storage and backend user profile.
-3. **Recently Viewed History**:
-   - Tracks recently viewed situation guides for quick resume.
-4. **User Profile & Preference Management**:
-   - Language selector (*English*, *Tamil*, *Hindi*), dark/light preferences, saved document history.
-
-#### Tech & Data Flow:
-* **Backend Endpoints**:
-  - `GET /api/v1/daily-rights/today` (Daily legal tip)
-* **Storage**: Browser `localStorage` + MongoDB `daily_rights` collection.
+### 🔍 Feature 6: Document X-Ray Clause Analyzer
+* **Primary Role**: Scans legal notices, rental contracts, and employment agreements to extract key dates, obligations, and red-flag clauses.
+* **Frontend Location**: [DocumentXRayTab.tsx](file:///c:/Projects/LegalAce/frontend/src/modules/document_xray/DocumentXRayTab.tsx)
+* **Backend Location**: `backend/app/modules/document_xray/` (`api.py`, `service.py`)
 
 ---
 
-## 🔗 Cross-Module Data Flow Summary
+### 🏛️ Feature 7: Free Legal Aid Eligibility Checker
+* **Primary Role**: Evaluates eligibility under NALSA Act Section 12 for free legal aid and connects citizens to their nearest DLSA/SLSA authority.
+* **Frontend Location**: [LegalAidChecker.tsx](file:///c:/Projects/LegalAce/frontend/src/modules/legal_aid/LegalAidChecker.tsx)
+* **Backend Location**: `backend/app/modules/legal_aid/` (`api.py`, `service.py`)
+
+---
+
+## 🔗 Cross-Module Integration Map
 
 ```
-[ User Query / Problem ]
+[ User Problem / Query ]
        │
-       ├──────> Module 2 (Situation Finder) ───> Learns Rights & Statutory Laws
-       │                                                    │
-       │                                        (Tap: "Get Action Plan")
-       │                                                    ▼
-       ├──────> Module 4 (Wizard) ─────────────> Generates Action Plan & PDF Legal Notice
-       │                                                    │
-       │                                        (Extracts Due Dates)
-       │                                                    ▼
-       ├──────> Module 3 (Deadline Engine) ────> Tracks Statutory Expiry & Reminders
+       ├──────> Situation Finder ──────> View Rights, Statutory Laws & Helplines
+       │                                       │
+       │                           (Tap: "Start Action Plan")
+       │                                       ▼
+       ├──────> Interactive Wizard ────> Generate Action Blueprint & PDF Legal Notice
+       │                                       │
+       │                           (Extract Expiration Dates)
+       │                                       ▼
+       ├──────> Deadline Engine ───────> Track Expiration, Health Score & WhatsApp Alerts
        │
-       ├──────> Module 1 (Chatbot) ────────────> Ask Clarifying Questions / Advice
+       ├──────> Document X-Ray ────────> Analyze Contracts & Extract Red Flags
        │
-       └──────> Module 5 (Profile & Daily) ────> Saves Bookmarks & Learns Daily Tip
+       ├──────> Free Legal Aid ────────> Check NALSA Eligibility & Nearest DLSA Office
+       │
+       └──────> Floating AI Chat ──────> Ask Questions & Confirm Pending Actions
 ```
-
----
-
-## 🛡️ Summary Matrix
-
-| Module | Core Purpose | Primary API Endpoint | Database Collection | Key Output |
-|---|---|---|---|---|
-| **Module 1: Chatbot** | Conversational Legal QA | `POST /api/v1/agent/chat` | `conversations` | Interactive AI Chat Response |
-| **Module 2: Situation Finder** | Rights & Statutory Guide | `GET /api/v1/situations` | `situations` | 4-Pillar Guide, Portals Hub, TTS Audio & PDF |
-| **Module 3: Deadline Engine** | Limitation Tracker | `POST /api/v1/deadlines/calculate` | `limitation_rules` | Remaining Days, Urgency & Expiration Date |
-| **Module 4: Legal Wizard** | Notice Generator | `POST /api/v1/wizard/plan` | `wizard_scenarios` | Action Plan Checklist & Advocate PDF Notice |
-| **Module 5: Daily & Profile** | User Hub & Bookmarks | `GET /api/v1/daily-rights/today` | `daily_rights` | Daily Tip, Bookmarks & Local Storage Cache |
