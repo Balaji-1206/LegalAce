@@ -56,7 +56,35 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [isHelplineModalOpen, setIsHelplineModalOpen] = useState<boolean>(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState<boolean>(false);
+  const [isModelModalOpen, setIsModelModalOpen] = useState<boolean>(false);
   const [copiedNumber, setCopiedNumber] = useState<string | null>(null);
+
+  // AI Model Preference state
+  type LLMProvider = 'auto' | 'gemini' | 'openai' | 'ollama';
+  const [llmProvider, setLlmProvider] = useState<LLMProvider>(
+    () => (localStorage.getItem('legalace_llm_provider') as LLMProvider) || 'auto'
+  );
+
+  const MODEL_META: Record<LLMProvider, { label: string; desc: string; icon: string }> = {
+    auto:   { label: 'Auto (Recommended)', desc: 'Smart routing for optimal performance', icon: '⚡' },
+    gemini: { label: 'Gemini',             desc: 'Cloud — high speed & comprehensive analysis', icon: '✨' },
+    openai: { label: 'GPT-4 (OpenAI)',     desc: 'Cloud — deep legal reasoning', icon: '🧠' },
+    ollama: { label: 'Ollama',             desc: 'Local GPU — 100% private on-device processing', icon: '🦙' },
+  };
+
+  const handleSelectModel = async (provider: LLMProvider) => {
+    setLlmProvider(provider);
+    localStorage.setItem('legalace_llm_provider', provider);
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      await fetch(`${backendUrl}/api/v1/llm-settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider }),
+      });
+    } catch { /* offline fallback */ }
+    setIsModelModalOpen(false);
+  };
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -379,6 +407,35 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </div>
         </div>
 
+        {/* AI Preferences */}
+        <div className="profile-section-title">AI Preferences</div>
+        <div className="profile-card-group">
+          <div className="profile-action-item" onClick={() => setIsModelModalOpen(true)}>
+            <div className="action-item-icon" style={{ background: '#eef2ff', color: '#4f46e5' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                <path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-4 0V4a2 2 0 0 1 2-2zM4 11a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7z" />
+                <circle cx="9" cy="14" r="1.5" fill="currentColor" />
+                <circle cx="15" cy="14" r="1.5" fill="currentColor" />
+                <path d="M10 18h4" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div className="action-item-content">
+              <div className="action-item-title">
+                AI Model
+                <span className="action-item-badge" style={{ background: '#eef2ff', color: '#4f46e5' }}>
+                  {MODEL_META[llmProvider].icon} {MODEL_META[llmProvider].label}
+                </span>
+              </div>
+              <div className="action-item-desc">{MODEL_META[llmProvider].desc}</div>
+            </div>
+            <div className="action-item-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
         {/* Preferences & System Data */}
         <div className="profile-section-title">Preferences & Data Control</div>
         <div className="profile-card-group">
@@ -605,6 +662,84 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
             <button className="modal-action-btn" onClick={() => setIsAboutModalOpen(false)}>
               Got It
+            </button>
+          </div>
+        </div>
+      )}
+      {/* --- AI MODEL SELECTION MODAL --- */}
+      {isModelModalOpen && (
+        <div className="profile-modal-overlay" onClick={() => setIsModelModalOpen(false)}>
+          <div className="profile-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-row">
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                🧠 Choose AI Model
+              </h3>
+              <button className="modal-close-btn" onClick={() => setIsModelModalOpen(false)}>✕</button>
+            </div>
+
+            <p style={{ fontSize: '0.78rem', color: '#64748b', marginBottom: '16px', lineHeight: 1.4 }}>
+              Choose how LegalAce processes your legal queries:
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+              {(Object.keys(MODEL_META) as LLMProvider[]).map((key) => {
+                const isSelected = llmProvider === key;
+                const m = MODEL_META[key];
+                return (
+                  <div
+                    key={key}
+                    onClick={() => handleSelectModel(key)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px 14px',
+                      borderRadius: '12px',
+                      border: isSelected ? '2px solid #4f46e5' : '1px solid #e2e8f0',
+                      background: isSelected ? '#f5f3ff' : '#ffffff',
+                      cursor: 'pointer',
+                      transition: 'all 0.18s ease',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        border: isSelected ? '6px solid #4f46e5' : '2px solid #cbd5e1',
+                        background: '#ffffff',
+                        flexShrink: 0,
+                        transition: 'all 0.15s ease',
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.86rem', fontWeight: 700, color: isSelected ? '#3730a3' : '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>{m.icon}</span>
+                        <span>{m.label}</span>
+                        {key === 'auto' && (
+                          <span style={{ fontSize: '0.65rem', background: '#dcfce7', color: '#15803d', padding: '2px 6px', borderRadius: '6px', fontWeight: 700 }}>
+                            Recommended
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.73rem', color: isSelected ? '#4338ca' : '#64748b', marginTop: '2px' }}>
+                        {m.desc}
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <span style={{ color: '#4f46e5', fontWeight: 800, fontSize: '0.9rem' }}>✓</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <button
+              className="modal-action-btn"
+              style={{ background: '#4f46e5' }}
+              onClick={() => setIsModelModalOpen(false)}
+            >
+              Done
             </button>
           </div>
         </div>

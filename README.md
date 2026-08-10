@@ -137,18 +137,63 @@ python -m venv .venv
 # Install dependencies:
 pip install -r requirements.txt
 
-# Start FastAPI server:
-python -m uvicorn app.main:app --reload
+# Start FastAPI server listening on 0.0.0.0 (allows LAN & localhost access):
+python run.py
+# Or directly via Uvicorn:
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-Backend server will run at: `http://localhost:8000` (Swagger docs: `http://localhost:8000/docs`).
+- Local Web URL: `http://localhost:8000` (Swagger docs: `http://localhost:8000/docs`)
+- Network LAN URL: `http://<COMPUTER_LAN_IP>:8000` (e.g. `http://172.16.15.251:8000/docs`)
 
-### 3. Frontend Setup
+### 3. Frontend Setup (Web)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Frontend Web App will run at: `http://localhost:5173`.
+- Web App URL: `http://localhost:5173`
+
+---
+
+## 🌐 Multi-Platform Development Networking (Web + Expo Go Mobile)
+
+The application uses a **single backend server** (`0.0.0.0:8000`) and a **single MongoDB connection** that serves both the Web app and Expo Go mobile clients simultaneously.
+
+### 1. How to Find Your Computer's LAN IP Address
+- **Windows (PowerShell/CMD)**: Run `ipconfig` and locate the `IPv4 Address` under your active Wi-Fi or Ethernet adapter (e.g., `172.16.15.251` or `192.168.1.100`).
+- **macOS / Linux**: Run `ifconfig` or `ip a` and check the IP assigned to `en0` or `wlan0`.
+
+### 2. Configuring LAN IP Environment Variables
+Create or update `frontend/.env`:
+```env
+# Web application running on local browser uses localhost
+EXPO_PUBLIC_API_URL_WEB=http://localhost:8000
+
+# Mobile application running on Expo Go physical phone uses LAN IP
+EXPO_PUBLIC_API_URL_MOBILE=http://<COMPUTER_LAN_IP>:8000
+```
+*Example for LAN IP `172.16.15.251`:*
+`EXPO_PUBLIC_API_URL_MOBILE=http://172.16.15.251:8000`
+
+### 3. API Base URL Resolution Summary
+- **Browser (Web)**: Uses `http://localhost:8000` (`EXPO_PUBLIC_API_URL_WEB`)
+- **Expo Go (Mobile Phone)**: Uses `http://<COMPUTER_LAN_IP>:8000` (`EXPO_PUBLIC_API_URL_MOBILE`)
+
+### 4. Starting Expo Go Mobile App
+1. Install **Expo Go** from Google Play Store or Apple App Store on your physical phone.
+2. Ensure your phone and development computer are connected to the **same Wi-Fi / Local Area Network (LAN)**.
+3. If running Expo in your project:
+   ```bash
+   npx expo start
+   ```
+4. Scan the QR code displayed in the terminal with Expo Go (Android) or Camera app (iOS).
+
+### 5. Mobile Connection Troubleshooting Checklist
+If Expo Go on your phone cannot connect to the backend:
+1. **Same Network**: Verify phone and computer are on the same Wi-Fi network (not mobile data or separate guest networks).
+2. **Backend Host Binding**: Confirm backend was started with `--host 0.0.0.0` (or `python run.py`), not `127.0.0.1`.
+3. **Firewall Rules**: Ensure Windows Defender Firewall or local firewall allows incoming connections on port `8000`. You can test reaching `http://<COMPUTER_LAN_IP>:8000/docs` from the mobile browser.
+4. **CORS Configuration**: The backend CORS middleware permits requests matching local subnet IPs (`192.168.*`, `172.*`, `10.*`).
 
 ---
 

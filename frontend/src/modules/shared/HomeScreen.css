@@ -23,6 +23,7 @@
 .home-screen {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 0 0 90px;
   background: #f4f5f9;
   position: relative;

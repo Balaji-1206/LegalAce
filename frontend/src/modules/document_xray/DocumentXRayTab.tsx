@@ -1,7 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
 import './document_xray.css';
+import { API_BASE_URL } from '../../config/api';
 
-const BACKEND_URL = 'http://localhost:8000';
+const BACKEND_URL = API_BASE_URL;
 
 interface ExtractedDate {
   label: string;

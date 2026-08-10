@@ -65,28 +65,32 @@ const ActionStepItem: React.FC<{ userId: string; stepText: string; backendUrl: s
   };
 
   return (
-    <div className={`rich-action-item${isChecked ? ' checked' : ''}`} style={{ marginTop: '4px' }}>
-      <label className="action-checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-        <input
-          type="checkbox"
-          checked={isChecked}
-          onChange={e => setIsChecked(e.target.checked)}
-          style={{ cursor: 'pointer' }}
-        />
-        <span className="action-step-text" style={{ fontSize: '0.74rem', color: isChecked ? '#94a3b8' : '#334155', textDecoration: isChecked ? 'line-through' : 'none' }}>
-          {stepText}
-        </span>
-      </label>
+    <div className="action-step-timeline-item">
+      <div className="action-step-line" />
       <button
-        className="msg-action-btn"
-        onClick={handleCreateReminder}
-        disabled={reminderState !== 'idle'}
-        style={{ marginTop: '2px', fontSize: '0.66rem', color: reminderState === 'created' ? '#10b981' : '#2563eb' }}
+        className={`action-step-num${isChecked ? ' checked' : ''}`}
+        onClick={() => setIsChecked(c => !c)}
+        title={isChecked ? 'Mark incomplete' : 'Mark complete'}
+        style={{ cursor: 'pointer', border: 'none' }}
       >
-        {reminderState === 'idle' && '📌 Remind Me'}
-        {reminderState === 'loading' && 'Saving...'}
-        {reminderState === 'created' && '✓ Saved'}
+        {isChecked ? (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="10" height="10"><polyline points="20 6 9 17 4 12" /></svg>
+        ) : stepText.match(/^\d+/) ? stepText.match(/^(\d+)/)?.[1] : '→'}
       </button>
+      <div className="action-step-body">
+        <span className={`action-step-text-label${isChecked ? ' checked' : ''}`}>
+          {stepText.replace(/^\d+[.\s-]*/, '')}
+        </span>
+        <button
+          className="action-step-remind-btn"
+          onClick={handleCreateReminder}
+          disabled={reminderState !== 'idle'}
+        >
+          {reminderState === 'idle' && <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="10" height="10"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Add reminder</>}
+          {reminderState === 'loading' && 'Saving...'}
+          {reminderState === 'created' && <>✓ Reminder saved</>}
+        </button>
+      </div>
     </div>
   );
 };
@@ -154,78 +158,74 @@ const PendingActionCard: React.FC<{
   const docText = String(resultData?.document_text || resultData?.doc_text || action.details?.document_text || '');
 
   return (
-    <div className="pending-action-card" style={{ marginTop: '8px', padding: '10px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '10px' }}>
-      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1e293b' }}>
-        ⚡ Confirmation Required: {action.title}
-      </div>
-      <div style={{ fontSize: '0.74rem', color: '#475569', marginTop: '3px' }}>
-        {action.prompt_text}
-      </div>
-
-      {status === 'pending' && (
-        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-          <button
-            onClick={() => handleDecision(true)}
-            style={{ padding: '4px 10px', fontSize: '0.72rem', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
-          >
-            ✓ Approve Action
-          </button>
-          <button
-            onClick={() => handleDecision(false)}
-            style={{ padding: '4px 10px', fontSize: '0.72rem', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-          >
-            ✕ Cancel
-          </button>
+    <div className="pending-action-card">
+      {/* Header */}
+      <div className="pending-action-header">
+        <div className="pending-action-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
+          </svg>
         </div>
-      )}
+        <div>
+          <div className="pending-action-title">{action.title}</div>
+          <div className="pending-action-subtitle">Ready to proceed</div>
+        </div>
+      </div>
 
-      {status === 'loading' && <div style={{ fontSize: '0.72rem', color: '#3b82f6', marginTop: '6px' }}>Executing action...</div>}
-      
-      {status === 'approved' && (
-        <div style={{ marginTop: '6px' }}>
-          <div style={{ fontSize: '0.74rem', color: '#10b981', fontWeight: 600 }}>✅ {feedback}</div>
-          
-          {docText && (
-            <div style={{ marginTop: '8px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: '#f1f5f9', borderBottom: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#0f172a' }}>
-                  📄 {(resultData?.title as string) || 'Generated Legal Notice Document'}
-                </span>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button
-                    onClick={() => handleCopyDoc(docText)}
-                    style={{ padding: '3px 8px', fontSize: '0.68rem', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
-                  >
-                    {copiedDoc ? '✓ Copied' : '📋 Copy'}
-                  </button>
-                  <button
-                    onClick={() => handleDownloadDoc((resultData?.title as string) || 'legal_notice', docText)}
-                    style={{ padding: '3px 8px', fontSize: '0.68rem', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
-                  >
-                    📥 Download
-                  </button>
-                  <button
-                    onClick={() => setShowDocText(s => !s)}
-                    style={{ padding: '3px 6px', fontSize: '0.68rem', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                  >
-                    {showDocText ? '▼ Hide' : '▲ View'}
-                  </button>
+      {/* Body */}
+      <div className="pending-action-body">
+        <p className="pending-action-desc">{action.prompt_text}</p>
+
+        {status === 'pending' && (
+          <div className="pending-action-btns">
+            <button className="pending-approve-btn" onClick={() => handleDecision(true)}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13"><polyline points="20 6 9 17 4 12" /></svg>
+              Approve & Generate
+            </button>
+            <button className="pending-cancel-btn" onClick={() => handleDecision(false)}>Cancel</button>
+          </div>
+        )}
+
+        {status === 'loading' && (
+          <div className="pending-action-status loading">Executing action...</div>
+        )}
+
+        {status === 'approved' && (
+          <div>
+            <div className="pending-action-status approved">✓ {feedback}</div>
+            {docText && (
+              <div className="doc-result-panel">
+                <div className="doc-result-header">
+                  <span className="doc-result-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    {(resultData?.title as string) || 'Generated Legal Document'}
+                  </span>
+                  <div className="doc-result-actions">
+                    <button className="doc-action-btn copy" onClick={() => handleCopyDoc(docText)}>
+                      {copiedDoc ? '✓ Copied' : 'Copy'}
+                    </button>
+                    <button className="doc-action-btn download" onClick={() => handleDownloadDoc((resultData?.title as string) || 'legal_notice', docText)}>
+                      Download
+                    </button>
+                    <button className="doc-action-btn toggle" onClick={() => setShowDocText(s => !s)}>
+                      {showDocText ? 'Hide' : 'View'}
+                    </button>
+                  </div>
                 </div>
+                {showDocText && (
+                  <div className="doc-result-body">
+                    <pre>{docText}</pre>
+                  </div>
+                )}
               </div>
+            )}
+          </div>
+        )}
 
-              {showDocText && (
-                <div style={{ padding: '10px', maxHeight: '220px', overflowY: 'auto', background: '#fafafa' }}>
-                  <pre style={{ margin: 0, fontFamily: 'Consolas, "Courier New", monospace', fontSize: '0.7rem', color: '#1e293b', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.4 }}>
-                    {docText}
-                  </pre>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {status === 'rejected' && <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '6px' }}>❌ {feedback}</div>}
+        {status === 'rejected' && (
+          <div className="pending-action-status rejected">Action cancelled.</div>
+        )}
+      </div>
     </div>
   );
 
@@ -382,12 +382,12 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
   }, [showProviderMenu]);
 
 
-  // Reasoning step simulation for Agentic AI transparency
+  // Safe execution state labels (no internal chain-of-thought exposed)
   const agenticSteps = [
-    "Deconstructing legal query & context...",
-    "Querying Indian Constitutional & Statutory Database...",
-    "Evaluating procedural remedies & precedents...",
-    "Building step-by-step resolution plan...",
+    "Analyzing your request",
+    "Searching Indian statutes & provisions",
+    "Reviewing applicable law",
+    "Preparing your response",
   ];
 
   useEffect(() => {
@@ -617,33 +617,33 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
         {/* Tooltip Hint */}
         {!isOpen && showHint && (
           <div className="floating-ai-hint" onClick={toggleWidget}>
-            <span className="sparkle-icon">✨</span>
-            <span>LegalAce Agentic AI — Ask Anything!</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13" style={{ opacity: 0.7 }}>
+              <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+            </svg>
+            <span>{loading ? 'LegalAce is working...' : 'Ask LegalAce'}</span>
           </div>
         )}
 
-        {/* Movable FAB Button */}
+        {/* FAB Button */}
         <button
           className={`floating-ai-fab ${isOpen ? 'open' : ''} ${isDragging ? 'dragging' : ''}`}
           onMouseDown={handlePointerDown}
           onTouchStart={handlePointerDown}
           onClick={handleFabClick}
-          title={isOpen ? "Close LegalAce AI Agent" : "Drag to move position or click to open"}
+          title={isOpen ? 'Close LegalAce AI' : 'Open LegalAce AI Legal Assistant'}
           aria-label="Toggle LegalAce AI Floating Assistant"
         >
           <div className="floating-ai-fab-pulse" />
           <div className="floating-ai-fab-icon">
             {isOpen ? (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="24" height="24">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="22" height="22">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             ) : (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="26" height="26">
-                <path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-4 0V4a2 2 0 0 1 2-2zM4 11a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7z" />
-                <circle cx="9" cy="14" r="1.5" fill="currentColor" />
-                <circle cx="15" cy="14" r="1.5" fill="currentColor" />
-                <path d="M10 18h4" strokeLinecap="round" />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="26" height="26">
+                <path d="M12 3L4 7v5c0 5.25 3.5 10.15 8 11.35C17.5 22.15 21 17.25 21 12V7l-8-4z" />
+                <path d="M8 12.5l2.5 2.5L16 9" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             )}
           </div>
@@ -651,94 +651,45 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
         </button>
       </div>
 
-      {/* Centered Agentic Chat Modal Window (Always stays centered!) */}
+      {/* Centered Agentic Chat Modal Window */}
       {isOpen && (
         <div
-          className="floating-chat-overlay"
+          className={`floating-chat-overlay${isFullscreen ? ' fullscreen-mode' : ''}`}
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsOpen(false);
           }}
         >
           <div className={`floating-chat-panel ${isFullscreen ? 'fullscreen' : ''}`}>
-            {/* Header */}
+            {/* Clean Header */}
             <div className="panel-header">
               <div className="panel-header-top">
                 <div className="panel-title-group">
-                  <div className="agent-avatar-icon">🤖</div>
+                  <div className="agent-avatar-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="20" height="20">
+                      <path d="M12 3L4 7v5c0 5.25 3.5 10.15 8 11.35C17.5 22.15 21 17.25 21 12V7l-8-4z" />
+                      <path d="M8 12.5l2.5 2.5L16 9" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
                   <div className="agent-title-text">
-                    <span className="agent-name">
-                      LegalAce Agentic AI <span className="sparkle-icon">✨</span>
-                    </span>
-                    <span className="agent-status-badge">
-                      <span className="status-dot-green" /> Agent Active & Reasoning
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="agent-name">LegalAce AI</span>
+                      <span className="agent-status-badge">
+                        {loading
+                          ? <><span className="status-dot-amber" /> Working...</>
+                          : <><span className="status-dot-green" /> Ready to help</>
+                        }
+                      </span>
+                    </div>
+                    <span className="agent-tagline">Your legal companion</span>
                   </div>
                 </div>
 
                 <div className="panel-header-actions">
-                  {/* LLM Provider Selector ─ Add-on */}
-                  <div ref={providerMenuRef} style={{ position: 'relative' }}>
-
-                    <button
-                      className="icon-btn-ghost"
-                      onClick={() => setShowProviderMenu(p => !p)}
-                      title={`Active AI: ${PROVIDER_META[llmProvider].label} — Click to switch`}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '4px',
-                        fontSize: '0.7rem', fontWeight: 700, padding: '4px 8px',
-                        border: `1px solid ${PROVIDER_META[llmProvider].color}22`,
-                        background: `${PROVIDER_META[llmProvider].color}11`,
-                        color: PROVIDER_META[llmProvider].color,
-                        borderRadius: '8px', minWidth: 0,
-                      }}
-                    >
-                      <span style={{ fontSize: '0.85rem' }}>{PROVIDER_META[llmProvider].icon}</span>
-                      <span style={{ display: 'inline' }}>{PROVIDER_META[llmProvider].label}</span>
-                      <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>▾</span>
-                    </button>
-                    {showProviderMenu && (
-                      <div style={{
-                        position: 'absolute', top: 'calc(100% + 6px)', right: 0,
-                        background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px',
-                        boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 999,
-                        minWidth: '190px', overflow: 'hidden',
-                      }}>
-                        <div style={{ padding: '8px 12px 4px', fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                          AI Engine
-                        </div>
-                        {(Object.keys(PROVIDER_META) as LLMProvider[]).map(p => (
-                          <button
-                            key={p}
-                            onClick={() => switchLLMProvider(p)}
-                            style={{
-                              width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
-                              padding: '8px 14px', border: 'none', background: llmProvider === p ? `${PROVIDER_META[p].color}12` : 'transparent',
-                              cursor: 'pointer', textAlign: 'left', fontSize: '0.78rem',
-                              fontWeight: llmProvider === p ? 700 : 400,
-                              color: llmProvider === p ? PROVIDER_META[p].color : '#334155',
-                              borderLeft: llmProvider === p ? `3px solid ${PROVIDER_META[p].color}` : '3px solid transparent',
-                              transition: 'background 0.15s',
-                            }}
-                          >
-                            <span style={{ fontSize: '1rem' }}>{PROVIDER_META[p].icon}</span>
-                            <div>
-                              <div style={{ fontWeight: 600 }}>{PROVIDER_META[p].label}</div>
-                              {p === 'auto' && <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Gemini → OpenAI → Ollama</div>}
-                              {p === 'gemini' && <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Cloud — best quality</div>}
-                              {p === 'openai' && <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Cloud — strong reasoning</div>}
-                              {p === 'ollama' && <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Local GPU — private</div>}
-                            </div>
-                            {llmProvider === p && <span style={{ marginLeft: 'auto', fontSize: '0.8rem' }}>✓</span>}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
                   <button
                     className="icon-btn-ghost"
                     onClick={startNewChat}
                     title="New Conversation"
+                    aria-label="Start new conversation"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                       <path d="M12 5v14M5 12h14" />
@@ -747,7 +698,8 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                   <button
                     className="icon-btn-ghost"
                     onClick={() => setIsFullscreen(!isFullscreen)}
-                    title={isFullscreen ? "Restore size" : "Expand to fullscreen"}
+                    title={isFullscreen ? "Restore size" : "Expand to full screen"}
+                    aria-label={isFullscreen ? "Restore size" : "Expand to full screen"}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                       {isFullscreen ? (
@@ -757,7 +709,12 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                       )}
                     </svg>
                   </button>
-                  <button className="icon-btn-ghost" onClick={() => setIsOpen(false)} title="Close Widget">
+                  <button
+                    className="icon-btn-ghost"
+                    onClick={() => setIsOpen(false)}
+                    title="Close"
+                    aria-label="Close Assistant"
+                  >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                       <line x1="18" y1="6" x2="6" y2="18" />
                       <line x1="6" y1="6" x2="18" y2="18" />
@@ -765,51 +722,100 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                   </button>
                 </div>
               </div>
+            </div>
 
-              {/* Agent Persona Switcher Bar */}
-              <div className="agent-mode-bar">
-                {AGENT_MODES.map((mode) => (
+            {/* Quick Prompts Ribbon — only show when no conversation started */}
+            {messages.length === 0 && (
+              <div className="quick-prompts-ribbon">
+                {suggestions.map((s, idx) => (
                   <button
-                    key={mode.id}
-                    className={`agent-mode-chip ${selectedMode === mode.id ? 'active' : ''}`}
-                    onClick={() => setSelectedMode(mode.id)}
+                    key={idx}
+                    className="quick-prompt-pill"
+                    onClick={() => setInputValue(s.text)}
                   >
-                    {mode.label}
+                    {s.label}
                   </button>
                 ))}
               </div>
-            </div>
-
-            {/* Quick Prompts Ribbon */}
-            <div className="quick-prompts-ribbon">
-              {suggestions.map((s, idx) => (
-                <button
-                  key={idx}
-                  className="quick-prompt-pill"
-                  onClick={() => {
-                    setInputValue(s.text);
-                  }}
-                >
-                  <span>⚡</span> {s.label}
-                </button>
-              ))}
-            </div>
+            )}
 
             {/* Messages Area */}
             <div className="floating-messages-container">
               {messages.length === 0 ? (
                 <div className="floating-empty-state">
-                  <div className="empty-state-icon">🤖</div>
-                  <div className="empty-state-title">Hello! How can I assist you?</div>
-                  <div className="empty-state-desc">
-                    Ask any legal question, request document drafting, or verify your constitutional and statutory rights.
+                  {/* Greeting */}
+                  <div className="welcome-greeting-block">
+                    <div className="welcome-avatar">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="26" height="26">
+                        <path d="M12 3L4 7v5c0 5.25 3.5 10.15 8 11.35C17.5 22.15 21 17.25 21 12V7l-8-4z" />
+                        <path d="M8 12.5l2.5 2.5L16 9" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                    <div className="welcome-title">How can I help you today?</div>
+                    <div className="welcome-subtitle">
+                      Ask about your rights, understand a legal situation, or get help taking the next step.
+                    </div>
+                  </div>
+
+                  {/* Capability Cards */}
+                  <div className="welcome-capability-grid">
+                    {[
+                      { icon: '⚖️', bg: '#eff6ff', color: '#2563eb', title: 'Understand My Rights', desc: 'Know what the law says', prompt: 'What are my rights as a ' },
+                      { icon: '📄', bg: '#f0fdf4', color: '#059669', title: 'Analyze a Document', desc: 'Upload & review contracts', prompt: 'Please analyze this document: ' },
+                      { icon: '🧭', bg: '#fdf4ff', color: '#7c3aed', title: 'What Should I Do?', desc: 'Get a step-by-step plan', prompt: 'I need help with a legal situation: ' },
+                      { icon: '⏰', bg: '#fff7ed', color: '#c2410c', title: 'Check a Deadline', desc: 'Filing & limitation dates', prompt: 'What is the deadline for filing a complaint about ' },
+                      { icon: '✍️', bg: '#fef9c3', color: '#92400e', title: 'Draft Legal Notice', desc: 'Generate formal notices', prompt: 'Draft a legal notice for ' },
+                      { icon: '🏛️', bg: '#f0f9ff', color: '#0369a1', title: 'Free Legal Aid', desc: 'Check eligibility & offices', prompt: 'How can I access free legal aid in India?' },
+                    ].map((cap, i) => (
+                      <div
+                        key={i}
+                        className="welcome-capability-card"
+                        onClick={() => setInputValue(cap.prompt)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={e => e.key === 'Enter' && setInputValue(cap.prompt)}
+                      >
+                        <div className="capability-icon" style={{ background: cap.bg, color: cap.color }}>{cap.icon}</div>
+                        <div className="capability-title">{cap.title}</div>
+                        <div className="capability-desc">{cap.desc}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Suggested prompts */}
+                  <div className="welcome-prompts-section">
+                    <div className="welcome-prompts-label">Try asking</div>
+                    {[
+                      'My landlord hasn\'t returned my security deposit.',
+                      'My employer hasn\'t paid my salary for 2 months.',
+                      'I received a legal notice. What should I do?',
+                      'Can I file a consumer complaint against a seller?',
+                    ].map((prompt, i) => (
+                      <div
+                        key={i}
+                        className="welcome-prompt-item"
+                        onClick={() => setInputValue(prompt)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={e => e.key === 'Enter' && setInputValue(prompt)}
+                      >
+                        <span>{prompt}</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                        </svg>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ) : (
                 messages.map((msg, idx) => (
                   <div key={idx} className={`chat-msg-row ${msg.role}`}>
                     <div className={`msg-avatar ${msg.role}`}>
-                      {msg.role === 'user' ? '👤' : '🤖'}
+                      {msg.role === 'user' ? (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14"><path d="M12 3L4 7v5c0 5.25 3.5 10.15 8 11.35C17.5 22.15 21 17.25 21 12V7l-8-4z"/><path d="M8 12.5l2.5 2.5L16 9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      )}
                     </div>
 
                     <div className="msg-content-box">
@@ -824,21 +830,22 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                           msg.content
                         )}
 
-                        {/* Citations Accordion */}
+                        {/* Citations — premium cards */}
                         {msg.citations && msg.citations.length > 0 && (
                           <div className="msg-citations-wrap">
                             {msg.citations.map((c, cIdx) => (
-                              <div key={cIdx}>
-                                <span
-                                  className="citation-chip"
-                                  onClick={() => toggleCitation(c.section)}
-                                >
-                                  📜 {c.act} — {c.section}
-                                </span>
+                              <div key={cIdx} className="citation-card" onClick={() => toggleCitation(c.section)}>
+                                <div className="citation-card-header">
+                                  <div className="citation-icon-badge">⚖</div>
+                                  <div className="citation-card-meta">
+                                    <div className="citation-act-name">{c.act}</div>
+                                    <div className="citation-section-label">{c.section}{c.section_title ? ` · ${c.section_title}` : ''}</div>
+                                  </div>
+                                  <svg className={`citation-expand-arrow${expandedCitation === c.section ? ' expanded' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg>
+                                </div>
                                 {expandedCitation === c.section && (
                                   <div className="citation-details-popup">
-                                    <strong>{c.section_title}:</strong>{' '}
-                                    {LAW_DETAILS_MAP[c.section] || "Relevant statutory provision under Indian laws."}
+                                    {LAW_DETAILS_MAP[c.section] || 'Relevant statutory provision under Indian laws.'}
                                   </div>
                                 )}
                               </div>
@@ -846,13 +853,18 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                           </div>
                         )}
 
-                        {/* Action Steps */}
+                        {/* Action Steps — Timeline */}
                         {msg.action_steps && msg.action_steps.length > 0 && (
-                          <div style={{ marginTop: '8px', borderTop: '1px solid #e2e8f0', paddingTop: '6px' }}>
-                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#1a1a5e' }}>Recommended Action Steps:</span>
-                            {msg.action_steps.map((step, stepIdx) => (
-                              <ActionStepItem key={stepIdx} userId={userId} stepText={step} backendUrl={backendUrl} />
-                            ))}
+                          <div>
+                            <div className="action-plan-header">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                              Your Action Plan
+                            </div>
+                            <div className="action-plan-timeline">
+                              {msg.action_steps.map((step, stepIdx) => (
+                                <ActionStepItem key={stepIdx} userId={userId} stepText={step} backendUrl={backendUrl} />
+                              ))}
+                            </div>
                           </div>
                         )}
 
@@ -893,60 +905,78 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                 ))
               )}
 
-              {/* Agentic Reasoning / Tool Execution Steps */}
+              {/* Agent Execution Progress */}
               {loading && (
                 <div className="agentic-thinking-box">
-                  <div className="thinking-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div className="thinking-spinner" />
-                      <span>Agent Reasoning Engine Active</span>
+                  <div className="thinking-header">
+                    <div className="thinking-header-left">
+                      <div className="thinking-logo-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                          <path d="M12 3L4 7v5c0 5.25 3.5 10.15 8 11.35C17.5 22.15 21 17.25 21 12V7l-8-4z"/>
+                        </svg>
+                      </div>
+                      <span className="thinking-label">
+                        LegalAce is working
+                        <span className="thinking-dots">
+                          <span className="thinking-dot" />
+                          <span className="thinking-dot" />
+                          <span className="thinking-dot" />
+                        </span>
+                      </span>
                     </div>
                     {handleStopResponse && (
-                      <button
-                        onClick={handleStopResponse}
-                        style={{
-                          padding: '3px 8px',
-                          fontSize: '0.7rem',
-                          fontWeight: 700,
-                          background: '#ef4444',
-                          color: '#ffffff',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
-                        ⏹️ Stop
+                      <button className="stop-response-btn" onClick={handleStopResponse}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="10" height="10">
+                          <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        </svg>
+                        Stop
                       </button>
                     )}
                   </div>
-                  {agenticSteps.slice(0, reasoningStepIndex + 1).map((step, sIdx) => (
-                    <div key={sIdx} className="thinking-step">
-                      {sIdx < reasoningStepIndex ? (
-                        <span className="step-check">✓</span>
-                      ) : (
-                        <span>⚙️</span>
-                      )}
-                      <span>{step}</span>
-                    </div>
-                  ))}
+                  <div className="execution-steps-list">
+                    {agenticSteps.map((step, sIdx) => {
+                      const isDone = sIdx < reasoningStepIndex;
+                      const isActive = sIdx === reasoningStepIndex;
+                      return (
+                        <div key={sIdx} className={`thinking-step ${isDone ? 'done' : isActive ? 'active' : 'idle'}`}>
+                          {isDone ? (
+                            <span className="step-check">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="8" height="8"><polyline points="20 6 9 17 4 12"/></svg>
+                            </span>
+                          ) : isActive ? (
+                            <span className="step-active-dot"><span className="step-active-inner" /></span>
+                          ) : (
+                            <span className="step-idle-dot" />
+                          )}
+                          <span>{step}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
 
+              {/* Error State */}
               {errorMessage && (
-                <div className="citation-details-popup" style={{ background: '#fef2f2', borderColor: '#fca5a5', color: '#991b1b' }}>
-                  ⚠️ {errorMessage}
+                <div className="error-state-card">
+                  <div className="error-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                  </div>
+                  <div className="error-content">
+                    <div className="error-title">LegalAce couldn't complete that request.</div>
+                    <div className="error-desc">Please try again. If the issue persists, start a new conversation.</div>
+                  </div>
                 </div>
               )}
 
               <div ref={scrollEndRef} />
             </div>
 
-            {/* Bottom Input Area */}
-            <div className="floating-input-bar">
+            {/* Bottom Composer */}
+            <div className="composer-wrapper">
               {attachment && (
                 <div className="attachment-preview">
                   <span>📄 {attachment} {uploadingFile ? '(Parsing text...)' : extractedContent ? '✓ Parsed' : ''}</span>
@@ -954,45 +984,12 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                 </div>
               )}
 
-
-              <div className="input-controls-row">
-                {/* File Attachment Upload Button */}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  style={{ display: 'none' }}
-                  onChange={handleFileSelect}
-                  accept=".pdf,.doc,.docx,.txt"
-                />
-                <button
-                  className="tool-icon-btn"
-                  onClick={() => fileInputRef.current?.click()}
-                  title="Attach Document/Contract for AI analysis"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                  </svg>
-                </button>
-
-                {/* Voice Speech Recognition Button */}
-                <button
-                  className={`tool-icon-btn ${isListening ? 'listening' : ''}`}
-                  onClick={handleVoiceToggle}
-                  title={isListening ? "Listening... Click to stop" : "Voice Input (Speech-to-Text)"}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                    <line x1="12" y1="19" x2="12" y2="23" />
-                    <line x1="8" y1="23" x2="16" y2="23" />
-                  </svg>
-                </button>
-
-                {/* Text Input */}
+              <div className="composer-container">
+                {/* Textarea — full width */}
                 <textarea
-                  className="chat-input-textarea"
+                  className="composer-textarea"
                   rows={1}
-                  placeholder="Ask legal advice, draft notices..."
+                  placeholder="Ask LegalAce..."
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={(e) => {
@@ -1003,49 +1000,77 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                       handleKeyPress(e);
                     }
                   }}
+                  aria-label="Type your legal question"
                 />
 
-                {/* Send / Stop Button */}
-                {loading && handleStopResponse ? (
-                  <button
-                    className="stop-msg-btn"
-                    onClick={handleStopResponse}
-                    title="Stop generating response"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '6px 12px',
-                      fontSize: '0.74rem',
-                      fontWeight: 700,
-                      background: '#ef4444',
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 6px rgba(239, 68, 68, 0.3)',
-                    }}
-                  >
-                    <span>⏹️</span> Stop
-                  </button>
-                ) : (
-                  <button
-                    className="send-msg-btn"
-                    onClick={handleSendWithMode}
-                    disabled={loading || (!inputValue.trim() && !attachment)}
-                    title="Send to LegalAce Agent"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                      <line x1="22" y1="2" x2="11" y2="13" />
-                      <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                    </svg>
-                  </button>
-                )}
+                {/* Bottom Row: tools left, send right */}
+                <div className="composer-bottom-row">
+                  <div className="composer-tools">
+                    {/* Hidden file input */}
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      style={{ display: 'none' }}
+                      onChange={handleFileSelect}
+                      accept=".pdf,.doc,.docx,.txt"
+                    />
+                    <button
+                      className="composer-tool-btn"
+                      onClick={() => fileInputRef.current?.click()}
+                      title="Attach document"
+                      aria-label="Attach document for AI analysis"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                      </svg>
+                    </button>
 
+                    <button
+                      className={`composer-tool-btn ${isListening ? 'listening' : ''}`}
+                      onClick={handleVoiceToggle}
+                      title={isListening ? "Listening... Click to stop" : "Voice input"}
+                      aria-label={isListening ? "Stop voice recording" : "Start voice input"}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                        <line x1="12" y1="19" x2="12" y2="23" />
+                        <line x1="8" y1="23" x2="16" y2="23" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* Send / Stop Button */}
+                  {loading && handleStopResponse ? (
+                    <button
+                      className="composer-stop-btn"
+                      onClick={handleStopResponse}
+                      title="Stop generating"
+                      aria-label="Stop generating response"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
+                        <rect x="4" y="4" width="16" height="16" rx="2"/>
+                      </svg>
+                    </button>
+                  ) : (
+                    <button
+                      className="composer-send-btn"
+                      onClick={handleSendWithMode}
+                      disabled={loading || (!inputValue.trim() && !attachment)}
+                      title="Send to LegalAce AI"
+                      aria-label="Send message"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                        <line x1="22" y1="2" x2="11" y2="13" />
+                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div className="floating-disclaimer">
-                LegalAce AI provides legal information. For binding litigation, consult a advocate.
+              <div className="composer-disclaimer">
+                LegalAce provides general legal information, not legal advice. For litigation, consult a qualified advocate.
               </div>
             </div>
           </div>

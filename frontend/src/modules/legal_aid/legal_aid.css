@@ -5,9 +5,11 @@
 
 .legalaid-screen {
   padding: 16px;
-  height: calc(100vh - 72px);
+  height: calc(100vh - 68px);
+  height: calc(100dvh - 68px);
   overflow-y: auto;
-  padding-bottom: 90px;
+  background: #f8fafc;
+  padding-bottom: 130px;
   -webkit-overflow-scrolling: touch;
   animation: legalaidFadeIn 0.4s ease;
 }

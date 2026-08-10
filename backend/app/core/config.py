@@ -7,8 +7,19 @@ class Settings(BaseSettings):
     MONGODB_URL: str
     DATABASE_NAME: str
 
+    # Server Host & Port
+    HOST: str = "0.0.0.0"
+    PORT: int = 8000
+
     # Security & CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+    CORS_ORIGIN_REGEX: str = r"http://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?"
 
     # OpenAI
     OPENAI_API_KEY: str = ""

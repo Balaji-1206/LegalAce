@@ -10,8 +10,9 @@ import { WizardScreen } from './modules/wizard/WizardScreen';
 import ProfileScreen from './modules/profile/ProfileScreen';
 import { DocumentXRayTab } from './modules/document_xray/DocumentXRayTab';
 import { LegalAidChecker } from './modules/legal_aid/LegalAidChecker';
+import { API_BASE_URL } from './config/api';
 
-const BACKEND_URL = 'http://localhost:8000';
+const BACKEND_URL = API_BASE_URL;
 
 const LAW_DETAILS_MAP: Record<string, string> = {
   "Section 2(7)": "Consumer means any person who buys any goods for a consideration which has been paid or promised...",
@@ -495,7 +496,7 @@ export default function App() {
 
           {/* === FEATURE 5: LEGAL AID CHECKER === */}
           {activeTab === 'legalaid' && (
-            <LegalAidChecker onBack={() => handleNavigate('profile')} />
+            <LegalAidChecker onBack={() => handleNavigate('home')} />
           )}
 
           {/* === PROFILE SCREEN === */}

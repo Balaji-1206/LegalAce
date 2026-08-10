@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import './legal_aid.css';
+import { API_BASE_URL } from '../../config/api';
 
-const BACKEND_URL = 'http://localhost:8000';
+const BACKEND_URL = API_BASE_URL;
 
 interface Authority {
   name: string;

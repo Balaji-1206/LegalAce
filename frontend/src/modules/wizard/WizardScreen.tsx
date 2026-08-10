@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './wizard.css';
+import { API_BASE_URL } from '../../config/api';
 
-const BACKEND = 'http://localhost:8000/api/v1/wizard';
+const BACKEND = `${API_BASE_URL}/api/v1/wizard`;
 const CACHE_KEY = 'wizard_offline_cache';
 const STEP_PROGRESS_KEY = 'wizard_step_progress';
 const DOC_CHECK_KEY = 'wizard_doc_checks';
@@ -457,7 +458,7 @@ const ActionPlanView: React.FC<ActionPlanViewProps> = ({ plan, scenarioTitle, la
     if (!activeTemplate) return;
     setGenerating(true);
     try {
-      const res = await fetch('http://localhost:8000/api/v1/wizard/generate-document', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/wizard/generate-document`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

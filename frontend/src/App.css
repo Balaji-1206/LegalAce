@@ -8,38 +8,81 @@
 /* ---- Reset & Base ---- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+html {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  overflow-x: hidden;
+  background: #0f172a;
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #f4f5f9;
+  background: #f8fafc;
+  width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
   padding: 0;
   display: flex;
   justify-content: center;
+  overflow-x: hidden;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  display: flex;
+  justify-content: center;
+  overflow-x: hidden;
 }
 
 /* ---- Responsive App Container ---- */
 .phone-mockup-wrapper {
   display: flex;
   justify-content: center;
+  align-items: center;
   width: 100%;
+  max-width: 100vw;
   min-height: 100vh;
+  min-height: 100dvh;
   height: 100vh;
-  background: #f4f5f9;
+  height: 100dvh;
+  background: #f8fafc;
   padding: 0;
   margin: 0;
+  overflow-x: hidden;
 }
 
 .phone-container {
   position: relative;
   width: 100%;
-  max-width: 480px;
-  height: 100vh;
-  background: #f4f5f9;
-  overflow: hidden;
+  height: 100%;
+  height: 100dvh;
+  background: #f8fafc;
+  overflow-x: hidden;
+  overflow-y: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.06);
+}
+
+/* On Desktop screens (> 768px), frame as a floating mobile device preview */
+@media (min-width: 769px) {
+  .phone-mockup-wrapper {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    padding: 24px 0;
+  }
+  .phone-container {
+    max-width: 440px;
+    height: 92vh;
+    max-height: 880px;
+    border-radius: 36px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.5), 0 0 30px rgba(79, 70, 229, 0.2);
+  }
 }
 
 /* ---- Workspace ---- */
@@ -48,25 +91,28 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #f4f5f9;
+  background: #f8fafc;
 }
 
 /* ============================================================
-   BOTTOM NAVIGATION BAR
+   BOTTOM NAVIGATION BAR — Glassmorphism Native Design
    ============================================================ */
 .bottom-navigation-bar {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 72px;
-  background: #ffffff;
-  border-top: 1px solid #e8eaf0;
+  height: 68px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
   display: flex;
   justify-content: space-around;
   align-items: center;
-  z-index: 100;
-  padding-bottom: 6px;
+  z-index: 990;
+  padding: 4px 8px max(4px, env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.03);
 }
 
 .nav-tab-item {
@@ -78,39 +124,45 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   cursor: pointer;
-  transition: all 0.2s;
-  color: #9ca3af;
-  padding: 0;
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  color: #94a3b8;
+  padding: 2px 0;
+  outline: none;
 }
 
-.nav-tab-item.active { color: #1a1a5e; }
+.nav-tab-item.active {
+  color: #4f46e5;
+}
 
 .nav-icon-wrap {
-  width: 40px;
-  height: 32px;
-  border-radius: 20px;
+  width: 44px;
+  height: 28px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .nav-tab-item.active .nav-icon-wrap {
-  background: #eef0ff;
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  color: #4f46e5;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15);
+  transform: translateY(-1px);
 }
 
 .nav-tab-item svg {
-  width: 22px;
-  height: 22px;
-  stroke-width: 1.8;
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.2;
 }
 
 .tab-item-label {
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 600;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
 /* ============================================================

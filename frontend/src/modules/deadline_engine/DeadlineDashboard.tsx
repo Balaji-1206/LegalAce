@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './deadline_engine.css';
+import { API_BASE_URL } from '../../config/api';
 
-const BACKEND_URL = 'http://localhost:8000';
+const BACKEND_URL = API_BASE_URL;
 
 // ---- Helpers ----
 const getDaysChipClass = (days: number, status: string) => {
@@ -413,7 +414,15 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
 
       if (scoreRes.ok) setHealthScore(await scoreRes.json());
       if (upcomingRes.ok) { const d = await upcomingRes.json(); setUpcoming(d.deadlines || []); }
-      if (allRes.ok) { const d = await allRes.json(); setAllDeadlines(d.deadlines || []); }
+      if (allRes.ok) {
+        const d = await allRes.json();
+        const rawItems: DeadlineItem[] = d.deadlines || [];
+        const uniqueItems = rawItems.filter(
+          (item, idx, self) =>
+            idx === self.findIndex((t) => (t.id && item.id ? t.id === item.id : t.title === item.title && t.deadline_date === item.deadline_date))
+        );
+        setAllDeadlines(uniqueItems);
+      }
     } catch (e) {
       console.warn('Failed to fetch deadline data', e);
     } finally {
@@ -540,17 +549,33 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
           {healthScore && (
             <div className="health-insights">
               {(healthScore.strengths || []).map((s: string, i: number) => (
-                <div key={i} className="insight-pill strength" style={{ '--de-stagger': i } as React.CSSProperties}>
-                  <span className="insight-pill-icon">✓</span>
-                  {s}
+                <div key={`str-${i}`} className="insight-pill strength" style={{ '--de-stagger': i } as React.CSSProperties}>
+                  <div className="insight-pill-badge strength">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="15" height="15">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </div>
+                  <div className="insight-pill-content">
+                    <span className="insight-pill-text">{s}</span>
+                  </div>
                 </div>
               ))}
-              {(healthScore.risks || []).map((r: string, i: number) => (
-                <div key={i} className={`insight-pill ${r.includes('expired') || r.includes('immediate') ? 'critical' : 'risk'}`} style={{ '--de-stagger': (healthScore.strengths?.length || 0) + i } as React.CSSProperties}>
-                  <span className="insight-pill-icon">⚠</span>
-                  {r.replace('⚠ ', '')}
-                </div>
-              ))}
+              {(healthScore.risks || []).map((r: string, i: number) => {
+                const isCritical = r.includes('expired') || r.includes('immediate');
+                const cleanText = r.replace(/^⚠\s*/, '').replace(/^['"]|['"]$/g, '');
+                return (
+                  <div key={`risk-${i}`} className={`insight-pill ${isCritical ? 'critical' : 'risk'}`} style={{ '--de-stagger': (healthScore.strengths?.length || 0) + i } as React.CSSProperties}>
+                    <div className={`insight-pill-badge ${isCritical ? 'critical' : 'risk'}`}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="15" height="15">
+                        <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                      </svg>
+                    </div>
+                    <div className="insight-pill-content">
+                      <span className="insight-pill-text">{cleanText}</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
 
