@@ -10,6 +10,8 @@ import { WizardScreen } from './modules/wizard/WizardScreen';
 import ProfileScreen from './modules/profile/ProfileScreen';
 import { DocumentXRayTab } from './modules/document_xray/DocumentXRayTab';
 import { LegalAidChecker } from './modules/legal_aid/LegalAidChecker';
+import { ToastProvider } from './modules/shared/ToastContext';
+import { SpotlightSearchModal } from './modules/shared/SpotlightSearchModal';
 import { API_BASE_URL } from './config/api';
 
 const BACKEND_URL = API_BASE_URL;
@@ -130,6 +132,7 @@ export default function App() {
     const savedRecents = localStorage.getItem('legalace_recently_viewed');
     return savedRecents ? JSON.parse(savedRecents) : [];
   });
+  const [isSpotlightOpen, setIsSpotlightOpen] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryItem | null>(null);
   const [, setSelectedSituationId] = useState<string | null>(null);
   const [selectedSituation, setSelectedSituation] = useState<SituationData | null>(null);
@@ -425,45 +428,47 @@ export default function App() {
   void deleteConversation;
 
   return (
-    <div className="phone-mockup-wrapper">
-      <div className="phone-container">
-        <main className="chat-workspace">
+    <ToastProvider>
+      <div className="phone-mockup-wrapper">
+        <div className="phone-container">
+          <main className="chat-workspace">
 
-          {/* === HOME SCREEN === */}
-          {activeTab === 'home' && (
-            <HomeScreen
-              onNavigate={handleNavigate}
-              situations={situations}
-              recentlyViewed={recentlyViewed}
-              openSituationDetail={(id) => { openSituationDetail(id); setActiveTab('situations'); }}
-            />
-          )}
+            {/* === HOME SCREEN === */}
+            {activeTab === 'home' && (
+              <HomeScreen
+                onNavigate={handleNavigate}
+                situations={situations}
+                recentlyViewed={recentlyViewed}
+                openSituationDetail={(id) => { openSituationDetail(id); setActiveTab('situations'); }}
+                onOpenSpotlight={() => setIsSpotlightOpen(true)}
+              />
+            )}
 
-          {/* === SITUATION FINDER SCREEN === */}
-          {activeTab === 'situations' && (
-            <SituationFinderTab
-              screen={sitScreen}
-              setScreen={setSitScreen}
-              categories={categories}
-              situations={situations}
-              bookmarks={bookmarks}
-              recentlyViewed={recentlyViewed}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              selectedSituation={selectedSituation}
-              openSituationDetail={openSituationDetail}
-              toggleBookmark={toggleBookmark}
-              getCategoryIcon={getCategoryIcon}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              situationsLoading={situationsLoading}
-              filteredSituations={filteredSituations}
-              LAW_DETAILS_MAP={LAW_DETAILS_MAP}
-              onBackHome={() => handleNavigate('home')}
-              onOpenWizard={() => handleNavigate('wizard')}
-            />
-
-          )}
+            {/* === SITUATION FINDER SCREEN === */}
+            {activeTab === 'situations' && (
+              <SituationFinderTab
+                screen={sitScreen}
+                setScreen={setSitScreen}
+                categories={categories}
+                situations={situations}
+                bookmarks={bookmarks}
+                recentlyViewed={recentlyViewed}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                selectedSituation={selectedSituation}
+                openSituationDetail={openSituationDetail}
+                toggleBookmark={toggleBookmark}
+                getCategoryIcon={getCategoryIcon}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                situationsLoading={situationsLoading}
+                filteredSituations={filteredSituations}
+                LAW_DETAILS_MAP={LAW_DETAILS_MAP}
+                onBackHome={() => handleNavigate('home')}
+                onOpenWizard={() => handleNavigate('wizard')}
+                onOpenSpotlight={() => setIsSpotlightOpen(true)}
+              />
+            )}
 
           {/* === DAILY RIGHTS / DOCUMENTS (accessed via Profile) === */}
           {activeTab === 'rights' && (
@@ -534,22 +539,35 @@ export default function App() {
             handleStopResponse={handleStopResponse}
           />
 
-          {/* === BOTTOM NAVIGATION BAR === */}
-          <div className="bottom-navigation-bar">
-            {navItems.map(({ key, label, icon }) => (
-              <button
-                key={key}
-                className={`nav-tab-item${activeTab === key ? ' active' : ''}`}
-                onClick={() => handleNavigate(key)}
-              >
-                <div className="nav-icon-wrap">{icon}</div>
-                <span className="tab-item-label">{label}</span>
-              </button>
-            ))}
-          </div>
+            {/* === BOTTOM NAVIGATION BAR === */}
+            <div className="bottom-navigation-bar">
+              {navItems.map(({ key, label, icon }) => (
+                <button
+                  key={key}
+                  className={`nav-tab-item${activeTab === key ? ' active' : ''}`}
+                  onClick={() => handleNavigate(key)}
+                >
+                  <div className="nav-icon-wrap">{icon}</div>
+                  <span className="tab-item-label">{label}</span>
+                </button>
+              ))}
+            </div>
 
-        </main>
+            {/* === SPOTLIGHT SEARCH MODAL === */}
+            <SpotlightSearchModal
+              isOpen={isSpotlightOpen}
+              onClose={() => setIsSpotlightOpen(false)}
+              situations={situations}
+              onSelectSituation={(id) => {
+                openSituationDetail(id);
+                setActiveTab('situations');
+              }}
+              onNavigateTool={(tab) => handleNavigate(tab as ActiveTab)}
+            />
+
+          </main>
+        </div>
       </div>
-    </div>
+    </ToastProvider>
   );
 }

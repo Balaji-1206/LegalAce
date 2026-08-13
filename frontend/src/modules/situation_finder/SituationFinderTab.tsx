@@ -49,6 +49,7 @@ interface SituationFinderTabProps {
   LAW_DETAILS_MAP: Record<string, string>;
   onBackHome?: () => void;
   onOpenWizard?: () => void;
+  onOpenSpotlight?: () => void;
 }
 
 // ─── Category colors map ────────────────────────────────────────────────────
@@ -317,7 +318,7 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
   selectedSituation, openSituationDetail, toggleBookmark,
   searchQuery, setSearchQuery,
   situationsLoading, filteredSituations,
-  LAW_DETAILS_MAP, onBackHome, onOpenWizard,
+  LAW_DETAILS_MAP, onBackHome, onOpenWizard, onOpenSpotlight,
 }) => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'bookmarked' | 'recent'>('all');
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -764,14 +765,15 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
 
       {/* Search */}
       <div className="situations-search-wrap">
-        <div className="situations-search-box">
+        <div className="situations-search-box" onClick={() => onOpenSpotlight ? onOpenSpotlight() : undefined}>
           <svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" width="18" height="18">
             <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
           </svg>
           <input
             type="text"
-            placeholder="What happened? Describe your problem..."
+            placeholder="Search situations, laws, or topics..."
             value={searchQuery}
+            readOnly={Boolean(onOpenSpotlight)}
             onChange={e => {
               setSearchQuery(e.target.value);
               if (e.target.value.trim()) {

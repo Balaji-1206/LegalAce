@@ -13,6 +13,7 @@ interface HomeScreenProps {
   situations: SituationItem[];
   recentlyViewed: string[];
   openSituationDetail: (id: string) => void;
+  onOpenSpotlight?: () => void;
 }
 
 const TODAYS_RIGHT = {
@@ -36,6 +37,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   situations,
   recentlyViewed,
   openSituationDetail,
+  onOpenSpotlight,
 }) => {
   const recentSituations = recentlyViewed
     .map(id => situations.find(s => s.situation_id === id))
@@ -80,7 +82,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
       {/* Search Bar */}
       <div className="home-search-wrap">
-        <div className="home-search-box" onClick={() => onNavigate('situations')}>
+        <div className="home-search-box" onClick={() => onOpenSpotlight ? onOpenSpotlight() : onNavigate('situations')}>
           <svg className="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
             <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
           </svg>

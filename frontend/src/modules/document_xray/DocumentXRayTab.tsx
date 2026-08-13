@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import './document_xray.css';
 import { API_BASE_URL } from '../../config/api';
+import { useToast } from '../shared/ToastContext';
 
 const BACKEND_URL = API_BASE_URL;
 
@@ -35,6 +36,7 @@ export const DocumentXRayTab: React.FC<DocumentXRayTabProps> = ({
   onNavigateDeadlines,
   onNavigateWizard,
 }) => {
+  const { showToast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<XRayResult | null>(null);
@@ -120,6 +122,7 @@ export const DocumentXRayTab: React.FC<DocumentXRayTabProps> = ({
 
     setDeadlinesPushed(true);
     if (pushed > 0) {
+      showToast(`📅 ${pushed} deadline${pushed > 1 ? 's' : ''} added to Legal Monitor`, 'success');
       setTimeout(() => onNavigateDeadlines(), 1200);
     }
   };

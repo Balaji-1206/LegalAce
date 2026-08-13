@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import API_BASE_URL from '../../config/api';
 import './ProfileScreen.css';
 import type { ConversationSummary } from '../shared/types';
+import { useToast } from '../shared/ToastContext';
 
 interface ProfileScreenProps {
   userId: string;
@@ -45,6 +46,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onNavigate,
   onOpenSaved,
 }) => {
+  const { showToast } = useToast();
   // Local profile state persisted in localStorage
   const [userName, setUserName] = useState<string>(() => localStorage.getItem('legalace_user_name') || 'LegalAce User');
   const [userEmail, setUserEmail] = useState<string>(() => localStorage.getItem('legalace_user_email') || 'user@legalace.in');
@@ -121,6 +123,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const handleCopyDocText = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedDocId(id);
+    showToast('📋 Notice text copied to clipboard', 'success');
     setTimeout(() => setCopiedDocId(null), 2000);
   };
 
@@ -128,6 +131,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     const updated = savedDocs.filter(d => d.id !== id);
     setSavedDocs(updated);
     localStorage.setItem('legalace_generated_documents', JSON.stringify(updated));
+    showToast('🗑️ Document removed from Vault', 'info');
     if (activeReadingDoc?.id === id) setActiveReadingDoc(null);
   };
 
@@ -154,6 +158,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const handleSelectModel = async (provider: LLMProvider) => {
     setLlmProvider(provider);
     localStorage.setItem('legalace_llm_provider', provider);
+    showToast(`⚡ Active Model: ${MODEL_META[provider].label}`, 'info');
     try {
       await fetch(`${API_BASE_URL}/api/v1/llm-settings`, {
         method: 'POST',
@@ -171,6 +176,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     localStorage.setItem('legalace_avatar_color', avatarColor);
     localStorage.setItem('legalace_persona', persona);
     localStorage.setItem('legalace_preferred_state', preferredState);
+    showToast('✅ Profile updated successfully', 'success');
     setIsEditModalOpen(false);
   };
 
@@ -201,19 +207,22 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
+    showToast('📥 Legal history JSON exported', 'success');
   };
 
   const handleClearData = () => {
     if (window.confirm("Are you sure you want to clear your local bookmarks and search history?")) {
       localStorage.removeItem('legalace_bookmarks');
       localStorage.removeItem('legalace_recently_viewed');
-      window.location.reload();
+      showToast('🧹 Local history cleared', 'info');
+      setTimeout(() => window.location.reload(), 600);
     }
   };
 
   const copyHelplineNumber = (num: string) => {
     navigator.clipboard.writeText(num);
     setCopiedNumber(num);
+    showToast(`📞 Copied Helpline: ${num}`, 'success');
     setTimeout(() => setCopiedNumber(null), 2000);
   };
 

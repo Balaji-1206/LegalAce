@@ -1,0 +1,150 @@
+/* ═══════════════════════════════════════════════════════════════
+   LegalAce — Mobile Executive Floating Toast System
+   Top Pill / Dynamic Island Notification Capsule
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes toastSlideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-22px) scale(0.92);
+  }
+  60% {
+    transform: translateY(3px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastSlideUp {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.94);
+  }
+}
+
+.toast-floating-container {
+  position: fixed;
+  top: calc(18px + env(safe-area-inset-top, 0px));
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  z-index: 9999;
+  width: 100%;
+  max-width: 440px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.toast-pill-capsule {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px 10px 12px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1.5px solid #e8eaf0;
+  border-radius: 24px;
+  box-shadow: 
+    0 12px 32px rgba(15, 23, 42, 0.12),
+    0 2px 8px rgba(15, 23, 42, 0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  animation: toastSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  cursor: pointer;
+  max-width: 100%;
+  transition: transform 0.15s ease;
+}
+
+.toast-pill-capsule:active {
+  transform: scale(0.96);
+}
+
+.toast-pill-capsule.dismissing {
+  animation: toastSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.toast-icon-bubble {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 15px;
+}
+
+.toast-pill-capsule.success .toast-icon-bubble {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1.5px solid #a7f3d0;
+}
+
+.toast-pill-capsule.info .toast-icon-bubble {
+  background: #eef2ff;
+  color: #4f46e5;
+  border: 1.5px solid #c7d2fe;
+}
+
+.toast-pill-capsule.warning .toast-icon-bubble {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1.5px solid #fde68a;
+}
+
+.toast-pill-capsule.error .toast-icon-bubble {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1.5px solid #fecaca;
+}
+
+.toast-message-text {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.35;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.toast-action-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #1a1a5e;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.toast-action-btn:hover {
+  background: #e2e8f0;
+}
+
+.toast-close-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  margin-left: 2px;
+}
