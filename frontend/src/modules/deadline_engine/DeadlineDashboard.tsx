@@ -135,10 +135,11 @@ interface AddSheetProps {
   userId: string;
   onClose: () => void;
   onAdded: () => void;
+  initialMode?: 'manual' | 'extract';
 }
 
-const AddDeadlineSheet: React.FC<AddSheetProps> = ({ userId, onClose, onAdded }) => {
-  const [mode, setMode] = useState<'manual' | 'extract'>('manual');
+const AddDeadlineSheet: React.FC<AddSheetProps> = ({ userId, onClose, onAdded, initialMode = 'manual' }) => {
+  const [mode, setMode] = useState<'manual' | 'extract'>(initialMode);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('general');
@@ -317,6 +318,7 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
   const [allDeadlines, setAllDeadlines] = useState<DeadlineItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddSheet, setShowAddSheet] = useState(false);
+  const [addSheetMode, setAddSheetMode] = useState<'manual' | 'extract'>('manual');
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
 
@@ -523,7 +525,7 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
               <p className="deadline-header-sub">Your personal legal guardian</p>
             </div>
           </div>
-          <button className="add-deadline-btn" onClick={() => setShowAddSheet(true)} title="Add Deadline">
+          <button className="add-deadline-btn" onClick={() => { setAddSheetMode('manual'); setShowAddSheet(true); }} title="Add Deadline">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
               <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
             </svg>
@@ -624,16 +626,42 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
 
           {filteredDeadlines.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-state-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <rect x="3" y="4" width="18" height="18" rx="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
+              <div className="empty-state-illustration">
+                <div className="empty-state-icon-bubble">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="32" height="32">
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                    <path d="m9 16 2 2 4-4" />
+                  </svg>
+                </div>
+                <div className="empty-state-badge-tag">Ready to Track</div>
               </div>
-              <h3>No deadlines found</h3>
-              <p>Tap + to add a deadline manually or let AI extract deadlines from your legal situation.</p>
+              <h3>No Deadlines {activeFilter !== 'all' ? `in "${activeFilter}"` : 'Tracked Yet'}</h3>
+              <p>
+                {activeFilter !== 'all'
+                  ? 'Switch filters to see your other scheduled obligations or add a new one.'
+                  : 'Stay ahead of notice periods, appeal limitations, and court hearing dates.'}
+              </p>
+              <div className="empty-state-actions">
+                <button
+                  className="empty-cta-btn primary"
+                  onClick={() => { setAddSheetMode('manual'); setShowAddSheet(true); }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="15" height="15">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Add Manually
+                </button>
+                <button
+                  className="empty-cta-btn secondary"
+                  onClick={() => { setAddSheetMode('extract'); setShowAddSheet(true); }}
+                >
+                  <span>🤖</span> AI Text Extract
+                </button>
+              </div>
             </div>
           ) : (
             filteredDeadlines.map((dl, idx) => (
@@ -699,6 +727,7 @@ export const DeadlineDashboard: React.FC<DeadlineDashboardProps> = ({ userId, on
       {showAddSheet && (
         <AddDeadlineSheet
           userId={userId}
+          initialMode={addSheetMode}
           onClose={() => setShowAddSheet(false)}
           onAdded={fetchData}
         />

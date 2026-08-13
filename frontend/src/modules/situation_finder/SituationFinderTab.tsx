@@ -53,19 +53,19 @@ interface SituationFinderTabProps {
 
 // ─── Category colors map ────────────────────────────────────────────────────
 const CAT_COLORS: Record<string, string> = {
-  employment:  '#3b82f6',
-  housing:     '#10b981',
-  consumer:    '#f59e0b',
-  cyber_crime: '#8b5cf6',
-  women_rights:'#a855f7',
-  banking:     '#06b6d4',
-  traffic:     '#f43f5e',
-  education:   '#14b8a6',
-  cheque_debt: '#ef4444',
-  rti:         '#f97316',
-  real_estate: '#6366f1',
-  insurance:   '#ec4899',
-  family:      '#84cc16',
+  employment:  '#4f46e5',
+  housing:     '#059669',
+  consumer:    '#d97706',
+  cyber_crime: '#7e22ce',
+  women_rights:'#be185d',
+  banking:     '#0e7490',
+  traffic:     '#dc2626',
+  education:   '#0d9488',
+  cheque_debt: '#b91c1c',
+  rti:         '#c2410c',
+  real_estate: '#059669',
+  insurance:   '#db2777',
+  family:      '#65a30d',
 };
 
 // ─── Category SVG icons ─────────────────────────────────────────────────────
@@ -676,13 +676,47 @@ export const SituationFinderTab: React.FC<SituationFinderTabProps> = ({
           <SkeletonList />
         ) : displayedSituations.length === 0 ? (
           <div className="sf-empty-state">
-            <div className="sf-empty-icon">🔍</div>
-            <h3>No situations found</h3>
+            <div className="sf-empty-illustration">
+              <div className="sf-empty-icon-bubble">
+                {activeFilter === 'bookmarked' ? '🔖' : activeFilter === 'recent' ? '🕐' : searchQuery ? '🔍' : '📂'}
+              </div>
+              <div className="sf-empty-badge">No Scenarios</div>
+            </div>
+            <h3>
+              {activeFilter === 'bookmarked'
+                ? 'No Bookmarked Situations'
+                : activeFilter === 'recent'
+                ? 'No Recently Viewed Items'
+                : searchQuery
+                ? `No Results for "${searchQuery}"`
+                : 'No Situations Found'}
+            </h3>
             <p>
-              {activeFilter !== 'all'
-                ? 'Try switching to "All" to see everything.'
-                : 'Try a different search term or category.'}
+              {activeFilter === 'bookmarked'
+                ? 'Save useful situations using the bookmark icon on any scenario card for quick reference.'
+                : activeFilter === 'recent'
+                ? 'Scenarios you inspect will automatically appear here for rapid access.'
+                : searchQuery
+                ? 'Try searching broader keywords like "rent", "termination", "cheque", or "police".'
+                : 'Browse our legal categories to find statutory steps and rights.'}
             </p>
+            <div className="sf-empty-actions">
+              {searchQuery || activeFilter !== 'all' ? (
+                <button
+                  className="sf-empty-btn primary"
+                  onClick={() => { setSearchQuery(''); setActiveFilter('all'); }}
+                >
+                  Show All Situations
+                </button>
+              ) : (
+                <button
+                  className="sf-empty-btn primary"
+                  onClick={() => setScreen('categories')}
+                >
+                  Browse Categories
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div style={{ padding: '0 16px' }}>

@@ -131,9 +131,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* Quick Actions */}
       <div className="section-title">Legal Ace Features</div>
       <div className="quick-actions-grid">
-        <div className="quick-action-card" onClick={() => onNavigate('xray')} style={{ '--home-stagger': 0 } as React.CSSProperties}>
+        <div className="quick-action-card xray" onClick={() => onNavigate('xray')} style={{ '--home-stagger': 0 } as React.CSSProperties}>
           <span className="qa-badge-pill blue">AI Scan</span>
-          <div className="qa-icon-wrap light" style={{ background: '#eef2ff', color: '#6366f1' }}>
+          <div className="qa-icon-wrap" style={{ background: '#eef2ff', color: '#4f46e5', border: '1px solid #c7d2fe' }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
@@ -147,9 +147,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         </div>
 
-        <div className="quick-action-card" onClick={() => onNavigate('legalaid')} style={{ '--home-stagger': 1 } as React.CSSProperties}>
+        <div className="quick-action-card legalaid" onClick={() => onNavigate('legalaid')} style={{ '--home-stagger': 1 } as React.CSSProperties}>
           <span className="qa-badge-pill emerald">DLSA</span>
-          <div className="qa-icon-wrap light" style={{ background: '#ecfdf5', color: '#059669' }}>
+          <div className="qa-icon-wrap" style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0' }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
               <circle cx="12" cy="12" r="10" />
               <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
@@ -162,9 +162,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         </div>
 
-        <div className="quick-action-card" onClick={() => onNavigate('situations')} style={{ '--home-stagger': 2 } as React.CSSProperties}>
+        <div className="quick-action-card situations" onClick={() => onNavigate('situations')} style={{ '--home-stagger': 2 } as React.CSSProperties}>
           <span className="qa-badge-pill amber">Scenarios</span>
-          <div className="qa-icon-wrap light" style={{ background: '#fef3c7', color: '#d97706' }}>
+          <div className="qa-icon-wrap" style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fde68a' }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
             </svg>
@@ -175,9 +175,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         </div>
 
-        <div className="quick-action-card" onClick={() => onNavigate('wizard')} style={{ '--home-stagger': 3 } as React.CSSProperties}>
+        <div className="quick-action-card wizard" onClick={() => onNavigate('wizard')} style={{ '--home-stagger': 3 } as React.CSSProperties}>
           <span className="qa-badge-pill indigo">Notice</span>
-          <div className="qa-icon-wrap light" style={{ background: '#e0e7ff', color: '#4338ca' }}>
+          <div className="qa-icon-wrap" style={{ background: '#eef2ff', color: '#4338ca', border: '1px solid #c7d2fe' }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
             </svg>
@@ -188,9 +188,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         </div>
 
-        <div className="quick-action-card" onClick={() => onNavigate('deadlines')} style={{ '--home-stagger': 4 } as React.CSSProperties}>
+        <div className="quick-action-card monitor" onClick={() => onNavigate('deadlines')} style={{ '--home-stagger': 4 } as React.CSSProperties}>
           <span className="qa-badge-pill purple">Tracker</span>
-          <div className="qa-icon-wrap light" style={{ background: '#fae8ff', color: '#a855f7' }}>
+          <div className="qa-icon-wrap" style={{ background: '#faf5ff', color: '#7e22ce', border: '1px solid #e9d5ff' }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
               <rect x="3" y="4" width="18" height="18" rx="2" />
               <line x1="16" y1="2" x2="16" y2="6" />

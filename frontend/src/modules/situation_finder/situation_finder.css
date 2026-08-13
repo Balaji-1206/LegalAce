@@ -57,7 +57,7 @@
 
 /* ─── Header ────────────────────────────────────────────────── */
 .situations-header {
-  padding: 52px 20px 8px;
+  padding: 12px 20px 8px;
   background: #f4f5f9;
 }
 .situations-header-nav {
@@ -190,25 +190,53 @@
   animation: sf-fadeSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: calc(var(--sf-stagger, 0) * 60ms);
 }
-.category-card.employment  { background: linear-gradient(145deg, rgba(59,130,246,0.12), rgba(29,78,216,0.06));   box-shadow: 0 2px 12px rgba(59,130,246,0.1); }
-.category-card.housing     { background: linear-gradient(145deg, rgba(16,185,129,0.12), rgba(5,150,105,0.06));   box-shadow: 0 2px 12px rgba(16,185,129,0.1); }
-.category-card.consumer    { background: linear-gradient(145deg, rgba(245,158,11,0.12), rgba(217,119,6,0.06));   box-shadow: 0 2px 12px rgba(245,158,11,0.1); }
-.category-card.cyber_crime { background: linear-gradient(145deg, rgba(139,92,246,0.12), rgba(109,40,217,0.06)); box-shadow: 0 2px 12px rgba(139,92,246,0.1); }
-.category-card.women_rights { background: linear-gradient(145deg, rgba(168,85,247,0.12), rgba(126,34,206,0.06)); box-shadow: 0 2px 12px rgba(168,85,247,0.1); }
-.category-card.banking     { background: linear-gradient(145deg, rgba(6,182,212,0.12), rgba(8,145,178,0.06));   box-shadow: 0 2px 12px rgba(6,182,212,0.1); }
-.category-card.traffic     { background: linear-gradient(145deg, rgba(244,63,94,0.12), rgba(225,29,72,0.06));   box-shadow: 0 2px 12px rgba(244,63,94,0.1); }
-.category-card.education   { background: linear-gradient(145deg, rgba(20,184,166,0.12), rgba(13,148,136,0.06)); box-shadow: 0 2px 12px rgba(20,184,166,0.1); }
-.category-card.cheque_debt { background: linear-gradient(145deg, rgba(239,68,68,0.12), rgba(220,38,38,0.06));   box-shadow: 0 2px 12px rgba(239,68,68,0.1); }
-.category-card.rti         { background: linear-gradient(145deg, rgba(249,115,22,0.12), rgba(194,65,12,0.06));   box-shadow: 0 2px 12px rgba(249,115,22,0.1); }
-.category-card.real_estate { background: linear-gradient(145deg, rgba(99,102,241,0.12), rgba(67,56,202,0.06));  box-shadow: 0 2px 12px rgba(99,102,241,0.1); }
-.category-card.insurance   { background: linear-gradient(145deg, rgba(236,72,153,0.12), rgba(219,39,119,0.06));  box-shadow: 0 2px 12px rgba(236,72,153,0.1); }
-.category-card.family      { background: linear-gradient(145deg, rgba(132,204,22,0.12), rgba(101,163,13,0.06));  box-shadow: 0 2px 12px rgba(132,204,22,0.1); }
+.category-card.employment   { background: #f5f7ff; border: 1.5px solid #dbeafe; }
+.category-card.employment .cat-icon-wrap { background: #e0e7ff; }
+
+.category-card.housing      { background: #f0fdf4; border: 1.5px solid #bbf7d0; }
+.category-card.housing .cat-icon-wrap { background: #dcfce7; }
+
+.category-card.consumer     { background: #fffbeb; border: 1.5px solid #fde68a; }
+.category-card.consumer .cat-icon-wrap { background: #fef3c7; }
+
+.category-card.cyber_crime  { background: #faf5ff; border: 1.5px solid #e9d5ff; }
+.category-card.cyber_crime .cat-icon-wrap { background: #f3e8ff; }
+
+.category-card.women_rights { background: #fdf2f8; border: 1.5px solid #fbcfe8; }
+.category-card.women_rights .cat-icon-wrap { background: #fce7f3; }
+
+.category-card.banking      { background: #ecfeff; border: 1.5px solid #a5f3fc; }
+.category-card.banking .cat-icon-wrap { background: #cffafe; }
+
+.category-card.traffic      { background: #fef2f2; border: 1.5px solid #fecaca; }
+.category-card.traffic .cat-icon-wrap { background: #fee2e2; }
+
+.category-card.education    { background: #f0fdfa; border: 1.5px solid #99f6e4; }
+.category-card.education .cat-icon-wrap { background: #ccfbf1; }
+
+.category-card.cheque_debt  { background: #fff1f2; border: 1.5px solid #fecdd3; }
+.category-card.cheque_debt .cat-icon-wrap { background: #ffe4e6; }
+
+.category-card.rti          { background: #fff7ed; border: 1.5px solid #fed7aa; }
+.category-card.rti .cat-icon-wrap { background: #ffedd5; }
+
+.category-card.real_estate  { background: #f0fdf4; border: 1.5px solid #bbf7d0; }
+.category-card.real_estate .cat-icon-wrap { background: #dcfce7; }
+
+.category-card.insurance    { background: #fdf2f8; border: 1.5px solid #fbcfe8; }
+.category-card.insurance .cat-icon-wrap { background: #fce7f3; }
+
+.category-card.family       { background: #f7fee7; border: 1.5px solid #d9f99d; }
+.category-card.family .cat-icon-wrap { background: #ecfccb; }
 
 .category-card:hover {
   transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.12) !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.07) !important;
 }
-.category-card:active { transform: scale(0.98); }
+.category-card:active {
+  transform: scale(0.96);
+  transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.4, 1);
+}
 
 .cat-icon-wrap {
   width: 48px;
@@ -482,25 +510,100 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 48px 24px;
+  padding: 36px 20px;
+  margin: 16px;
   text-align: center;
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1.5px solid #e8eaf0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
   animation: sf-fadeSlideUp 0.4s ease both;
 }
-.sf-empty-icon {
-  font-size: 48px;
+
+.sf-empty-illustration {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-bottom: 16px;
-  animation: sf-floatIcon 3s ease-in-out infinite;
 }
+
+.sf-empty-icon-bubble {
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  border: 2px solid #c7d2fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.12);
+  animation: sf-floatIcon 3.5s ease-in-out infinite;
+}
+
+.sf-empty-badge {
+  margin-top: -8px;
+  background: linear-gradient(135deg, #1a1a5e 0%, #312e81 100%);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(26, 26, 94, 0.25);
+  z-index: 2;
+}
+
 .sf-empty-state h3 {
-  font-size: 16px;
-  font-weight: 700;
-  color: #374151;
+  font-size: 17px;
+  font-weight: 800;
+  color: #1a1a5e;
+  letter-spacing: -0.3px;
   margin-bottom: 6px;
 }
+
 .sf-empty-state p {
   font-size: 13px;
-  color: #9ca3af;
+  color: #6b7280;
   line-height: 1.5;
+  max-width: 280px;
+  margin-bottom: 18px;
+}
+
+.sf-empty-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 260px;
+}
+
+.sf-empty-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 16px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.sf-empty-btn.primary {
+  background: linear-gradient(135deg, #1a1a5e 0%, #312e81 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 14px rgba(26, 26, 94, 0.25);
+}
+
+.sf-empty-btn.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(26, 26, 94, 0.35);
 }
 
 /* ─── Detail Screen ───────────────────────────────────────────── */
@@ -516,7 +619,7 @@
 /* Detail hero — dark gradient */
 .sit-detail-hero {
   background: linear-gradient(135deg, #1a1a5e 0%, #312e81 50%, #1e1b4b 100%);
-  padding: 52px 20px 28px;
+  padding: 16px 20px 24px;
   position: relative;
   overflow: hidden;
 }

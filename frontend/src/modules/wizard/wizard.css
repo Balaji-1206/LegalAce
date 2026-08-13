@@ -87,7 +87,7 @@
 
 /* ─── Header ─────────────────────────────────────────────────── */
 .wizard-header {
-  padding: 52px 20px 12px;
+  padding: 12px 20px 8px;
   background: #f4f5f9;
 }
 
@@ -349,7 +349,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 52px 16px 12px;
+  padding: 12px 16px 8px;
   cursor: pointer;
   font-size: 15px;
   font-weight: 600;
@@ -796,7 +796,7 @@
 /* Hero header with gradient mesh */
 .action-plan-hero {
   background: linear-gradient(135deg, #1a1a5e 0%, #312e81 50%, #1e1b4b 100%);
-  padding: 52px 20px 28px;
+  padding: 16px 20px 24px;
   margin-bottom: 0;
   position: relative;
   overflow: hidden;

@@ -463,59 +463,45 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         </div>
       </div>
 
-      {/* Interactive Stats Grid */}
-      <div className="profile-section-group" style={{ marginTop: 20 }}>
+      {/* 3-Metric Overview Strip */}
+      <div className="profile-section-group" style={{ marginTop: 18 }}>
         <div className="profile-section-title">Overview & Activity</div>
-        <div className="profile-stats-grid">
-          <div className="stat-card" onClick={() => onNavigate('chat')}>
-            <div className="stat-card-icon" style={{ background: '#eef2ff', color: '#4f46e5' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
+        <div className="profile-metrics-strip">
+          <div className="metric-pill-card" onClick={() => onNavigate('chat')}>
+            <div className="metric-icon-bubble indigo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
             </div>
-            <div className="stat-card-info">
-              <strong>{conversations.length}</strong>
-              <span>Consultations</span>
+            <div className="metric-data">
+              <span className="metric-number">{conversations.length}</span>
+              <span className="metric-label">Consultations</span>
             </div>
           </div>
 
-          <div className="stat-card" onClick={onOpenSaved}>
-            <div className="stat-card-icon" style={{ background: '#fef3c7', color: '#d97706' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
+          <div className="metric-pill-card" onClick={onOpenSaved}>
+            <div className="metric-icon-bubble amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
                 <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
               </svg>
             </div>
-            <div className="stat-card-info">
-              <strong>{bookmarks.length}</strong>
-              <span>Saved Laws</span>
+            <div className="metric-data">
+              <span className="metric-number">{bookmarks.length}</span>
+              <span className="metric-label">Saved Laws</span>
             </div>
           </div>
 
-          <div className="stat-card" onClick={() => onNavigate('deadlines')}>
-            <div className="stat-card-icon" style={{ background: '#ecfdf5', color: '#059669' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
-                <path d="m9 16 2 2 4-4" />
+          <div className="metric-pill-card" onClick={() => setProfileView('vault')}>
+            <div className="metric-icon-bubble emerald">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
               </svg>
             </div>
-            <div className="stat-card-info">
-              <strong>Legal Health</strong>
-              <span>Monitor & Deadlines</span>
-            </div>
-          </div>
-
-          <div className="stat-card" onClick={() => onNavigate('rights')}>
-            <div className="stat-card-icon" style={{ background: '#fce7f3', color: '#db2777' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-            </div>
-            <div className="stat-card-info">
-              <strong>Daily Rights</strong>
-              <span>Citizenship Handbook</span>
+            <div className="metric-data">
+              <span className="metric-number">{savedDocs.length}</span>
+              <span className="metric-label">Vault Files</span>
             </div>
           </div>
         </div>
@@ -525,6 +511,50 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       <div className="profile-section-group">
         <div className="profile-section-title">Legal Workspace & Tools</div>
         <div className="profile-card-group">
+          <div className="profile-action-item" onClick={() => onNavigate('deadlines')}>
+            <div className="action-item-icon" style={{ background: '#ecfdf5', color: '#059669' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+                <path d="m9 16 2 2 4-4" />
+              </svg>
+            </div>
+            <div className="action-item-content">
+              <div className="action-item-title">
+                Legal Health Monitor
+                <span className="action-item-badge" style={{ background: '#ecfdf5', color: '#059669' }}>Tracker</span>
+              </div>
+              <div className="action-item-desc">Track filing dates, limitation periods & statutory deadlines</div>
+            </div>
+            <div className="action-item-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+          </div>
+
+          <div className="profile-action-item" onClick={() => onNavigate('rights')}>
+            <div className="action-item-icon" style={{ background: '#fdf2f8', color: '#db2777' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </div>
+            <div className="action-item-content">
+              <div className="action-item-title">
+                Daily Rights Handbook
+                <span className="action-item-badge" style={{ background: '#fdf2f8', color: '#db2777' }}>Handbook</span>
+              </div>
+              <div className="action-item-desc">Constitutional rights, citizen protections & everyday legal tips</div>
+            </div>
+            <div className="action-item-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+          </div>
+
           <div className="profile-action-item" onClick={() => onNavigate('wizard')}>
             <div className="action-item-icon" style={{ background: '#e0e7ff', color: '#4338ca' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
