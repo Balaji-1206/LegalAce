@@ -201,9 +201,14 @@ def generate_smart_fallback(query: str, intent: str, law_chunks: list) -> dict:
         "disclaimer": "This information is provided for educational purposes under Indian Law."
     }
 
+import hashlib
+import asyncio
+
+_RAG_RESPONSE_CACHE: dict[str, tuple[dict, str, list]] = {}
+_MAX_CACHE_SIZE = 100
+
 async def call_gemini_llm(prompt: str) -> dict:
-    """Call Google Gemini API with native JSON output mode."""
-    import asyncio
+    """Call Google Gemini API with native JSON output mode and strict 4s timeout."""
     from google import genai
     from google.genai import types
 
@@ -221,9 +226,13 @@ async def call_gemini_llm(prompt: str) -> dict:
             )
         )
 
-    response = await loop.run_in_executor(None, _generate)
-    raw_text = response.text or "{}"
-    return clean_and_parse_json(raw_text)
+    try:
+        response = await asyncio.wait_for(loop.run_in_executor(None, _generate), timeout=4.0)
+        raw_text = response.text or "{}"
+        return clean_and_parse_json(raw_text)
+    except asyncio.TimeoutError:
+        logger.warning("Gemini LLM call timed out after 4.0s — failing over...")
+        return {}
 
 async def run_rag_pipeline(
     query: str,
@@ -232,6 +241,12 @@ async def run_rag_pipeline(
     """
     Run the query through RAG pipeline with fail-safe legal fallback execution.
     """
+    # 0. Check RAG Cache for identical query
+    query_key = hashlib.md5(f"{query.lower().strip()}".encode('utf-8')).hexdigest()
+    if not conversation_history and query_key in _RAG_RESPONSE_CACHE:
+        logger.info(f"RAG Cache HIT for query: '{query[:50]}'")
+        return _RAG_RESPONSE_CACHE[query_key]
+
     from app.modules.chatbot.rag import embedder, faiss_store
     if not embedder.is_loaded():
         embedder.load_embedder()
@@ -298,11 +313,14 @@ async def run_rag_pipeline(
     if not parsed and _openai_client and settings.OPENAI_API_KEY and _llm_override in ("auto", "openai"):
         try:
             logger.info(f"Executing OpenAI LLM generation [override={_llm_override}]...")
-            response = await _openai_client.chat.completions.create(
-                model=settings.OPENAI_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.2,
-                response_format={"type": "json_object"},
+            response = await asyncio.wait_for(
+                _openai_client.chat.completions.create(
+                    model=settings.OPENAI_MODEL,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.2,
+                    response_format={"type": "json_object"},
+                ),
+                timeout=4.0,
             )
             raw_content = response.choices[0].message.content or "{}"
             parsed = clean_and_parse_json(raw_content)
@@ -327,10 +345,13 @@ async def run_rag_pipeline(
                 history=trimmed_history,
                 question=query,
             )
-            ollama_response = await ollama_client.chat.completions.create(
-                model=settings.OLLAMA_MODEL,
-                messages=[{"role": "user", "content": ollama_prompt}],
-                temperature=0.2,
+            ollama_response = await asyncio.wait_for(
+                ollama_client.chat.completions.create(
+                    model=settings.OLLAMA_MODEL,
+                    messages=[{"role": "user", "content": ollama_prompt}],
+                    temperature=0.2,
+                ),
+                timeout=5.0,
             )
             raw_ollama = ollama_response.choices[0].message.content or "{}"
             parsed = clean_and_parse_json(raw_ollama)
@@ -422,4 +443,7 @@ async def run_rag_pipeline(
             if getattr(chunk, 'score', 0.0) >= 0.45
         ]
 
-    return parsed, intent, law_chunks
+    res_tuple = (parsed, intent, law_chunks)
+    if len(_RAG_RESPONSE_CACHE) < _MAX_CACHE_SIZE:
+        _RAG_RESPONSE_CACHE[query_key] = res_tuple
+    return res_tuple

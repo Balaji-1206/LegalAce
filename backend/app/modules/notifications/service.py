@@ -75,6 +75,13 @@ async def set_notification_preferences(
     Channel: 'whatsapp' | 'sms' | 'none'
     """
     from bson import ObjectId
+    from bson.errors import InvalidId
+
+    try:
+        obj_id = ObjectId(deadline_id)
+    except (InvalidId, ValueError, TypeError):
+        logger.warning(f"Invalid deadline ObjectId string: '{deadline_id}'")
+        return None
 
     db = get_database()
     prefs = {
@@ -86,7 +93,7 @@ async def set_notification_preferences(
     }
 
     result = await db["deadlines"].find_one_and_update(
-        {"_id": ObjectId(deadline_id), "user_id": user_id},
+        {"_id": obj_id, "user_id": user_id},
         {"$set": {"notification_preferences": prefs, "updated_at": datetime.now(timezone.utc)}},
         return_document=True,
     )
@@ -104,10 +111,17 @@ async def set_notification_preferences(
 async def remove_notification_preferences(deadline_id: str, user_id: str) -> bool:
     """Disable notifications for a deadline."""
     from bson import ObjectId
+    from bson.errors import InvalidId
+
+    try:
+        obj_id = ObjectId(deadline_id)
+    except (InvalidId, ValueError, TypeError):
+        logger.warning(f"Invalid deadline ObjectId string: '{deadline_id}'")
+        return False
 
     db = get_database()
     result = await db["deadlines"].update_one(
-        {"_id": ObjectId(deadline_id), "user_id": user_id},
+        {"_id": obj_id, "user_id": user_id},
         {"$unset": {"notification_preferences": ""}, "$set": {"updated_at": datetime.now(timezone.utc)}},
     )
     return result.modified_count > 0

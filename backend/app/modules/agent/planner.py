@@ -192,6 +192,12 @@ def create_rule_based_plan(user_message: str, agent_mode: str = "general", has_d
     )
 
 
+import hashlib
+import asyncio
+
+_PLAN_CACHE: dict[str, AgentPlan] = {}
+_MAX_PLAN_CACHE = 100
+
 async def generate_agent_plan(
     user_message: str,
     history_messages: List[Dict[str, Any]],
@@ -202,6 +208,11 @@ async def generate_agent_plan(
     Generate execution plan using Gemini / OpenAI LLM with full chat history context.
     Falls back to rule-based planner if LLM is unavailable.
     """
+    plan_key = hashlib.md5(f"{user_message.lower().strip()}:{agent_mode}:{has_document}".encode('utf-8')).hexdigest()
+    if not history_messages and plan_key in _PLAN_CACHE:
+        logger.info(f"Agent Planner Cache HIT for: '{user_message[:50]}'")
+        return _PLAN_CACHE[plan_key]
+
     history_str = _format_full_history(history_messages)
     tools_desc = get_tools_prompt_description()
 
@@ -220,7 +231,6 @@ async def generate_agent_plan(
     # Tier 1: Gemini
     if settings.GEMINI_API_KEY and _llm_override in ("auto", "gemini"):
         try:
-            import asyncio
             from google import genai
             from google.genai import types
 
@@ -238,10 +248,12 @@ async def generate_agent_plan(
                     )
                 )
 
-            res = await loop.run_in_executor(None, _gen)
+            res = await asyncio.wait_for(loop.run_in_executor(None, _gen), timeout=3.5)
             raw = res.text or "{}"
             parsed = _clean_json_output(raw)
             logger.info(f"Planner generated plan via Gemini LLM [override={_llm_override}].")
+        except asyncio.TimeoutError:
+            logger.warning("Gemini LLM planning timed out after 3.5s — failing over...")
         except Exception as e:
             logger.warning(f"Gemini LLM planning failed: {e}")
 
@@ -311,13 +323,19 @@ async def generate_agent_plan(
                 requires_confirmation=req_confirm or is_mutating,
             ))
 
-        return AgentPlan(
+        plan_res = AgentPlan(
             objective=parsed.get("objective", f"Legal resolution for query"),
             agent_mode=parsed.get("agent_mode", agent_mode),
             steps=steps,
         )
+        if len(_PLAN_CACHE) < _MAX_PLAN_CACHE:
+            _PLAN_CACHE[plan_key] = plan_res
+        return plan_res
 
     # Fallback to rule-based planner
     logger.info("Falling back to deterministic rule-based execution planner.")
-    return create_rule_based_plan(user_message, agent_mode, has_document)
+    fallback_plan = create_rule_based_plan(user_message, agent_mode, has_document)
+    if len(_PLAN_CACHE) < _MAX_PLAN_CACHE:
+        _PLAN_CACHE[plan_key] = fallback_plan
+    return fallback_plan
 

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import AsyncGenerator, List, Dict, Any, Tuple
+from typing import AsyncGenerator, List, Dict, Any, Tuple, Optional
 
 from app.core.logging import get_logger
 from app.modules.agent.schemas import AgentPlan, PlannedStep, ToolExecutionResult, PendingAction

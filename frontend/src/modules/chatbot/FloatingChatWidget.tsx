@@ -86,7 +86,7 @@ const ActionStepItem: React.FC<{ userId: string; stepText: string; backendUrl: s
           onClick={handleCreateReminder}
           disabled={reminderState !== 'idle'}
         >
-          {reminderState === 'idle' && <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="10" height="10"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Add reminder</>}
+          {reminderState === 'idle' && <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="10" height="10"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg> Add reminder</>}
           {reminderState === 'loading' && 'Saving...'}
           {reminderState === 'created' && <>✓ Reminder saved</>}
         </button>
@@ -105,6 +105,22 @@ const PendingActionCard: React.FC<{
   const [resultData, setResultData] = useState<Record<string, unknown> | null>(null);
   const [copiedDoc, setCopiedDoc] = useState<boolean>(false);
   const [showDocText, setShowDocText] = useState<boolean>(true);
+
+  const saveToDocVault = (title: string, text: string) => {
+    try {
+      const raw = localStorage.getItem('legalace_generated_documents');
+      const docs = raw ? JSON.parse(raw) : [];
+      const newDoc = {
+        id: 'doc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        title: title || 'Statutory Legal Notice',
+        document_type: 'Legal Notice',
+        content: text,
+        created_at: new Date().toISOString(),
+      };
+      const updated = [newDoc, ...docs.filter((d: { content: string }) => d.content !== text)];
+      localStorage.setItem('legalace_generated_documents', JSON.stringify(updated));
+    } catch { /* storage fallback */ }
+  };
 
   const handleDecision = async (approved: boolean) => {
     setStatus('loading');
@@ -127,6 +143,11 @@ const PendingActionCard: React.FC<{
         setFeedback(data.message || 'Action approved & executed!');
         if (data.result) {
           setResultData(data.result);
+          const textToSave = String(data.result.document_text || data.result.doc_text || action.details?.document_text || '');
+          const docTitle = String(data.result.title || action.title || 'Statutory Legal Notice');
+          if (textToSave) {
+            saveToDocVault(docTitle, textToSave);
+          }
         }
       } else {
         setStatus('rejected');
@@ -144,15 +165,48 @@ const PendingActionCard: React.FC<{
     setTimeout(() => setCopiedDoc(false), 2000);
   };
 
-  const handleDownloadDoc = (title: string, text: string) => {
-    const element = document.createElement("a");
-    const file = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    element.href = URL.createObjectURL(file);
-    const filename = `${(title || 'legal_notice').toLowerCase().replace(/[^a-z0-9]/g, '_')}.txt`;
-    element.download = filename;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+  const handleDownloadDoc = async (title: string, text: string) => {
+    const win = window as unknown as { html2pdf?: () => { set: (opt: unknown) => { from: (elem: HTMLElement) => { save: () => Promise<void> } } } };
+    if (!win.html2pdf) {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      document.head.appendChild(script);
+      await new Promise((res) => { script.onload = res; });
+    }
+
+    const container = document.createElement('div');
+    container.style.padding = '32px 40px';
+    container.style.fontFamily = "'Times New Roman', Georgia, serif";
+    container.style.color = '#0f172a';
+    container.style.lineHeight = '1.7';
+    container.style.background = '#ffffff';
+    container.innerHTML = `
+      <div style="text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 24px;">
+        <h2 style="font-size: 20px; text-transform: uppercase; color: #0f172a; margin: 0; font-weight: 700;">${title.toUpperCase()}</h2>
+        <p style="font-size: 13px; color: #475569; margin-top: 4px;">Issued via LegalAce AI Rights Companion</p>
+      </div>
+      <div style="white-space: pre-wrap; font-size: 14px; text-align: justify;">${text}</div>
+      <div style="margin-top: 40px; border-top: 1px solid #cbd5e1; padding-top: 12px; font-size: 11px; color: #64748b; text-align: center;">
+        Generated for official legal record on ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
+      </div>
+    `;
+
+    document.body.appendChild(container);
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: `${(title || 'Legal_Notice').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    try {
+      if (win.html2pdf) {
+        await win.html2pdf().set(opt).from(container).save();
+      }
+    } finally {
+      document.body.removeChild(container);
+    }
   };
 
   const docText = String(resultData?.document_text || resultData?.doc_text || action.details?.document_text || '');
@@ -197,7 +251,7 @@ const PendingActionCard: React.FC<{
               <div className="doc-result-panel">
                 <div className="doc-result-header">
                   <span className="doc-result-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
                     {(resultData?.title as string) || 'Generated Legal Document'}
                   </span>
                   <div className="doc-result-actions">
@@ -320,7 +374,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-  const [selectedMode, setSelectedMode] = useState<AgentMode>('general');
+  const [selectedMode] = useState<AgentMode>('general');
   const [isListening, setIsListening] = useState<boolean>(false);
   const [attachment, setAttachment] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -336,51 +390,6 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const scrollEndRef = useRef<HTMLDivElement | null>(null);
-
-  // ── Add-on: Runtime LLM provider selector ──
-  type LLMProvider = 'auto' | 'gemini' | 'openai' | 'ollama';
-  const [llmProvider, setLlmProvider] = useState<LLMProvider>('auto');
-  const [showProviderMenu, setShowProviderMenu] = useState<boolean>(false);
-  const PROVIDER_META: Record<LLMProvider, { label: string; icon: string; color: string }> = {
-    auto:   { label: 'Auto',   icon: '🔄', color: '#6366f1' },
-    gemini: { label: 'Gemini', icon: '✨', color: '#059669' },
-    openai: { label: 'OpenAI', icon: '🧠', color: '#2563eb' },
-    ollama: { label: 'Ollama', icon: '🦙', color: '#d97706' },
-  };
-
-  const switchLLMProvider = async (p: LLMProvider) => {
-    try {
-      await fetch(`${backendUrl}/api/v1/llm-settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: p }),
-      });
-      setLlmProvider(p);
-    } catch { /* offline fallback */ setLlmProvider(p); }
-    setShowProviderMenu(false);
-  };
-
-  useEffect(() => {
-    fetch(`${backendUrl}/api/v1/llm-settings`)
-      .then(r => r.json())
-      .then(d => { if (d.provider) setLlmProvider(d.provider as LLMProvider); })
-      .catch(() => {});
-  }, [backendUrl]);
-
-  const providerMenuRef = useRef<HTMLDivElement | null>(null);
-
-  // Close provider dropdown when clicking outside
-  useEffect(() => {
-    if (!showProviderMenu) return;
-    const handler = (e: MouseEvent) => {
-      if (providerMenuRef.current && !providerMenuRef.current.contains(e.target as Node)) {
-        setShowProviderMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [showProviderMenu]);
-
 
   // Safe execution state labels (no internal chain-of-thought exposed)
   const agenticSteps = [
@@ -618,7 +627,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
         {!isOpen && showHint && (
           <div className="floating-ai-hint" onClick={toggleWidget}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13" style={{ opacity: 0.7 }}>
-              <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+              <circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" />
             </svg>
             <span>{loading ? 'LegalAce is working...' : 'Ask LegalAce'}</span>
           </div>
@@ -801,7 +810,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                       >
                         <span>{prompt}</span>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                          <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
                         </svg>
                       </div>
                     ))}
@@ -812,9 +821,9 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                   <div key={idx} className={`chat-msg-row ${msg.role}`}>
                     <div className={`msg-avatar ${msg.role}`}>
                       {msg.role === 'user' ? (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                       ) : (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14"><path d="M12 3L4 7v5c0 5.25 3.5 10.15 8 11.35C17.5 22.15 21 17.25 21 12V7l-8-4z"/><path d="M8 12.5l2.5 2.5L16 9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14"><path d="M12 3L4 7v5c0 5.25 3.5 10.15 8 11.35C17.5 22.15 21 17.25 21 12V7l-8-4z" /><path d="M8 12.5l2.5 2.5L16 9" strokeLinecap="round" strokeLinejoin="round" /></svg>
                       )}
                     </div>
 
@@ -841,7 +850,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                                     <div className="citation-act-name">{c.act}</div>
                                     <div className="citation-section-label">{c.section}{c.section_title ? ` · ${c.section_title}` : ''}</div>
                                   </div>
-                                  <svg className={`citation-expand-arrow${expandedCitation === c.section ? ' expanded' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg>
+                                  <svg className={`citation-expand-arrow${expandedCitation === c.section ? ' expanded' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="6 9 12 15 18 9" /></svg>
                                 </div>
                                 {expandedCitation === c.section && (
                                   <div className="citation-details-popup">
@@ -857,7 +866,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                         {msg.action_steps && msg.action_steps.length > 0 && (
                           <div>
                             <div className="action-plan-header">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12"><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
                               Your Action Plan
                             </div>
                             <div className="action-plan-timeline">
@@ -912,7 +921,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                     <div className="thinking-header-left">
                       <div className="thinking-logo-badge">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
-                          <path d="M12 3L4 7v5c0 5.25 3.5 10.15 8 11.35C17.5 22.15 21 17.25 21 12V7l-8-4z"/>
+                          <path d="M12 3L4 7v5c0 5.25 3.5 10.15 8 11.35C17.5 22.15 21 17.25 21 12V7l-8-4z" />
                         </svg>
                       </div>
                       <span className="thinking-label">
@@ -927,7 +936,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                     {handleStopResponse && (
                       <button className="stop-response-btn" onClick={handleStopResponse}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="10" height="10">
-                          <rect x="3" y="3" width="18" height="18" rx="2"/>
+                          <rect x="3" y="3" width="18" height="18" rx="2" />
                         </svg>
                         Stop
                       </button>
@@ -941,7 +950,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                         <div key={sIdx} className={`thinking-step ${isDone ? 'done' : isActive ? 'active' : 'idle'}`}>
                           {isDone ? (
                             <span className="step-check">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="8" height="8"><polyline points="20 6 9 17 4 12"/></svg>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="8" height="8"><polyline points="20 6 9 17 4 12" /></svg>
                             </span>
                           ) : isActive ? (
                             <span className="step-active-dot"><span className="step-active-inner" /></span>
@@ -962,7 +971,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                 <div className="error-state-card">
                   <div className="error-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                      <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                     </svg>
                   </div>
                   <div className="error-content">
@@ -977,6 +986,22 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
 
             {/* Bottom Composer */}
             <div className="composer-wrapper">
+              {isListening && (
+                <div className="voice-wave-visualizer-bar">
+                  <div className="voice-wave-status">
+                    <span className="voice-record-dot" />
+                    <span>Listening to your voice prompt...</span>
+                  </div>
+                  <div className="voice-wave-bars">
+                    <span className="bar bar-1" />
+                    <span className="bar bar-2" />
+                    <span className="bar bar-3" />
+                    <span className="bar bar-4" />
+                    <span className="bar bar-5" />
+                  </div>
+                </div>
+              )}
+
               {attachment && (
                 <div className="attachment-preview">
                   <span>📄 {attachment} {uploadingFile ? '(Parsing text...)' : extractedContent ? '✓ Parsed' : ''}</span>
@@ -1049,7 +1074,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                       aria-label="Stop generating response"
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
-                        <rect x="4" y="4" width="16" height="16" rx="2"/>
+                        <rect x="4" y="4" width="16" height="16" rx="2" />
                       </svg>
                     </button>
                   ) : (

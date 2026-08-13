@@ -480,18 +480,43 @@ const ActionPlanView: React.FC<ActionPlanViewProps> = ({ plan, scenarioTitle, la
         const data = await res.json();
         setGeneratedDoc(data);
         showToast('success', '📄 Official Legal Notice generated successfully!');
+        if (data && data.document_text) {
+          saveWizardDocToVault(data.title || activeTemplate.title, data.document_text, 'Legal Notice');
+        }
       } else {
         const fallback = buildClientFallbackDoc(activeTemplate);
         setGeneratedDoc(fallback);
         showToast('success', '📄 Legal Notice generated successfully!');
+        if (fallback && fallback.document_text) {
+          saveWizardDocToVault(fallback.title || activeTemplate.title, fallback.document_text, 'Legal Notice');
+        }
       }
     } catch {
       const fallback = buildClientFallbackDoc(activeTemplate);
       setGeneratedDoc(fallback);
       showToast('success', '📄 Legal Notice generated successfully!');
+      if (fallback && fallback.document_text) {
+        saveWizardDocToVault(fallback.title || activeTemplate.title, fallback.document_text, 'Legal Notice');
+      }
     } finally {
       setGenerating(false);
     }
+  };
+
+  const saveWizardDocToVault = (docTitle: string, docText: string, type: string) => {
+    try {
+      const raw = localStorage.getItem('legalace_generated_documents');
+      const docs = raw ? JSON.parse(raw) : [];
+      const newDoc = {
+        id: 'doc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        title: docTitle || 'Statutory Legal Notice',
+        document_type: type || 'Legal Notice',
+        content: docText,
+        created_at: new Date().toISOString(),
+      };
+      const updated = [newDoc, ...docs.filter((d: { content: string }) => d.content !== docText)];
+      localStorage.setItem('legalace_generated_documents', JSON.stringify(updated));
+    } catch { /* storage fallback */ }
   };
 
   const [docTheme, setDocTheme] = useState<'advocate' | 'court' | 'corporate'>('advocate');

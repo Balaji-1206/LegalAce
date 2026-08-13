@@ -9,7 +9,13 @@ frontend/.env
 .env
 
 # Node
+node_modules/
 frontend/node_modules/
+mobile/node_modules/
+
+# Expo
+.expo/
+mobile/.expo/
 
 # VS Code
 .vscode/

@@ -660,11 +660,22 @@ def _generic_plan(scenario_id: str, answers: dict) -> dict:
 # Dynamic AI Decision Tree Generator (On-The-Fly for Any Custom Topic)
 # ---------------------------------------------------------------------------
 
+import hashlib
+import asyncio
+
+_DYNAMIC_SCENARIO_CACHE: dict[str, dict] = {}
+_MAX_SCENARIO_CACHE = 50
+
 async def generate_dynamic_scenario(user_topic: str) -> dict:
     """
     Generate a dynamic 3-4 node decision tree scenario and custom action plan
     for any legal topic provided by the user using the active LLM provider chain.
     """
+    topic_key = hashlib.md5(user_topic.lower().strip().encode('utf-8')).hexdigest()
+    if topic_key in _DYNAMIC_SCENARIO_CACHE:
+        logger.info(f"Dynamic Wizard Scenario Cache HIT for topic: '{user_topic[:50]}'")
+        return _DYNAMIC_SCENARIO_CACHE[topic_key]
+
     logger.info(f"Generating dynamic AI legal wizard scenario for topic: '{user_topic}'...")
     from app.core.config import settings
     from app.api.llm_settings import get_active_provider
@@ -721,29 +732,32 @@ Return ONLY a valid JSON matching this schema:
     # Tier 1: Gemini
     if settings.GEMINI_API_KEY and llm_provider in ("auto", "gemini"):
         try:
-            import asyncio
             from google import genai
             from google.genai import types
 
             client = genai.Client(api_key=settings.GEMINI_API_KEY)
             loop = asyncio.get_running_loop()
-            res = await loop.run_in_executor(
-                None,
-                lambda: client.models.generate_content(
+            def _gen():
+                return client.models.generate_content(
                     model=settings.GEMINI_MODEL or "gemini-2.0-flash",
                     contents=prompt,
-                    config=types.GenerateContentConfig(response_mime_type="application/json", temperature=0.2)
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        temperature=0.2,
+                    )
                 )
-            )
-            data = json.loads(res.text)
+            res = await asyncio.wait_for(loop.run_in_executor(None, _gen), timeout=4.0)
+            data = json.loads(res.text or "{}")
             if "questions" in data and "default_plan" in data:
+                if len(_DYNAMIC_SCENARIO_CACHE) < _MAX_SCENARIO_CACHE:
+                    _DYNAMIC_SCENARIO_CACHE[topic_key] = data
                 return data
         except Exception as e:
             logger.warning(f"Dynamic scenario LLM generation (Gemini) failed: {e}")
 
     # Fallback / Rule-based dynamic scenario
     clean_topic = user_topic.strip().capitalize()
-    return {
+    fallback_res = {
         "scenario_id": f"dynamic_{hash(user_topic) % 10000}",
         "category": "custom",
         "title": f"Custom Dispute: {clean_topic[:40]}",
@@ -765,6 +779,9 @@ Return ONLY a valid JSON matching this schema:
             "authorities": [{"name": "District Legal Services Authority (DLSA)", "helpline": "15100", "url": "https://nalsa.gov.in", "action": "Free legal aid & mediation"}]
         }
     }
+    if len(_DYNAMIC_SCENARIO_CACHE) < _MAX_SCENARIO_CACHE:
+        _DYNAMIC_SCENARIO_CACHE[topic_key] = fallback_res
+    return fallback_res
 
 
 # ---------------------------------------------------------------------------

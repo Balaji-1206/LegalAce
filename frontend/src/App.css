@@ -103,16 +103,16 @@ body {
   right: 0;
   bottom: 0;
   height: 68px;
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
   justify-content: space-around;
   align-items: center;
   z-index: 990;
   padding: 4px 8px max(4px, env(safe-area-inset-bottom));
-  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.03);
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.35);
 }
 
 .nav-tab-item {
@@ -126,14 +126,14 @@ body {
   align-items: center;
   gap: 2px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-  color: #94a3b8;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  color: rgba(255, 255, 255, 0.55);
   padding: 2px 0;
   outline: none;
 }
 
 .nav-tab-item.active {
-  color: #4f46e5;
+  color: #ffffff;
 }
 
 .nav-icon-wrap {
@@ -143,14 +143,19 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .nav-tab-item.active .nav-icon-wrap {
-  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
-  color: #4f46e5;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.45);
+  transform: translateY(-2px);
+}
+
+.nav-tab-item:hover .nav-icon-wrap {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
 }
 
 .nav-tab-item svg {
@@ -161,7 +166,7 @@ body {
 
 .tab-item-label {
   font-size: 10.5px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.2px;
 }
 

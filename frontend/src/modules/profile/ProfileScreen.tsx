@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import API_BASE_URL from '../../config/api';
 import './ProfileScreen.css';
 import type { ConversationSummary } from '../shared/types';
 
@@ -52,6 +53,84 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const [preferredState, setPreferredState] = useState<string>(() => localStorage.getItem('legalace_preferred_state') || 'Karnataka');
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
 
+  // Saved Generated Documents State
+  interface SavedDocItem {
+    id: string;
+    title: string;
+    document_type: string;
+    content: string;
+    created_at: string;
+  }
+  const [profileView, setProfileView] = useState<'main' | 'vault' | 'reader'>('main');
+  const [vaultSearchQuery, setVaultSearchQuery] = useState<string>('');
+  const [vaultFilterCategory, setVaultFilterCategory] = useState<string>('all');
+  const [activeReadingDoc, setActiveReadingDoc] = useState<SavedDocItem | null>(null);
+
+  const [savedDocs, setSavedDocs] = useState<SavedDocItem[]>(() => {
+    try {
+      const raw = localStorage.getItem('legalace_generated_documents');
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+  const [copiedDocId, setCopiedDocId] = useState<string | null>(null);
+
+  const handleDownloadPDF = async (doc: SavedDocItem) => {
+    const win = window as unknown as { html2pdf?: () => { set: (opt: unknown) => { from: (elem: HTMLElement) => { save: () => Promise<void> } } } };
+    if (!win.html2pdf) {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      document.head.appendChild(script);
+      await new Promise((res) => { script.onload = res; });
+    }
+
+    const container = document.createElement('div');
+    container.style.padding = '32px 40px';
+    container.style.fontFamily = "'Times New Roman', Georgia, serif";
+    container.style.color = '#0f172a';
+    container.style.lineHeight = '1.7';
+    container.style.background = '#ffffff';
+    container.innerHTML = `
+      <div style="text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 24px;">
+        <h2 style="font-size: 20px; text-transform: uppercase; color: #0f172a; margin: 0; font-weight: 700;">${doc.title.toUpperCase()}</h2>
+        <p style="font-size: 13px; color: #475569; margin-top: 4px;">Issued via LegalAce AI Rights Companion</p>
+      </div>
+      <div style="white-space: pre-wrap; font-size: 14px; text-align: justify;">${doc.content}</div>
+      <div style="margin-top: 40px; border-top: 1px solid #cbd5e1; padding-top: 12px; font-size: 11px; color: #64748b; text-align: center;">
+        Generated for official legal record on ${new Date(doc.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
+      </div>
+    `;
+
+    document.body.appendChild(container);
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: `${(doc.title || 'Legal_Notice').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    try {
+      if (win.html2pdf) {
+        await win.html2pdf().set(opt).from(container).save();
+      }
+    } finally {
+      document.body.removeChild(container);
+    }
+  };
+
+  const handleCopyDocText = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedDocId(id);
+    setTimeout(() => setCopiedDocId(null), 2000);
+  };
+
+  const handleDeleteDoc = (id: string) => {
+    const updated = savedDocs.filter(d => d.id !== id);
+    setSavedDocs(updated);
+    localStorage.setItem('legalace_generated_documents', JSON.stringify(updated));
+    if (activeReadingDoc?.id === id) setActiveReadingDoc(null);
+  };
+
   // Modal visibility states
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [isHelplineModalOpen, setIsHelplineModalOpen] = useState<boolean>(false);
@@ -76,8 +155,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     setLlmProvider(provider);
     localStorage.setItem('legalace_llm_provider', provider);
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-      await fetch(`${backendUrl}/api/v1/llm-settings`, {
+      await fetch(`${API_BASE_URL}/api/v1/llm-settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provider }),
@@ -148,82 +226,246 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     preferredState !== '',
   ].filter(Boolean).length * 20;
 
-  return (
-    <div className="profile-screen animate-fade-in">
-      {/* Hero Header */}
-      <div className="profile-hero-banner">
-        <div className="profile-hero-ambient-glow"></div>
-        <div className="profile-hero-mesh"></div>
+  if (profileView === 'vault') {
+    const filteredDocs = savedDocs.filter((doc) => {
+      const matchesSearch = !vaultSearchQuery || 
+        doc.title.toLowerCase().includes(vaultSearchQuery.toLowerCase()) || 
+        doc.content.toLowerCase().includes(vaultSearchQuery.toLowerCase());
+      const matchesCat = vaultFilterCategory === 'all' || 
+        doc.document_type.toLowerCase().includes(vaultFilterCategory.toLowerCase());
+      return matchesSearch && matchesCat;
+    });
 
-        {/* Action Header Navigation Bar */}
-        <div className="profile-header-nav-row">
-          <button className="profile-back-btn" onClick={() => onNavigate('home')} title="Back to Home">
+    return (
+      <div className="document-storage-vault-screen animate-fade-in">
+        {/* Sticky Vault Top Nav Bar */}
+        <div className="vault-top-nav-bar">
+          <button className="vault-back-btn" onClick={() => setProfileView('main')} title="Back to Profile">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-          <span className="profile-header-title">Citizen Profile</span>
-          <button className="profile-edit-trigger" onClick={() => setIsEditModalOpen(true)}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-            Edit Profile
+          <div className="vault-nav-title-group">
+            <h2 className="vault-nav-title">Document Storage Vault</h2>
+            <span className="vault-nav-subtitle">🔒 {savedDocs.length} {savedDocs.length === 1 ? 'File Saved' : 'Files Saved'}</span>
+          </div>
+          <button className="vault-draft-action-btn" onClick={() => onNavigate('wizard')}>
+            + Draft Notice
           </button>
         </div>
 
-        <div className="profile-hero-content">
-          <div className="profile-avatar-wrap">
-            <div className="profile-avatar-ring"></div>
-            <div className="profile-avatar-large" style={{ backgroundColor: avatarColor }}>
-              {getInitials(userName)}
-            </div>
-            <div className="avatar-badge-icon" title="Verified Indian Citizen Profile">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="12" height="12">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
+        {/* Search Box & Category Filters */}
+        <div className="vault-controls-bar">
+          <div className="vault-search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Search saved documents by title or keyword..."
+              value={vaultSearchQuery}
+              onChange={(e) => setVaultSearchQuery(e.target.value)}
+            />
+            {vaultSearchQuery && (
+              <button className="vault-clear-search" onClick={() => setVaultSearchQuery('')}>×</button>
+            )}
           </div>
 
-          <h2 className="profile-user-name">
-            {userName}
-            <span className="verified-shield-badge" title="Verified Account">🛡️</span>
-          </h2>
-          <div className="profile-id-pill">
-            <span className="email-text">{userEmail}</span>
-            <span className="pill-divider">•</span>
-            <span className="id-text">{userId}</span>
+          <div className="vault-filter-pills">
+            {['all', 'Legal Notice', 'Action Plan', 'Contract'].map((cat) => (
+              <button
+                key={cat}
+                className={`vault-filter-pill ${vaultFilterCategory === cat ? 'active' : ''}`}
+                onClick={() => setVaultFilterCategory(cat)}
+              >
+                {cat === 'all' ? '📁 All Documents' : cat}
+              </button>
+            ))}
           </div>
+        </div>
 
-          <div className="profile-tags-row">
-            <span className="profile-persona-chip">
-              <span className="chip-icon">⚖️</span>
-              {persona}
-            </span>
-            <span className="profile-state-chip">
-              <span className="chip-icon">📍</span>
-              {preferredState}
-            </span>
-          </div>
-
-          {/* Profile Setup Bar */}
-          <div className="profile-completion-box">
-            <div className="completion-header">
-              <div className="completion-title-wrap">
-                <span className="completion-icon">⚡</span>
-                <span>Profile Setup Strength</span>
-              </div>
-              <span className="completion-percentage-badge">{completionPercentage}%</span>
+        {/* Storage Vault Content Grid */}
+        <div className="vault-content-body">
+          {filteredDocs.length === 0 ? (
+            <div className="vault-empty-state">
+              <div className="vault-empty-icon">📂</div>
+              <h3>No Documents Found</h3>
+              <p>
+                {savedDocs.length === 0
+                  ? "Draft a legal notice or generate a notice in chat to automatically store it in your encrypted browser vault."
+                  : "No documents match your search criteria."}
+              </p>
+              <button className="vault-primary-btn" onClick={() => onNavigate('wizard')}>
+                Draft Statutory Notice
+              </button>
             </div>
-            <div className="completion-bar-track">
-              <div className="completion-bar-fill" style={{ width: `${completionPercentage}%` }}></div>
+          ) : (
+            <div className="vault-docs-grid">
+              {filteredDocs.map((doc) => (
+                <div key={doc.id} className="vault-doc-card">
+                  <div className="vault-card-header">
+                    <div className="vault-doc-icon-wrap">📄</div>
+                    <div className="vault-doc-meta">
+                      <div className="vault-doc-title">{doc.title}</div>
+                      <div className="vault-doc-sub-meta">
+                        <span className="vault-doc-type-badge">{doc.document_type || 'Legal Notice'}</span>
+                        <span className="vault-doc-date">
+                          {new Date(doc.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                    </div>
+                    <button className="vault-delete-btn" onClick={() => handleDeleteDoc(doc.id)} title="Delete document">
+                      🗑️
+                    </button>
+                  </div>
+
+                  <div className="vault-card-actions">
+                    <button className="vault-action-btn pdf" onClick={() => handleDownloadPDF(doc)}>
+                      <span>📥</span> Download PDF
+                    </button>
+                    <button
+                      className="vault-action-btn view"
+                      onClick={() => { setActiveReadingDoc(doc); setProfileView('reader'); }}
+                    >
+                      👁️ Full Reader
+                    </button>
+                    <button className="vault-action-btn copy" onClick={() => handleCopyDocText(doc.id, doc.content)}>
+                      {copiedDocId === doc.id ? '✓ Copied' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (profileView === 'reader' && activeReadingDoc) {
+    return (
+      <div className="legal-document-reader-screen animate-fade-in">
+        {/* Sticky Reader Top Bar */}
+        <div className="reader-top-nav-bar">
+          <button className="reader-back-btn" onClick={() => setProfileView('vault')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            <span>Back to Vault</span>
+          </button>
+          <div className="reader-actions-group">
+            <button className="reader-action-btn pdf" onClick={() => handleDownloadPDF(activeReadingDoc)}>
+              📥 Download PDF
+            </button>
+            <button
+              className="reader-action-btn copy"
+              onClick={() => handleCopyDocText(activeReadingDoc.id, activeReadingDoc.content)}
+            >
+              {copiedDocId === activeReadingDoc.id ? '✓ Copied' : 'Copy Text'}
+            </button>
+          </div>
+        </div>
+
+        {/* Reader Paper View */}
+        <div className="reader-paper-wrapper">
+          <div className="reader-formal-paper">
+            <div className="reader-letterhead">
+              <h2>{activeReadingDoc.title.toUpperCase()}</h2>
+              <p>Official Statutory Record • Generated via LegalAce AI Companion</p>
+              <div className="reader-letterhead-divider" />
+            </div>
+
+            <div className="reader-document-text">
+              {activeReadingDoc.content}
+            </div>
+
+            <div className="reader-formal-footer">
+              <p>Generated on {new Date(activeReadingDoc.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+              <p>Confidential Legal Record</p>
             </div>
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Interactive Stats Row */}
-      <div className="profile-stats-container">
+  return (
+    <div className="profile-screen executive-layout animate-fade-in">
+      {/* Executive Top Header Bar */}
+      <div className="executive-top-header">
+        <button className="executive-back-btn" onClick={() => onNavigate('home')} title="Back to Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <div className="executive-header-title">
+          <h2>Citizen Profile</h2>
+          <span>Legal Companion Hub</span>
+        </div>
+        <button className="executive-edit-btn" onClick={() => setIsEditModalOpen(true)} title="Edit Profile Details">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+          <span>Edit</span>
+        </button>
+      </div>
+
+      {/* Main Executive Identity Card */}
+      <div className="executive-identity-card">
+        <div className="identity-card-header">
+          <div className="identity-avatar-box" style={{ backgroundColor: avatarColor }}>
+            <span>{getInitials(userName)}</span>
+            <div className="online-indicator" title="Verified Account" />
+          </div>
+
+          <div className="identity-details">
+            <div className="identity-name-row">
+              <h1 className="identity-name">{userName}</h1>
+              <span className="identity-shield" title="Verified Account">🛡️</span>
+            </div>
+            <div className="identity-sub-text">
+              <span>{userEmail}</span>
+              <span className="dot">•</span>
+              <span className="id-code">ID: {userId.replace(/^user_/, '')}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Persona & Jurisdiction Quick Pills Grid */}
+        <div className="identity-pills-grid">
+          <div className="identity-pill-chip persona">
+            <span className="chip-icon">💼</span>
+            <div className="chip-content">
+              <span className="chip-label">Legal Persona</span>
+              <span className="chip-value">{persona}</span>
+            </div>
+          </div>
+
+          <div className="identity-pill-chip state">
+            <span className="chip-icon">📍</span>
+            <div className="chip-content">
+              <span className="chip-label">Jurisdiction</span>
+              <span className="chip-value">{preferredState}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Setup Completion Bar */}
+        <div className="executive-setup-strip" onClick={() => setIsEditModalOpen(true)}>
+          <div className="setup-strip-top">
+            <span className="setup-strip-title">⚡ Setup Progress</span>
+            <span className="setup-strip-percentage">{completionPercentage}%</span>
+          </div>
+          <div className="setup-strip-track">
+            <div className="setup-strip-fill" style={{ width: `${completionPercentage}%` }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Interactive Stats Grid */}
+      <div className="profile-section-group" style={{ marginTop: 20 }}>
+        <div className="profile-section-title">Overview & Activity</div>
         <div className="profile-stats-grid">
           <div className="stat-card" onClick={() => onNavigate('chat')}>
             <div className="stat-card-icon" style={{ background: '#eef2ff', color: '#4f46e5' }}>
@@ -295,6 +537,32 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 <span className="action-item-badge">Interactive</span>
               </div>
               <div className="action-item-desc">Step-by-step guidance to draft notices or file complaints</div>
+            </div>
+            <div className="action-item-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+          </div>
+
+          <div className="profile-action-item" onClick={() => setProfileView('vault')}>
+            <div className="action-item-icon" style={{ background: '#ecfdf5', color: '#059669' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+              </svg>
+            </div>
+            <div className="action-item-content">
+              <div className="action-item-title">
+                Generated Legal Documents
+                <span className="action-item-badge" style={{ background: '#ecfdf5', color: '#059669' }}>
+                  {savedDocs.length} {savedDocs.length === 1 ? 'File' : 'Files'}
+                </span>
+              </div>
+              <div className="action-item-desc">View, download PDF, or copy generated legal notices</div>
             </div>
             <div className="action-item-arrow">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">

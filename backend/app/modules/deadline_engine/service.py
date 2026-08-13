@@ -24,8 +24,13 @@ COLLECTION = "deadlines"
 # Helper
 # ---------------------------------------------------------------------------
 
-def _days_remaining(deadline_date: datetime) -> int:
+def _days_remaining(deadline_date: datetime | str) -> int:
     now = datetime.now(timezone.utc)
+    if isinstance(deadline_date, str):
+        try:
+            deadline_date = datetime.fromisoformat(deadline_date)
+        except ValueError:
+            return 0
     if deadline_date.tzinfo is None:
         deadline_date = deadline_date.replace(tzinfo=timezone.utc)
     delta = deadline_date - now
@@ -222,15 +227,18 @@ async def compute_health_score(user_id: str) -> dict:
         strengths.append("No high-priority pending items")
 
     for d in expired:
-        risks.append(f"⚠ '{d['title']}' has expired — immediate action required")
+        clean_t = (d.get("title") or "Deadline").strip("'\" ")
+        risks.append(f"⚠ {clean_t} has expired — immediate action required")
     for d in high_active:
         days = _days_remaining(d["deadline_date"])
-        risks.append(f"⚠ '{d['title']}' — {days} days remaining (High Priority)")
+        clean_t = (d.get("title") or "Deadline").strip("'\" ")
+        risks.append(f"⚠ {clean_t} — {days} days remaining (High Priority)")
     # Upcoming items in next 15 days
     for d in medium_active:
         days = _days_remaining(d["deadline_date"])
         if 0 < days <= 15:
-            risks.append(f"⚠ '{d['title']}' approaching in {days} days")
+            clean_t = (d.get("title") or "Deadline").strip("'\" ")
+            risks.append(f"⚠ {clean_t} approaching in {days} days")
 
     return {
         "user_id": user_id,

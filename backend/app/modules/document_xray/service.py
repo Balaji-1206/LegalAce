@@ -251,9 +251,13 @@ async def _call_gemini(prompt: str) -> dict:
             )
         )
 
-    response = await loop.run_in_executor(None, _generate)
-    raw = response.text or "{}"
-    return _clean_and_parse_json(raw)
+    try:
+        response = await asyncio.wait_for(loop.run_in_executor(None, _generate), timeout=5.0)
+        raw = response.text or "{}"
+        return _clean_and_parse_json(raw)
+    except asyncio.TimeoutError:
+        logger.warning("Document X-Ray: Gemini call timed out after 5.0s — failing over...")
+        return {}
 
 
 async def _call_openai(prompt: str) -> dict:
@@ -261,17 +265,24 @@ async def _call_openai(prompt: str) -> dict:
     from openai import AsyncOpenAI
 
     client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-    response = await client.chat.completions.create(
-        model=settings.OPENAI_MODEL or "gpt-4o",
-        messages=[
-            {"role": "system", "content": "You are a legal document analyzer. Return only valid JSON."},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.1,
-        response_format={"type": "json_object"},
-    )
-    raw = response.choices[0].message.content or "{}"
-    return _clean_and_parse_json(raw)
+    try:
+        response = await asyncio.wait_for(
+            client.chat.completions.create(
+                model=settings.OPENAI_MODEL or "gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You are a legal document analyzer. Return only valid JSON."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.1,
+                response_format={"type": "json_object"},
+            ),
+            timeout=5.0,
+        )
+        raw = response.choices[0].message.content or "{}"
+        return _clean_and_parse_json(raw)
+    except asyncio.TimeoutError:
+        logger.warning("Document X-Ray: OpenAI call timed out after 5.0s — failing over...")
+        return {}
 
 
 def _clean_and_parse_json(raw_text: str) -> dict:

@@ -226,17 +226,33 @@
 }
 
 .insight-pill {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
   background: #ffffff;
   border-radius: 16px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   border: 1px solid #e2e8f0;
   animation: de-fadeSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: calc(var(--de-stagger, 0) * 80ms);
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.insight-pill.critical {
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe4e6 100%);
+  border-color: #fecdd3;
+}
+
+.insight-pill.risk {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border-color: #fde68a;
+}
+
+.insight-pill.strength {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #bbf7d0;
 }
 
 .insight-pill:hover {
@@ -245,8 +261,8 @@
 }
 
 .insight-pill-badge {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -255,18 +271,21 @@
 }
 
 .insight-pill-badge.strength {
-  background: #ecfdf5;
-  color: #059669;
+  background: #059669;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
 }
 
 .insight-pill-badge.risk {
-  background: #fff7ed;
-  color: #c2410c;
+  background: #d97706;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
 }
 
 .insight-pill-badge.critical {
-  background: #fef2f2;
-  color: #dc2626;
+  background: #e11d48;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.3);
 }
 
 .insight-pill-content {
@@ -275,11 +294,32 @@
 }
 
 .insight-pill-text {
-  font-size: 13.5px;
-  font-weight: 500;
-  color: #1e293b;
-  line-height: 1.4;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.45;
   display: block;
+}
+
+.insight-dismiss-btn {
+  border: none;
+  background: rgba(15, 23, 42, 0.08);
+  color: #475569;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.18s ease;
+}
+
+.insight-dismiss-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
 }
 
 /* ---- Section Titles ---- */

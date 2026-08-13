@@ -17,8 +17,9 @@ const getEnv = (key: string): string | undefined => {
     // import.meta may fail in non-ESM environments
   }
   try {
-    if (typeof process !== 'undefined' && process.env && process.env[key] !== undefined) {
-      return process.env[key];
+    const globalProc = (globalThis as Record<string, unknown>).process as { env?: Record<string, string> } | undefined;
+    if (globalProc && globalProc.env && globalProc.env[key] !== undefined) {
+      return globalProc.env[key];
     }
   } catch {
     // process may not be defined in standard browser context
@@ -28,7 +29,7 @@ const getEnv = (key: string): string | undefined => {
 
 // Default fallback URLs
 const DEFAULT_WEB_URL = 'http://localhost:8000';
-const DEFAULT_MOBILE_URL = 'http://172.16.15.251:8000';
+const DEFAULT_MOBILE_URL = 'http://172.16.6.28:8000';
 
 // Configured URLs from EXPO_PUBLIC_* or VITE_* env vars
 export const API_URL_WEB =
@@ -50,8 +51,8 @@ export const API_URL_MOBILE =
 export const getApiBaseUrl = (): string => {
   // 1. Check if running in Native React Native / Expo Go environment
   try {
-    const { Platform } = require('react-native');
-    if (Platform && Platform.OS && Platform.OS !== 'web') {
+    const nav = (globalThis as Record<string, unknown>).navigator as { product?: string } | undefined;
+    if (nav && nav.product === 'ReactNative') {
       return API_URL_MOBILE;
     }
   } catch {
