@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './SpotlightSearchModal.css';
 
 interface SituationItem {
@@ -37,11 +37,14 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const handleClose = useCallback(() => {
+    setQuery('');
+    onClose();
+  }, [onClose]);
+
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 80);
-    } else {
-      setQuery('');
     }
   }, [isOpen]);
 
@@ -58,7 +61,7 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
     : [];
 
   return (
-    <div className="spotlight-overlay" onClick={onClose}>
+    <div className="spotlight-overlay" onClick={handleClose}>
       <div className="spotlight-card" onClick={e => e.stopPropagation()}>
         {/* Search Input Bar */}
         <div className="spotlight-input-bar">
@@ -81,7 +84,7 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
               ×
             </button>
           )}
-          <button className="spotlight-close-btn" onClick={onClose}>
+          <button className="spotlight-close-btn" onClick={handleClose}>
             Cancel
           </button>
         </div>
@@ -102,7 +105,7 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
                       className="spotlight-result-row"
                       onClick={() => {
                         onSelectSituation(sit.situation_id);
-                        onClose();
+                        handleClose();
                       }}
                     >
                       <div className="spotlight-result-main">
@@ -156,7 +159,7 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
               <div className="spotlight-tools-grid">
                 <div
                   className="spotlight-tool-card"
-                  onClick={() => { onNavigateTool('xray'); onClose(); }}
+                  onClick={() => { onNavigateTool('xray'); handleClose(); }}
                 >
                   <div className="spotlight-tool-icon" style={{ background: '#eef2ff', color: '#4f46e5' }}>
                     📄
@@ -169,7 +172,7 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
 
                 <div
                   className="spotlight-tool-card"
-                  onClick={() => { onNavigateTool('legalaid'); onClose(); }}
+                  onClick={() => { onNavigateTool('legalaid'); handleClose(); }}
                 >
                   <div className="spotlight-tool-icon" style={{ background: '#ecfdf5', color: '#059669' }}>
                     🏛️
@@ -182,7 +185,7 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
 
                 <div
                   className="spotlight-tool-card"
-                  onClick={() => { onNavigateTool('wizard'); onClose(); }}
+                  onClick={() => { onNavigateTool('wizard'); handleClose(); }}
                 >
                   <div className="spotlight-tool-icon" style={{ background: '#f5f3ff', color: '#7c3aed' }}>
                     ⚡
@@ -195,7 +198,7 @@ export const SpotlightSearchModal: React.FC<SpotlightSearchModalProps> = ({
 
                 <div
                   className="spotlight-tool-card"
-                  onClick={() => { onNavigateTool('deadlines'); onClose(); }}
+                  onClick={() => { onNavigateTool('deadlines'); handleClose(); }}
                 >
                   <div className="spotlight-tool-icon" style={{ background: '#fffbeb', color: '#d97706' }}>
                     📅

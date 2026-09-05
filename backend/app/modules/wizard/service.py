@@ -808,6 +808,8 @@ async def create_session(user_id: str, scenario_id: str) -> dict:
 
 async def submit_answers(session_id: str, user_id: str, answers: dict) -> dict:
     from bson import ObjectId
+    if not ObjectId.is_valid(session_id):
+        return None
     db = get_database()
 
     session = await db["wizard_sessions"].find_one({"_id": ObjectId(session_id), "user_id": user_id})

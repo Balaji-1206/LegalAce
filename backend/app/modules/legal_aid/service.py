@@ -206,7 +206,7 @@ def check_eligibility(
                 reasons.append(f"✅ {cat['description']} ({cat['statutory_reference']})")
 
     # Auto-check income even if not explicitly flagged
-    if "income_below" not in category_flags and annual_income > 0:
+    if "income_below" not in category_flags and annual_income >= 0:
         threshold = STATE_INCOME_THRESHOLDS.get(state, 300000)
         if annual_income <= threshold:
             qualifying.append("Annual Income Below Threshold")

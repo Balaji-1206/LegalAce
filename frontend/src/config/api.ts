@@ -29,7 +29,7 @@ const getEnv = (key: string): string | undefined => {
 
 // Default fallback URLs
 const DEFAULT_WEB_URL = 'http://localhost:8000';
-const DEFAULT_MOBILE_URL = 'http://172.16.6.28:8000';
+const DEFAULT_MOBILE_URL = 'http://192.168.29.145:8000';
 
 // Configured URLs from EXPO_PUBLIC_* or VITE_* env vars
 export const API_URL_WEB =

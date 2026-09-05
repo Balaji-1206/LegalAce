@@ -113,6 +113,8 @@ async def get_upcoming_deadlines(user_id: str, days_ahead: int = 90) -> List[dic
 
 
 async def mark_deadline_complete(deadline_id: str, user_id: str) -> Optional[dict]:
+    if not ObjectId.is_valid(deadline_id):
+        return None
     db = get_database()
     now = datetime.now(timezone.utc)
     result = await db[COLLECTION].find_one_and_update(
@@ -125,6 +127,8 @@ async def mark_deadline_complete(deadline_id: str, user_id: str) -> Optional[dic
 
 async def dismiss_deadline(deadline_id: str, user_id: str) -> Optional[dict]:
     """Soft-dismiss: extend deadline by 7 days and mark as snoozed."""
+    if not ObjectId.is_valid(deadline_id):
+        return None
     db = get_database()
     doc = await db[COLLECTION].find_one({"_id": ObjectId(deadline_id), "user_id": user_id})
     if not doc:
@@ -142,6 +146,8 @@ async def dismiss_deadline(deadline_id: str, user_id: str) -> Optional[dict]:
 
 
 async def delete_deadline(deadline_id: str, user_id: str) -> bool:
+    if not ObjectId.is_valid(deadline_id):
+        return False
     db = get_database()
     result = await db[COLLECTION].delete_one({
         "_id": ObjectId(deadline_id),

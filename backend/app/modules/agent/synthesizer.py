@@ -37,10 +37,16 @@ async def synthesize_agent_response_async(
         if faiss_store.is_loaded():
             verified_citations = []
             for citation in resp.law_citations:
-                # Check if section number or title exists in loaded metadata
+                # Check if both act and section match in loaded statutory metadata
                 match = any(
-                    citation.section.lower() in m.get("section_number", "").lower() or
-                    citation.act.lower() in m.get("act_name", "").lower()
+                    (
+                        citation.section.strip().lower() in m.get("section_number", "").lower()
+                        or citation.section.strip().lower() in m.get("section_title", "").lower()
+                    )
+                    and (
+                        citation.act.strip().lower() in m.get("act_name", "").lower()
+                        or m.get("act_name", "").lower() in citation.act.strip().lower()
+                    )
                     for m in faiss_store._metadata
                 )
                 if match:

@@ -25,15 +25,22 @@ OTP_EXPIRY_SECONDS = 300  # 5 minutes
 OTP_MAX_ATTEMPTS = 3
 
 
+import hashlib
+
+def _hash_otp(phone: str, otp: str) -> str:
+    return hashlib.sha256(f"{phone}:{otp}".encode("utf-8")).hexdigest()
+
+
 def generate_otp(phone: str) -> str:
     """Generate a 6-digit OTP for phone verification."""
     otp = str(random.randint(100000, 999999))
     _otp_store[phone] = {
-        "otp": otp,
+        "otp_hash": _hash_otp(phone, otp),
         "expires_at": time.time() + OTP_EXPIRY_SECONDS,
         "attempts": 0,
     }
-    logger.info(f"Generated OTP for {phone}: {otp}")
+    masked = f"{phone[:3]}****{phone[-3:]}" if len(phone) >= 6 else phone
+    logger.info(f"Generated 6-digit verification OTP for phone: {masked}")
     return otp
 
 
@@ -52,7 +59,8 @@ def verify_otp(phone: str, otp: str) -> bool:
         del _otp_store[phone]
         return False
 
-    if entry["otp"] == otp:
+    expected_hash = entry.get("otp_hash")
+    if expected_hash == _hash_otp(phone, otp) or entry.get("otp") == otp:
         del _otp_store[phone]
         return True
 

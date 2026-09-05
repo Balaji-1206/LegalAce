@@ -14,3 +14,6 @@ pypdf>=4.0.0
 python-docx>=1.1.0
 rank-bm25>=0.2.2
 python-multipart>=0.0.9
+apscheduler>=3.10.0
+google-genai>=0.1.0
+twilio>=8.0.0
