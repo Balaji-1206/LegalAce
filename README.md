@@ -8,8 +8,8 @@
 
 ```
                           ┌─────────────────────────────────────────┐
-                          │            LegalAce App UI             │
-                          │   (React TSX + Vanilla CSS System)    │
+                          │       LegalAce Cross-Platform App       │
+                          │   (Expo React Native TSX + Dark Theme)  │
                           └────────────────────┬────────────────────┘
                                                │
              ┌─────────────────────────────────┼─────────────────────────────────┐
@@ -37,32 +37,39 @@
 
 ### 🤖 1. Agentic Legal AI Chatbot (RAG Pipeline)
 - **Vector Retrieval**: Local FAISS vector index built on real Indian Acts (Transfer of Property Act, Consumer Protection Act 2019, Industrial Disputes Act, POSH Act, IT Act, CrPC, Domestic Violence Act).
-- **Multi-LLM Fallback**: Resilient LLM chain supporting Google Gemini 2.0 Flash → OpenAI GPT-4o → Ollama (local) → Smart Rule-Based Engine.
+- **Multi-LLM Fallback & Switcher**: Resilient LLM tier supporting Google Gemini 2.0 Flash → OpenAI GPT-4o → Ollama (local) → Smart Rule-Based Engine. Switchable on-the-fly from the mobile app.
 - **Citations & Guardrails**: Cites exact act names, sections, relevance scores, statutory rights, and action steps with educational disclaimers.
 
 ### 🛡️ 2. Situation Finder
 - **13 Specialized Categories**: Housing, Employment, Consumer, Banking, Cyber Crime, Traffic, Women Rights, Education, Cheque Debt, RTI, Real Estate, Insurance, Family & Support.
-- **PDF Print Engine**: Clean multi-page PDF generation for legal notices and summaries with print-media layout rules.
+- **Interactive Scenarios**: Instant search, penalty calculator, and key statutory rights cards for every situation.
 
-### ⏳ 3. Legal Health Monitor & Reminders (Feature 4)
-- **Health Score Ring**: Real-time legal safety score calculation based on active, completed, and expired filing deadlines.
+### ⏳ 3. Legal Health Monitor & Statutory Deadlines (Feature 4)
+- **Limitation Act Engine**: Calculates statutory limitation periods under the Limitation Act 1963, Consumer Protection Act, NI Act Section 138, and RTI Act.
+- **Health Score Ring**: Real-time legal health score dynamically calculated based on active, completed, and expired legal filing deadlines.
 - **Automated Reminders**:
   - 💬 **Direct WhatsApp (`wa.me`)**: 1-tap pre-filled reminder links (100% Free).
-  - 🔔 **Browser System Push Alerts**: Native device alert banners with sound.
-  - 📲 **Automated SMS via Fast2SMS / Twilio**: Scheduled APScheduler background jobs.
+  - 🔔 **Native Device Push Alerts**: System notifications with urgency badges.
+  - 📲 **Automated SMS via Fast2SMS / Twilio**: Scheduled background reminder jobs via APScheduler.
 
-### 📝 4. Guided Legal Wizard
-- **Interactive Question Trees**: Step-by-step guidance tailored to user scenarios.
-- **Action Plans**: Generates required document checklists, step-by-step procedures, authority complaint locations, and downloadable notice templates.
+### 📝 4. Guided Legal Wizard & AI Scenario Generator
+- **Interactive Question Trees**: Step-by-step decision guidance tailored to citizen disputes.
+- **AI-Powered Custom Paths**: Dynamic question tree generation using Gemini/GPT for scenarios not in the pre-built library.
+- **Action Plans & Document Drafting**: Generates required document checklists, step-by-step procedures, filing authority locations, and downloadable notice drafts.
 
 ### 📄 5. Document X-Ray (Feature 3 — Upload & Auto-Extract)
-- **AI Document Parser**: Upload legal PDFs or images (rent agreements, cheque bounce notices, FIR copies, termination letters).
+- **AI Document Parser**: Upload legal PDFs or images (rental agreements, cheque bounce notices, FIR copies, termination letters).
 - **Structured Extraction**: Extracts document type, party names, key dates timeline, obligations checklist, and red flags (unfavorable/illegal clauses).
 - **Cross-Module Integration**: 1-tap push to Deadline Monitor and Wizard.
 
 ### ⚖️ 6. Free Legal Aid (DLSA) Checker (Feature 5)
-- **Statutory Eligibility**: Evaluates user criteria under **Section 12 of the Legal Services Authorities Act, 1987** (SC/ST, Women/Children, Disabled Persons, Industrial Workmen, Income < ₹3,00,000, etc.).
-- **Nearest Authority Locator**: Built-in DLSA/SLSA office directory for 10 major Indian states + NALSA helpline (15100) with 1-tap calling.
+- **Statutory Eligibility**: Evaluates user criteria under **Section 12 of the Legal Services Authorities Act, 1987** (SC/ST, Women/Children, Persons with Disabilities, Industrial Workmen, Under-Trial Prisoners, Annual Income < ₹3,00,000, etc.).
+- **Nearest Authority Locator**: Built-in DLSA/SLSA office directory for Indian states + NALSA nationwide helpline (15100) with 1-tap calling.
+
+### 🔒 7. Encrypted Document Vault & Citizen Hub
+- **Encrypted Document Storage**: Local encrypted vault for legal notices, agreements, evidence, and complaints.
+- **Formal Letterhead Paper Reader**: Clean document reading view with copy, share, and export capabilities.
+- **State Jurisdiction & Legal Persona**: Customizable jurisdiction settings for state-specific legal procedures.
 
 ---
 
@@ -70,7 +77,7 @@
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | React, TypeScript, Vanilla CSS Design System |
+| **Mobile / Frontend** | Expo (~57.0), React Native (0.86), TypeScript, React Native Web, Safe Area Context, Vector Icons |
 | **Backend API** | FastAPI, Uvicorn, Python 3.10+ |
 | **AI / RAG** | LangChain, FAISS Vector Search, SentenceTransformers (`all-MiniLM-L6-v2`) |
 | **LLMs Supported** | Google Gemini 2.0 Flash, OpenAI GPT-4o, Ollama (Qwen 2.5) |
@@ -102,18 +109,24 @@ LegalAce/
 │   ├── faiss_index/                 # Pre-built vector index
 │   ├── requirements.txt
 │   └── .env
-└── frontend/
+└── exp/                             # Unified Cross-Platform React Native App (Expo)
+    ├── assets/                      # App icons, splash screens & adaptive graphics
     ├── src/
-    │   ├── modules/
-    │   │   ├── chatbot/             # Floating AI Chat Widget
-    │   │   ├── deadline_engine/     # Deadline Dashboard & Reminders
-    │   │   ├── document_xray/       # Feature 3 Document X-Ray UI
-    │   │   ├── legal_aid/           # Feature 5 DLSA Legal Aid Checker UI
-    │   │   ├── profile/             # User Profile Hub
-    │   │   ├── situation_finder/    # Interactive Situation Cards
-    │   │   └── wizard/              # Guided Legal Wizard UI
-    │   ├── App.tsx                  # Tab navigation & layout
-    │   └── App.css                  # Core CSS design system
+    │   ├── components/              # BottomNav (sliding glass bar), Header, Spotlight, Toast
+    │   ├── config/                  # API client & multi-platform LAN URL auto-resolver
+    │   ├── screens/                 # All 8 core screens:
+    │   │   ├── HomeScreen.tsx       # Citizen Dashboard & quick actions
+    │   │   ├── WizardScreen.tsx     # Guided Legal Wizard & AI tree generator
+    │   │   ├── SituationFinderScreen.tsx # 13 Legal categories & search
+    │   │   ├── DocumentXRayScreen.tsx    # Contract/Notice AI X-Ray parser
+    │   │   ├── DeadlineScreen.tsx   # Statutory Deadlines & Health Score
+    │   │   ├── LegalAidScreen.tsx   # Section 12 LSA Eligibility & DLSA Directory
+    │   │   ├── DailyRightsScreen.tsx # Daily legal rights & awareness
+    │   │   └── ProfileScreen.tsx    # Profile, Vault, Helplines & LLM Switcher
+    │   ├── theme/                   # Curated dark glassmorphic palette
+    │   └── types/                   # TypeScript interfaces & domain models
+    ├── App.tsx                      # Root component with dynamic screen router
+    ├── app.json                     # Expo manifest & native app config
     └── package.json
 ```
 
@@ -142,58 +155,49 @@ python run.py
 # Or directly via Uvicorn:
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-- Local Web URL: `http://localhost:8000` (Swagger docs: `http://localhost:8000/docs`)
-- Network LAN URL: `http://<COMPUTER_LAN_IP>:8000` (e.g. `http://172.16.15.251:8000/docs`)
+- Local Web URL: `http://localhost:8000` (Interactive Swagger docs: `http://localhost:8000/docs`)
+- Network LAN URL: `http://<COMPUTER_LAN_IP>:8000` (e.g. `http://172.16.10.168:8000/docs`)
 
-### 3. Frontend Setup (Web)
+### 3. Mobile / Frontend Setup (`exp/`)
 ```bash
-cd frontend
+cd exp
 npm install
-npm run dev
+
+# Start the Expo development server:
+npm start
+# or: npx expo start
 ```
-- Web App URL: `http://localhost:5173`
+
+From the interactive terminal prompt, you can press:
+- `a` — Open on connected **Android device / Emulator**
+- `i` — Open on **iOS Simulator**
+- `w` — Open in **Web Browser** (`http://localhost:8081`)
+- **Scan QR Code** — Open in the **Expo Go** app on your physical smartphone!
 
 ---
 
-## 🌐 Multi-Platform Development Networking (Web + Expo Go Mobile)
+## 🌐 Multi-Platform Development Networking (Physical Phone + Expo Go)
 
-The application uses a **single backend server** (`0.0.0.0:8000`) and a **single MongoDB connection** that serves both the Web app and Expo Go mobile clients simultaneously.
+The application uses a **single backend server** (`0.0.0.0:8000`) and a **single MongoDB connection** that serves both Web and physical Expo Go mobile clients simultaneously.
 
-### 1. How to Find Your Computer's LAN IP Address
-- **Windows (PowerShell/CMD)**: Run `ipconfig` and locate the `IPv4 Address` under your active Wi-Fi or Ethernet adapter (e.g., `172.16.15.251` or `192.168.1.100`).
-- **macOS / Linux**: Run `ifconfig` or `ip a` and check the IP assigned to `en0` or `wlan0`.
+### 1. Automatic LAN IP Detection
+The app in `exp/src/config/api.ts` **automatically detects your development machine's LAN IP** directly from the Expo dev server handshake (`Constants.expoConfig?.hostUri`). You do not need to manually configure IP addresses in most cases!
 
-### 2. Configuring LAN IP Environment Variables
-Create or update `frontend/.env`:
+### 2. Manual Environment Variable Override (Optional)
+If you wish to set an explicit backend URL, create `exp/.env`:
 ```env
-# Web application running on local browser uses localhost
-EXPO_PUBLIC_API_URL_WEB=http://localhost:8000
-
-# Mobile application running on Expo Go physical phone uses LAN IP
-EXPO_PUBLIC_API_URL_MOBILE=http://<COMPUTER_LAN_IP>:8000
+EXPO_PUBLIC_API_URL=http://<YOUR_COMPUTER_LAN_IP>:8000
 ```
-*Example for LAN IP `172.16.15.251`:*
-`EXPO_PUBLIC_API_URL_MOBILE=http://172.16.15.251:8000`
+*To find your computer's LAN IP:*
+- **Windows (PowerShell)**: Run `ipconfig` and look for `IPv4 Address` under your active Wi-Fi adapter (e.g., `172.16.10.168` or `192.168.1.100`).
+- **macOS / Linux**: Run `ifconfig` or `ip a` (under `en0` or `wlan0`).
 
-### 3. API Base URL Resolution Summary
-- **Browser (Web)**: Uses `http://localhost:8000` (`EXPO_PUBLIC_API_URL_WEB`)
-- **Expo Go (Mobile Phone)**: Uses `http://<COMPUTER_LAN_IP>:8000` (`EXPO_PUBLIC_API_URL_MOBILE`)
-
-### 4. Starting Expo Go Mobile App
-1. Install **Expo Go** from Google Play Store or Apple App Store on your physical phone.
-2. Ensure your phone and development computer are connected to the **same Wi-Fi / Local Area Network (LAN)**.
-3. If running Expo in your project:
-   ```bash
-   npx expo start
-   ```
-4. Scan the QR code displayed in the terminal with Expo Go (Android) or Camera app (iOS).
-
-### 5. Mobile Connection Troubleshooting Checklist
-If Expo Go on your phone cannot connect to the backend:
-1. **Same Network**: Verify phone and computer are on the same Wi-Fi network (not mobile data or separate guest networks).
-2. **Backend Host Binding**: Confirm backend was started with `--host 0.0.0.0` (or `python run.py`), not `127.0.0.1`.
-3. **Firewall Rules**: Ensure Windows Defender Firewall or local firewall allows incoming connections on port `8000`. You can test reaching `http://<COMPUTER_LAN_IP>:8000/docs` from the mobile browser.
-4. **CORS Configuration**: The backend CORS middleware permits requests matching local subnet IPs (`192.168.*`, `172.*`, `10.*`).
+### 3. Mobile Connection Troubleshooting Checklist
+If Expo Go on your physical phone cannot connect to the backend:
+1. **Same Wi-Fi Network**: Ensure your phone and development computer are connected to the same Wi-Fi router (avoid mobile cellular data or isolated guest networks).
+2. **Backend Host Binding**: Ensure the backend was started with `--host 0.0.0.0` (or `python run.py`), NOT `127.0.0.1`.
+3. **Firewall Rules**: Verify Windows Defender Firewall allows incoming connections on port `8000`. You can test this by navigating to `http://<COMPUTER_LAN_IP>:8000/docs` in your phone's mobile browser.
+4. **CORS Configuration**: The backend CORS middleware already permits local subnet IPs (`192.168.*`, `172.*`, `10.*`).
 
 ---
 
