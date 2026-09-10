@@ -12,10 +12,12 @@ frontend/.env
 node_modules/
 frontend/node_modules/
 mobile/node_modules/
+exp/node_modules/
 
 # Expo
 .expo/
 mobile/.expo/
+exp/.expo/
 
 # VS Code
 .vscode/
