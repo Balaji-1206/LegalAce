@@ -57,26 +57,34 @@
 - **Offline Notice Drafting**: Citizens in low-connectivity areas can draft, customize, and share pre-filled statutory legal demand notices completely disconnected from the internet.
 - **Dynamic Offline Badge**: Displays an amber `⚡ OFFLINE MODE (CACHED)` status indicator when running disconnected.
 
-### 🤖 6. Agentic Legal AI Chatbot (RAG Pipeline & Tool Calling)
+### 📲 6. Statutory Legal Notice Generation & 1-Tap Multi-Channel Dispatch
+- **Pre-Filled Statutory Demand Drafting**: Synthesizes ready-to-serve statutory legal notices (under the Model Tenancy Act 2021, Indian Contract Act 1872, Payment of Wages Act 1936, or Consumer Protection Act 2019) pre-filled with dispute facts, 15-day statutory deadlines, and itemized financial claim breakdowns (principal, 12% statutory interest, damages).
+- **In-Place Editable Review Hub**: Allows citizens to review and fine-tune exact paragraphs, dates, or claim amounts directly in the mobile app prior to dispatch.
+- **1-Tap WhatsApp Service (`wa.me`)**: Formats clean E.164 numbers (e.g. `919876543210`) and generates character-safe executive summaries for instant WhatsApp service directly from the citizen's own account.
+- **1-Tap Formal Email Service (`mailto:`)**: Builds pre-filled email transmission links directed to landlords, HR departments, or corporate grievance redressal desks.
+- **Pure-Python Printable PDF Generator**: Fast, zero-dependency PDF 1.4 binary engine emitting certified A4 printable legal notice documents (`/api/v1/wizard/download-pdf`) complete with reference codes, statutory tags, and signature blocks.
+- **Mandatory Authorization Gate**: Enforces explicit citizen verification checkbox (*"I certify that I have reviewed the exact text and financial claim of this statutory legal demand notice..."*) before activating external dispatch channels.
+
+### 🤖 7. Agentic Legal AI Chatbot (RAG Pipeline & Tool Calling)
 - **Vector Retrieval**: Local FAISS vector index built on real Indian statutory acts (Transfer of Property Act, Consumer Protection Act 2019, Industrial Disputes Act, POSH Act, Information Technology Act, CrPC/BNSS, Domestic Violence Act).
 - **Agent Tool Registry**: Built-in planner capable of dispatching dynamic tools (such as `legal_aid_lookup`) to synthesize statutory authorities and legal remedies directly into conversation turns.
 - **Multi-LLM Fallback & Switcher**: Resilient multi-tier LLM fallback: Google Gemini 2.0 Flash → OpenAI GPT-4o → Ollama (local) → Smart Rule-Based Engine. Switchable on-the-fly from the mobile app.
 - **Rich Markdown Formatting**: Native mobile parsing and formatted rendering for section headers (`###`), bold highlights (`**text**`), and bullet points.
 
-### 🛡️ 7. Situation Finder & 13 Legal Categories
+### 🛡️ 8. Situation Finder & 13 Legal Categories
 - **13 Specialized Categories**: Housing, Employment, Consumer, Banking, Cyber Crime, Traffic, Women's Rights, Education, Cheque Debt, RTI, Real Estate, Insurance, and Family & Support.
 - **Interactive Scenarios**: Instant search, penalty calculators, and key statutory rights cards for everyday citizen disputes.
 
-### ⏳ 8. Legal Health Monitor & Statutory Deadlines
+### ⏳ 9. Legal Health Monitor & Statutory Deadlines
 - **Limitation Act Engine**: Calculates statutory limitation periods under the Limitation Act 1963, Consumer Protection Act, NI Act Section 138, and RTI Act.
 - **Health Score Ring**: Real-time legal health score dynamically calculated from active, completed, and expired legal filing deadlines with nested analytics.
 - **Multi-Channel Reminders**: Direct WhatsApp (`wa.me`) 1-tap reminders, native push alerts, and automated SMS via Fast2SMS with OTP verification.
 
-### 📄 9. Document X-Ray (Upload & Auto-Extract)
+### 📄 10. Document X-Ray (Upload & Auto-Extract)
 - **AI Document Parser**: Upload legal PDFs or images (rental agreements, cheque bounce notices, FIR copies, termination letters).
 - **Structured Extraction**: Extracts document type, party names, key dates timeline, obligations checklist, and red flags (unfavorable/illegal clauses).
 
-### ⚖️ 10. Free Legal Aid (DLSA) Checker
+### ⚖️ 11. Free Legal Aid (DLSA) Checker
 - **Statutory Eligibility**: Evaluates user criteria under **Section 12 of the Legal Services Authorities Act, 1987** (SC/ST, Women/Children, Persons with Disabilities, Industrial Workmen, Under-Trial Prisoners, Annual Income < ₹3,00,000, etc.).
 - **Nearest Authority Locator**: Built-in DLSA/SLSA office directory for Indian states + NALSA nationwide helpline (15100) with 1-tap calling.
 
