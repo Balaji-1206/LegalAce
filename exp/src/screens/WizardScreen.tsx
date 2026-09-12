@@ -79,14 +79,40 @@ export const WizardScreen: React.FC<WizardScreenProps> = ({ userId: _userId, onB
   const [customQuery, setCustomQuery] = useState('');
   const [generatingDynamic, setGeneratingDynamic] = useState(false);
 
-  // Document Generator Modal State
+  // Document Generator & 1-Tap Legal Notice Dispatch State
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
   const [docGenerating, setDocGenerating] = useState(false);
   const [generatedDocText, setGeneratedDocText] = useState<string | null>(null);
-  const [recipientName, setRecipientName] = useState('Opposing Party / Landlord / Company');
   const [senderName, setSenderName] = useState('Aggrieved Citizen');
+  const [senderPhone, setSenderPhone] = useState('');
+  const [senderEmail, setSenderEmail] = useState('');
+  const [recipientName, setRecipientName] = useState('Opposing Party / Landlord / Company');
+  const [recipientPhone, setRecipientPhone] = useState('');
+  const [recipientEmail, setRecipientEmail] = useState('');
   const [disputeAmount, setDisputeAmount] = useState('50000');
   const [factsSummary, setFactsSummary] = useState('');
+  const [noticeDays, setNoticeDays] = useState('15');
+  const [isAuthorizedToSend, setIsAuthorizedToSend] = useState(false);
+  const [dispatchData, setDispatchData] = useState<{
+    title: string;
+    document_text: string;
+    executive_notice: string;
+    whatsapp_url: string;
+    mailto_url: string;
+    recipient_phone?: string | null;
+    recipient_email?: string | null;
+    statutory_sections?: string[];
+    financial_breakdown?: {
+      principal: number;
+      interest: number;
+      damages: number;
+      total_claim: number;
+    };
+    ref_code?: string;
+    pdf_download_url?: string;
+  } | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+
 
   // Outcome Tracking State
   const [scenarioStats, setScenarioStats] = useState<Record<string, { total_cases: number; resolution_rate: number }>>({});
@@ -362,62 +388,182 @@ export const WizardScreen: React.FC<WizardScreenProps> = ({ userId: _userId, onB
     }
   };
 
-  const handleGenerateNotice = async () => {
+  const handleGenerateNotice = async (overrideCustomText?: string) => {
     setDocGenerating(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/wizard/generate-document`, {
+      const templateId = selectedScenario?.category || selectedScenario?.scenario_id || 'legal_notice';
+      const res = await fetch(`${API_BASE_URL}/api/v1/wizard/dispatch-notice`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          template_id: 'legal_notice',
-          details: {
-            sender_name: senderName,
-            recipient_name: recipientName,
-            dispute_amount: disputeAmount,
-            facts_summary: factsSummary || (selectedScenario ? selectedScenario.title : 'Legal dispute matters'),
-            notice_days: 15,
-          },
+          template_id: templateId,
+          scenario_id: selectedScenario?.scenario_id,
+          sender_name: senderName.trim() || 'Aggrieved Citizen',
+          sender_phone: senderPhone.trim() || undefined,
+          sender_email: senderEmail.trim() || undefined,
+          recipient_name: recipientName.trim() || 'Opposing Party',
+          recipient_phone: recipientPhone.trim() || undefined,
+          recipient_email: recipientEmail.trim() || undefined,
+          dispute_amount: disputeAmount.trim() || '50000',
+          facts_summary: factsSummary.trim() || (selectedScenario ? selectedScenario.title : 'Unresolved legal dispute'),
+          notice_days: parseInt(noticeDays, 10) || 15,
+          custom_text: overrideCustomText || generatedDocText || undefined,
         }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        setGeneratedDocText(data.document_text || data.text);
+        setDispatchData(data);
+        setGeneratedDocText(data.document_text);
+        setIsAuthorizedToSend(false);
       } else {
-        throw new Error();
+        throw new Error('API failed');
       }
     } catch {
+      // Offline fallback
       const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
-      setGeneratedDocText(
-`BY REGISTERED POST WITH ACKNOWLEDGEMENT DUE / SPEED POST
+      const fallbackRef = `LA/NOT/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`;
+      const principalNum = parseFloat(disputeAmount.replace(/,/g, '')) || 50000;
+      const interestNum = Math.round(principalNum * 0.12);
+      const damagesNum = 15000;
+      const totalClaim = principalNum + interestNum + damagesNum;
+
+      const fallbackText =
+        overrideCustomText ||
+        generatedDocText ||
+`BY REGISTERED POST A.D. / SPEED POST / LEGAL TRANSMISSION
 
 Date: ${today}
+Ref No: ${fallbackRef}
 
 TO:
-${recipientName}
+${recipientName || 'Opposing Party'}
+${recipientPhone ? 'Contact: ' + recipientPhone : ''}
+${recipientEmail ? 'Email: ' + recipientEmail : ''}
 
 FROM:
-${senderName}
+${senderName || 'Aggrieved Citizen'}
+${senderPhone ? 'Contact: ' + senderPhone : ''}
+${senderEmail ? 'Email: ' + senderEmail : ''}
 
-SUBJECT: STATUTORY LEGAL DEMAND NOTICE UNDER SECTION 106 TRANSFER OF PROPERTY ACT / SECTION 35 CONSUMER PROTECTION ACT.
+SUBJECT: STATUTORY LEGAL DEMAND NOTICE UNDER INDIAN LAW FOR RECOVERY OF RS. ${principalNum.toLocaleString('en-IN')}/- ALONG WITH INTEREST AND DAMAGES.
 
 Sir/Madam,
 
-Under instructions from and on behalf of my client/myself, you are hereby served with this formal legal notice:
+Under instructions from and on behalf of the undersigned, I hereby issue upon you this Formal Legal Notice:
 
-1. That an agreement/transaction was entered into between the parties regarding: ${factsSummary || 'unresolved legal obligations'}.
-2. That the sum of ₹${disputeAmount}/- remains wrongfully withheld/due despite repeated oral and written reminders.
-3. That your deliberate failure to resolve the grievance constitutes unfair practice and breach of trust.
+1. CAUSE OF DISPUTE: That the dispute arose on account of: ${factsSummary || 'deliberate failure to discharge legal duties and contractual obligations'}.
+2. UNLAWFUL WITHHOLDING / STATUTORY BREACH: That you have unlawfully withheld the sum of Rs. ${principalNum.toLocaleString('en-IN')}/- despite repeated verbal and written requests.
+3. FINANCIAL DEMAND BREAKDOWN:
+   a) Principal Amount Withheld: Rs. ${principalNum.toLocaleString('en-IN')}/-
+   b) Statutory Interest @ 12% p.a.: Rs. ${interestNum.toLocaleString('en-IN')}/-
+   c) Compensation for Harassment & Legal Notice Charges: Rs. ${damagesNum.toLocaleString('en-IN')}/-
+   TOTAL STATUTORY CLAIM: RS. ${totalClaim.toLocaleString('en-IN')}/-
 
-TAKE NOTICE that you are hereby called upon to pay/refund the sum of ₹${disputeAmount}/- within 15 (fifteen) days from the receipt of this notice, failing which appropriate civil and criminal proceedings will be instituted against you in the competent court at your risk as to costs and consequences.
+TAKE NOTICE that you are hereby called upon to pay/refund the total demand amount of Rs. ${totalClaim.toLocaleString('en-IN')}/- within ${noticeDays || 15} days of receipt of this notice, failing which formal legal proceedings shall be initiated before competent judicial authorities at your sole risk, cost, and consequence.
 
 Yours faithfully,
 
 _____________________________
-(${senderName})`
-      );
+(${senderName || 'Aggrieved Citizen'})
+Place: Bengaluru, India`;
+
+      const cleanPhone = recipientPhone.replace(/\D/g, '');
+      const intlPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+      const waNotice = `⚖️ *STATUTORY LEGAL DEMAND NOTICE*\n\nTO: ${recipientName}\nFROM: ${senderName}\nDEMAND: Rs. ${totalClaim.toLocaleString('en-IN')}/- within ${noticeDays || 15} days.\nGROUNDS: ${factsSummary || 'Statutory breach and failure to refund'}\n\n*(Full legal notice served via formal communication)*`;
+      const waUrl = intlPhone ? `https://wa.me/${intlPhone}?text=${encodeURIComponent(waNotice)}` : `https://wa.me/?text=${encodeURIComponent(waNotice)}`;
+      const mailUrl = recipientEmail ? `mailto:${recipientEmail.trim()}?subject=${encodeURIComponent('Statutory Legal Demand Notice')}&body=${encodeURIComponent(fallbackText)}` : `mailto:?subject=${encodeURIComponent('Statutory Legal Demand Notice')}&body=${encodeURIComponent(fallbackText)}`;
+
+      setGeneratedDocText(fallbackText);
+      setDispatchData({
+        title: 'Statutory Legal Demand Notice',
+        document_text: fallbackText,
+        executive_notice: waNotice,
+        whatsapp_url: waUrl,
+        mailto_url: mailUrl,
+        recipient_phone: intlPhone,
+        recipient_email: recipientEmail,
+        ref_code: fallbackRef,
+        pdf_download_url: `/api/v1/wizard/download-pdf?template_id=legal_notice&ref_code=${fallbackRef.replace(/\//g, '_')}`,
+        financial_breakdown: {
+          principal: principalNum,
+          interest: interestNum,
+          damages: damagesNum,
+          total_claim: totalClaim,
+        },
+        statutory_sections: ['Indian Contract Act 1872 — Section 73', 'Code of Civil Procedure 1908'],
+      });
+      setIsAuthorizedToSend(false);
     } finally {
       setDocGenerating(false);
+    }
+  };
+
+  const confirmAndDispatch = (actionTitle: string, channelName: string, onConfirm: () => void) => {
+    if (!isAuthorizedToSend) {
+      Alert.alert(
+        'Authorization Required',
+        'Please review the statutory notice and check the confirmation box certifying you authorize dispatching this legal demand.'
+      );
+      return;
+    }
+
+    Alert.alert(
+      `Confirm ${actionTitle}`,
+      `A formal legal notice carries statutory legal consequences under Indian law.\n\nAre you sure you want to dispatch this notice to "${recipientName}" via ${channelName}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Authorize & Send', style: 'default', onPress: onConfirm },
+      ]
+    );
+  };
+
+  const handleSendWhatsApp = () => {
+    confirmAndDispatch('WhatsApp Dispatch', 'WhatsApp', async () => {
+      let targetUrl = dispatchData?.whatsapp_url;
+      if (!targetUrl) {
+        const cleanPhone = recipientPhone.replace(/\D/g, '');
+        const intlPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+        const msg = encodeURIComponent(generatedDocText ? generatedDocText.substring(0, 1200) + '...' : 'Statutory Legal Notice');
+        targetUrl = intlPhone ? `https://wa.me/${intlPhone}?text=${msg}` : `https://wa.me/?text=${msg}`;
+      }
+      try {
+        await Linking.openURL(targetUrl);
+      } catch {
+        Alert.alert('Could Not Open WhatsApp', 'Please ensure WhatsApp is installed on your device.');
+      }
+    });
+  };
+
+  const handleSendEmail = () => {
+    confirmAndDispatch('Email Dispatch', 'Email', async () => {
+      let targetUrl = dispatchData?.mailto_url;
+      if (!targetUrl) {
+        const subj = encodeURIComponent(`Statutory Legal Demand Notice — ${recipientName}`);
+        const body = encodeURIComponent(generatedDocText || '');
+        targetUrl = recipientEmail ? `mailto:${recipientEmail.trim()}?subject=${subj}&body=${body}` : `mailto:?subject=${subj}&body=${body}`;
+      }
+      try {
+        await Linking.openURL(targetUrl);
+      } catch {
+        Alert.alert('Could Not Open Email', 'Please ensure an email application is configured.');
+      }
+    });
+  };
+
+  const handleDownloadPdf = async () => {
+    setPdfLoading(true);
+    try {
+      const templateId = selectedScenario?.category || selectedScenario?.scenario_id || 'legal_notice';
+      const cleanRef = (dispatchData?.ref_code || 'NOTICE').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const downloadUrl = dispatchData?.pdf_download_url
+        ? `${API_BASE_URL}${dispatchData.pdf_download_url}`
+        : `${API_BASE_URL}/api/v1/wizard/download-pdf?template_id=${templateId}&ref_code=${cleanRef}`;
+      await Linking.openURL(downloadUrl);
+    } catch {
+      Alert.alert('Download Started', 'Opening notice PDF in browser for print and save.');
+    } finally {
+      setPdfLoading(false);
     }
   };
 
@@ -425,7 +571,7 @@ _____________________________
     if (!generatedDocText) return;
     try {
       await Share.share({
-        title: 'Statutory Legal Notice',
+        title: dispatchData?.title || 'Statutory Legal Demand Notice',
         message: generatedDocText,
       });
     } catch { /* cancelled */ }
@@ -929,6 +1075,7 @@ _____________________________
       <View style={{ height: 95 }} />
 
       {/* --- NOTICE GENERATION MODAL --- */}
+      {/* --- NOTICE GENERATION & 1-TAP DISPATCH MODAL --- */}
       <Modal visible={isDocModalOpen} animationType="slide" transparent>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -936,7 +1083,16 @@ _____________________________
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeaderRow}>
-              <Text style={styles.modalTitle}>Draft Statutory Notice</Text>
+              <View>
+                <Text style={styles.modalTitle}>
+                  {!generatedDocText ? 'Draft Statutory Notice' : 'Review & Dispatch Notice'}
+                </Text>
+                <Text style={styles.modalSubtitle}>
+                  {!generatedDocText
+                    ? 'Step 1 of 2: Recipient contact & claim details'
+                    : 'Step 2 of 2: Review, customize, & 1-tap dispatch'}
+                </Text>
+              </View>
               <TouchableOpacity onPress={() => setIsDocModalOpen(false)}>
                 <Ionicons name="close" size={24} color="#64748b" />
               </TouchableOpacity>
@@ -945,8 +1101,9 @@ _____________________________
             <ScrollView showsVerticalScrollIndicator={false}>
               {!generatedDocText ? (
                 <View>
+                  {/* Sender Details */}
                   <View style={styles.formGroup}>
-                    <Text style={styles.modalLabel}>Your Full Name (Sender)</Text>
+                    <Text style={styles.modalLabel}>Your Full Name (Sender / Claimant)</Text>
                     <TextInput
                       style={styles.modalInput}
                       value={senderName}
@@ -955,41 +1112,119 @@ _____________________________
                     />
                   </View>
 
-                  <View style={styles.formGroup}>
-                    <Text style={styles.modalLabel}>Opposing Party (Recipient / Landlord / Firm)</Text>
-                    <TextInput
-                      style={styles.modalInput}
-                      value={recipientName}
-                      onChangeText={setRecipientName}
-                      placeholder="e.g. Apex Realty Developers"
-                    />
+                  <View style={styles.formRow}>
+                    <View style={[styles.formGroup, { flex: 1 }]}>
+                      <Text style={styles.modalLabel}>Your Phone (Optional)</Text>
+                      <TextInput
+                        style={styles.modalInput}
+                        value={senderPhone}
+                        onChangeText={setSenderPhone}
+                        keyboardType="phone-pad"
+                        placeholder="e.g. 9876543210"
+                      />
+                    </View>
+                    <View style={[styles.formGroup, { flex: 1 }]}>
+                      <Text style={styles.modalLabel}>Your Email (Optional)</Text>
+                      <TextInput
+                        style={styles.modalInput}
+                        value={senderEmail}
+                        onChangeText={setSenderEmail}
+                        keyboardType="email-address"
+                        placeholder="you@example.com"
+                      />
+                    </View>
+                  </View>
+
+                  {/* Opposing Party Section with badges */}
+                  <View style={styles.recipientCardBox}>
+                    <View style={styles.recipientCardHeader}>
+                      <Text style={styles.recipientCardTitle}>🎯 Opposing Party / Respondent</Text>
+                      <Text style={styles.recipientCardSub}>Direct delivery targets for WhatsApp & Email</Text>
+                    </View>
+
+                    <View style={styles.formGroup}>
+                      <Text style={styles.modalLabel}>Opposing Party / Company / Landlord Name *</Text>
+                      <TextInput
+                        style={styles.modalInput}
+                        value={recipientName}
+                        onChangeText={setRecipientName}
+                        placeholder="e.g. Apex Realty Developers / Landlord Name"
+                      />
+                    </View>
+
+                    <View style={styles.formGroup}>
+                      <View style={styles.labelBadgeRow}>
+                        <Text style={styles.modalLabel}>Recipient Mobile Number (WhatsApp)</Text>
+                        <View style={styles.waActiveBadge}>
+                          <Ionicons name="logo-whatsapp" size={11} color="#059669" />
+                          <Text style={styles.waActiveBadgeText}>1-Tap Delivery</Text>
+                        </View>
+                      </View>
+                      <TextInput
+                        style={styles.modalInput}
+                        value={recipientPhone}
+                        onChangeText={setRecipientPhone}
+                        keyboardType="phone-pad"
+                        placeholder="e.g. +91 98765 43210"
+                      />
+                    </View>
+
+                    <View style={styles.formGroup}>
+                      <View style={styles.labelBadgeRow}>
+                        <Text style={styles.modalLabel}>Recipient Email Address</Text>
+                        <View style={styles.emailActiveBadge}>
+                          <Ionicons name="mail" size={11} color="#4f46e5" />
+                          <Text style={styles.emailActiveBadgeText}>Formal Service</Text>
+                        </View>
+                      </View>
+                      <TextInput
+                        style={styles.modalInput}
+                        value={recipientEmail}
+                        onChangeText={setRecipientEmail}
+                        keyboardType="email-address"
+                        placeholder="e.g. landlord@example.com / grievance@company.com"
+                      />
+                    </View>
+                  </View>
+
+                  {/* Dispute Financials */}
+                  <View style={styles.formRow}>
+                    <View style={[styles.formGroup, { flex: 1.2 }]}>
+                      <Text style={styles.modalLabel}>Dispute Amount (₹)</Text>
+                      <TextInput
+                        style={styles.modalInput}
+                        value={disputeAmount}
+                        onChangeText={setDisputeAmount}
+                        keyboardType="numeric"
+                        placeholder="e.g. 50000"
+                      />
+                    </View>
+                    <View style={[styles.formGroup, { flex: 0.8 }]}>
+                      <Text style={styles.modalLabel}>Notice Days</Text>
+                      <TextInput
+                        style={styles.modalInput}
+                        value={noticeDays}
+                        onChangeText={setNoticeDays}
+                        keyboardType="numeric"
+                        placeholder="15"
+                      />
+                    </View>
                   </View>
 
                   <View style={styles.formGroup}>
-                    <Text style={styles.modalLabel}>Dispute Amount (₹)</Text>
+                    <Text style={styles.modalLabel}>Brief Summary of Facts / Grievance</Text>
                     <TextInput
-                      style={styles.modalInput}
-                      value={disputeAmount}
-                      onChangeText={setDisputeAmount}
-                      keyboardType="numeric"
-                      placeholder="e.g. 50000"
-                    />
-                  </View>
-
-                  <View style={styles.formGroup}>
-                    <Text style={styles.modalLabel}>Brief Summary of Dispute Facts</Text>
-                    <TextInput
-                      style={[styles.modalInput, { height: 70 }]}
+                      style={[styles.modalInput, { height: 64 }]}
                       value={factsSummary}
                       onChangeText={setFactsSummary}
                       multiline
-                      placeholder="e.g. Landlord withholding security deposit without explanation"
+                      placeholder="e.g. Landlord withholding refundable security deposit without legal justification"
                     />
                   </View>
 
                   <TouchableOpacity
                     style={styles.docActionBtn}
-                    onPress={handleGenerateNotice}
+                    onPress={() => handleGenerateNotice()}
                     disabled={docGenerating}
                     activeOpacity={0.8}
                   >
@@ -1000,34 +1235,211 @@ _____________________________
                       {docGenerating ? (
                         <ActivityIndicator size="small" color="#ffffff" />
                       ) : (
-                        <Text style={styles.docActionBtnText}>📄 Generate Statutory Notice</Text>
+                        <Text style={styles.docActionBtnText}>⚖️ Generate & Format Statutory Notice</Text>
                       )}
                     </LinearGradient>
                   </TouchableOpacity>
                 </View>
               ) : (
                 <View>
-                  <Text style={styles.previewLabel}>Generated Statutory Notice Text:</Text>
-                  <View style={styles.docPreviewBox}>
-                    <Text style={styles.docPreviewText}>{generatedDocText}</Text>
+                  {/* Meta Bar */}
+                  <View style={styles.dispatchMetaBar}>
+                    <View style={styles.refBadge}>
+                      <Text style={styles.refBadgeText}>
+                        Ref: {dispatchData?.ref_code || 'LA-2026-NOTICE'}
+                      </Text>
+                    </View>
+                    <View style={styles.dispatchStatusBadge}>
+                      <Ionicons name="flash" size={11} color="#4338ca" />
+                      <Text style={styles.dispatchStatusText}>1-Tap Dispatch Ready</Text>
+                    </View>
                   </View>
 
+                  {/* Statutory Sections Grounding Pill Tags */}
+                  {dispatchData?.statutory_sections && dispatchData.statutory_sections.length > 0 && (
+                    <View style={styles.statuteTagsWrap}>
+                      <Text style={styles.statuteHeading}>Statutory Grounding:</Text>
+                      <View style={styles.statutePillsRow}>
+                        {dispatchData.statutory_sections.map((sec, idx) => (
+                          <View key={idx} style={styles.statutePill}>
+                            <Text style={styles.statutePillText}>§ {sec}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Financial Claim Breakdown Card */}
+                  {dispatchData?.financial_breakdown && (
+                    <View style={styles.claimBreakdownCard}>
+                      <Text style={styles.claimBreakdownTitle}>💰 Itemized Statutory Claim</Text>
+                      <View style={styles.claimBreakdownRow}>
+                        <Text style={styles.claimBreakdownLabel}>Principal Claimed:</Text>
+                        <Text style={styles.claimBreakdownVal}>
+                          ₹{dispatchData.financial_breakdown.principal.toLocaleString('en-IN')}
+                        </Text>
+                      </View>
+                      <View style={styles.claimBreakdownRow}>
+                        <Text style={styles.claimBreakdownLabel}>12% Statutory Interest:</Text>
+                        <Text style={styles.claimBreakdownVal}>
+                          ₹{dispatchData.financial_breakdown.interest.toLocaleString('en-IN')}
+                        </Text>
+                      </View>
+                      <View style={styles.claimBreakdownRow}>
+                        <Text style={styles.claimBreakdownLabel}>Legal Expenses & Damages:</Text>
+                        <Text style={styles.claimBreakdownVal}>
+                          ₹{dispatchData.financial_breakdown.damages.toLocaleString('en-IN')}
+                        </Text>
+                      </View>
+                      <View style={styles.claimTotalRow}>
+                        <Text style={styles.claimTotalLabel}>TOTAL PAYABLE DEMAND:</Text>
+                        <Text style={styles.claimTotalVal}>
+                          ₹{dispatchData.financial_breakdown.total_claim.toLocaleString('en-IN')}/-
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Editable Notice Input */}
+                  <View style={styles.editorHeaderRow}>
+                    <Text style={styles.previewLabel}>In-Place Statutory Notice Editor:</Text>
+                    <Text style={styles.editorHint}>✏️ Tap text to edit prior to dispatch</Text>
+                  </View>
+                  <TextInput
+                    style={styles.editableNoticeBox}
+                    value={generatedDocText}
+                    onChangeText={setGeneratedDocText}
+                    multiline
+                    textAlignVertical="top"
+                  />
+
+                  {/* Mandatory Authorization Safeguard Checkbox */}
+                  <TouchableOpacity
+                    style={[
+                      styles.authCheckboxCard,
+                      isAuthorizedToSend && styles.authCheckboxCardActive,
+                    ]}
+                    onPress={() => setIsAuthorizedToSend(!isAuthorizedToSend)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons
+                      name={isAuthorizedToSend ? 'checkbox' : 'square-outline'}
+                      size={24}
+                      color={isAuthorizedToSend ? '#059669' : '#94a3b8'}
+                    />
+                    <Text style={styles.authCheckboxLabel}>
+                      I have reviewed this statutory legal notice and certify that the details and financial claim are accurate. I authorize dispatching it to {recipientName}.
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* 1-Tap Dispatch Channels */}
+                  <View style={styles.dispatchSectionHeader}>
+                    <Text style={styles.dispatchSectionTitle}>🚀 1-Tap Statutory Dispatch Channels</Text>
+                    {!isAuthorizedToSend && (
+                      <Text style={styles.dispatchWarningText}>
+                        * Check the authorization box above to activate send channels
+                      </Text>
+                    )}
+                  </View>
+
+                  {/* WhatsApp Channel */}
+                  <TouchableOpacity
+                    style={[
+                      styles.channelBtn,
+                      styles.waChannelBtn,
+                      !isAuthorizedToSend && styles.channelBtnDisabled,
+                    ]}
+                    onPress={handleSendWhatsApp}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.channelBtnContent}>
+                      <View style={styles.channelIconBox}>
+                        <Ionicons name="logo-whatsapp" size={24} color="#ffffff" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.channelBtnTitle}>Send via WhatsApp</Text>
+                        <Text style={styles.channelBtnSub}>
+                          {recipientPhone
+                            ? `Pre-filled notice to ${recipientPhone}`
+                            : 'Opens WhatsApp chat contact selector'}
+                        </Text>
+                      </View>
+                      <Ionicons name="arrow-forward" size={18} color="#ffffff" />
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Email Channel */}
+                  <TouchableOpacity
+                    style={[
+                      styles.channelBtn,
+                      styles.emailChannelBtn,
+                      !isAuthorizedToSend && styles.channelBtnDisabled,
+                    ]}
+                    onPress={handleSendEmail}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.channelBtnContent}>
+                      <View style={styles.channelIconBox}>
+                        <Ionicons name="mail" size={22} color="#ffffff" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.channelBtnTitle}>Send via Email</Text>
+                        <Text style={styles.channelBtnSub}>
+                          {recipientEmail
+                            ? `Formal service draft to ${recipientEmail}`
+                            : 'Pre-fills subject & full notice in email app'}
+                        </Text>
+                      </View>
+                      <Ionicons name="arrow-forward" size={18} color="#ffffff" />
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Download Official PDF */}
+                  <TouchableOpacity
+                    style={[styles.channelBtn, styles.pdfChannelBtn]}
+                    onPress={handleDownloadPdf}
+                    disabled={pdfLoading}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.channelBtnContent}>
+                      <View style={styles.channelIconBox}>
+                        {pdfLoading ? (
+                          <ActivityIndicator size="small" color="#ffffff" />
+                        ) : (
+                          <Ionicons name="document-text" size={22} color="#ffffff" />
+                        )}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.channelBtnTitle}>Download Official PDF Notice</Text>
+                        <Text style={styles.channelBtnSub}>
+                          Printable A4 statutory document with reference watermark
+                        </Text>
+                      </View>
+                      <Ionicons name="download-outline" size={18} color="#ffffff" />
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Secondary Actions Row */}
                   <View style={styles.docModalActionsRow}>
                     <TouchableOpacity
-                      style={[styles.docBtn, { backgroundColor: '#4f46e5' }]}
+                      style={[styles.docBtn, { backgroundColor: '#3b82f6', flex: 1 }]}
                       onPress={handleShareDoc}
                       activeOpacity={0.8}
                     >
                       <Ionicons name="share-outline" size={16} color="#ffffff" />
-                      <Text style={styles.docBtnText}>Share / Save Notice</Text>
+                      <Text style={styles.docBtnText}>Share Text</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      style={[styles.docBtn, { backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#cbd5e1' }]}
+                      style={[
+                        styles.docBtn,
+                        { backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#cbd5e1', flex: 1 },
+                      ]}
                       onPress={() => setGeneratedDocText(null)}
                       activeOpacity={0.8}
                     >
-                      <Text style={[styles.docBtnText, { color: '#334155' }]}>Edit Details</Text>
+                      <Ionicons name="pencil" size={14} color="#334155" />
+                      <Text style={[styles.docBtnText, { color: '#334155' }]}>Edit Form</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -1036,6 +1448,7 @@ _____________________________
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
     </ScrollView>
   );
 };
@@ -1607,7 +2020,7 @@ const styles = StyleSheet.create({
   modalHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 16,
   },
   modalTitle: {
@@ -1615,24 +2028,88 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#1e1b4b',
   },
+  modalSubtitle: {
+    fontSize: 11.5,
+    color: '#64748b',
+    marginTop: 2,
+  },
   formGroup: {
-    marginBottom: 14,
+    marginBottom: 12,
+  },
+  formRow: {
+    flexDirection: 'row',
+    gap: 10,
   },
   modalLabel: {
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: '700',
     color: '#334155',
-    marginBottom: 6,
+    marginBottom: 5,
   },
   modalInput: {
     borderWidth: 1.5,
     borderColor: '#e2e8f0',
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 13.5,
+    paddingVertical: 9,
+    fontSize: 13,
     color: '#111827',
     backgroundColor: '#f8fafc',
+  },
+  recipientCardBox: {
+    backgroundColor: '#f8fafc',
+    borderWidth: 1.5,
+    borderColor: '#cbd5e1',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
+  },
+  recipientCardHeader: {
+    marginBottom: 10,
+  },
+  recipientCardTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#1e1b4b',
+  },
+  recipientCardSub: {
+    fontSize: 10.5,
+    color: '#64748b',
+    marginTop: 1,
+  },
+  labelBadgeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  waActiveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#ecfdf5',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  waActiveBadgeText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  emailActiveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#eef2ff',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  emailActiveBadgeText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: '#4f46e5',
   },
   docActionBtn: {
     borderRadius: 12,
@@ -1646,43 +2123,234 @@ const styles = StyleSheet.create({
   },
   docActionBtnText: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: 13.5,
+    fontWeight: '800',
+  },
+  dispatchMetaBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  refBadge: {
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  refBadgeText: {
+    fontSize: 11,
     fontWeight: '700',
+    color: '#475569',
+  },
+  dispatchStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#e0e7ff',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  dispatchStatusText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#3730a3',
+  },
+  statuteTagsWrap: {
+    marginBottom: 10,
+  },
+  statuteHeading: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#64748b',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  statutePillsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  statutePill: {
+    backgroundColor: '#ecfdf5',
+    borderWidth: 1,
+    borderColor: '#a7f3d0',
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
+    borderRadius: 6,
+  },
+  statutePillText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#065f46',
+  },
+  claimBreakdownCard: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  claimBreakdownTitle: {
+    fontSize: 12.5,
+    fontWeight: '800',
+    color: '#0f172a',
+    marginBottom: 6,
+  },
+  claimBreakdownRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 2,
+  },
+  claimBreakdownLabel: {
+    fontSize: 11.5,
+    color: '#64748b',
+  },
+  claimBreakdownVal: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
+  claimTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    paddingTop: 6,
+    marginTop: 4,
+  },
+  claimTotalLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  claimTotalVal: {
+    fontSize: 12.5,
+    fontWeight: '900',
+    color: '#059669',
+  },
+  editorHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
   },
   previewLabel: {
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: '700',
     color: '#334155',
-    marginBottom: 8,
   },
-  docPreviewBox: {
-    backgroundColor: '#f8fafc',
+  editorHint: {
+    fontSize: 10.5,
+    color: '#64748b',
+  },
+  editableNoticeBox: {
+    backgroundColor: '#0f172a',
+    color: '#f8fafc',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 11,
+    lineHeight: 16,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    height: 190,
+    marginBottom: 12,
     borderWidth: 1,
+    borderColor: '#334155',
+  },
+  authCheckboxCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1.5,
     borderColor: '#cbd5e1',
     borderRadius: 12,
-    padding: 14,
-    maxHeight: 280,
+    padding: 12,
     marginBottom: 14,
   },
-  docPreviewText: {
-    fontSize: 12,
+  authCheckboxCardActive: {
+    backgroundColor: '#ecfdf5',
+    borderColor: '#059669',
+  },
+  authCheckboxLabel: {
+    flex: 1,
+    fontSize: 11.5,
+    color: '#1e293b',
+    lineHeight: 16,
+    fontWeight: '600',
+  },
+  dispatchSectionHeader: {
+    marginBottom: 8,
+  },
+  dispatchSectionTitle: {
+    fontSize: 13,
+    fontWeight: '800',
     color: '#0f172a',
-    lineHeight: 18,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  dispatchWarningText: {
+    fontSize: 10.5,
+    color: '#dc2626',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  channelBtn: {
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 8,
+  },
+  waChannelBtn: {
+    backgroundColor: '#059669',
+  },
+  emailChannelBtn: {
+    backgroundColor: '#4338ca',
+  },
+  pdfChannelBtn: {
+    backgroundColor: '#1e293b',
+  },
+  channelBtnDisabled: {
+    opacity: 0.4,
+  },
+  channelBtnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  channelIconBox: {
+    width: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  channelBtnTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#ffffff',
+  },
+  channelBtnSub: {
+    fontSize: 10.5,
+    color: 'rgba(255, 255, 255, 0.85)',
+    marginTop: 1,
   },
   docModalActionsRow: {
+    flexDirection: 'row',
     gap: 10,
+    marginTop: 6,
+    marginBottom: 10,
   },
   docBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
   },
   docBtnText: {
-    fontSize: 13.5,
+    fontSize: 12.5,
     fontWeight: '700',
     color: '#ffffff',
   },
