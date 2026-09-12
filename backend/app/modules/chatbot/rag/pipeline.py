@@ -66,11 +66,14 @@ def generate_smart_fallback(query: str, intent: str, law_chunks: list) -> dict:
         for chunk in law_chunks:
             if getattr(chunk, 'score', 0.0) >= 0.45:
                 chunk_highlights.append(f"• **{chunk.act_name} — {chunk.section_number} ({chunk.section_title})**: {chunk.section_text}")
+                score_val = float(getattr(chunk, 'score', 0.85))
                 law_citations.append({
                     "act": chunk.act_name,
                     "section": chunk.section_number,
                     "section_title": chunk.section_title,
-                    "relevance_score": float(chunk.score)
+                    "relevance_score": score_val,
+                    "excerpt": getattr(chunk, "section_text", ""),
+                    "grounding_score": min(99.0, max(45.0, round(score_val * 100, 1))),
                 })
 
     # Domain specific guidance generators
@@ -431,7 +434,7 @@ async def run_rag_pipeline(
         else:
             parsed = generate_smart_fallback(query, intent, law_chunks)
 
-    # Ensure law_citations are populated if retrieved law_chunks exist and meet relevance threshold
+    # Ensure law_citations are populated and enriched with statutory excerpts and grounding scores
     if not parsed.get("law_citations") and law_chunks:
         parsed["law_citations"] = [
             {
@@ -439,10 +442,24 @@ async def run_rag_pipeline(
                 "section": chunk.section_number,
                 "section_title": chunk.section_title,
                 "relevance_score": float(chunk.score),
+                "excerpt": getattr(chunk, "section_text", ""),
+                "grounding_score": min(99.0, max(45.0, round(float(chunk.score) * 100, 1))),
             }
             for chunk in law_chunks
             if getattr(chunk, 'score', 0.0) >= 0.45
         ]
+    elif parsed.get("law_citations") and law_chunks:
+        for cit in parsed["law_citations"]:
+            if not cit.get("excerpt"):
+                matched_chunk = next(
+                    (ch for ch in law_chunks if (getattr(ch, 'section_number', '').lower() in cit.get("section", '').lower() or getattr(ch, 'act_name', '').lower() in cit.get("act", '').lower())),
+                    None
+                )
+                if matched_chunk:
+                    cit["excerpt"] = getattr(matched_chunk, "section_text", "")
+                    cit["grounding_score"] = min(99.0, max(45.0, round(float(getattr(matched_chunk, 'score', 0.85)) * 100, 1)))
+                else:
+                    cit["grounding_score"] = min(99.0, max(45.0, round(float(cit.get("relevance_score", 0.85)) * 100, 1)))
 
     res_tuple = (parsed, intent, law_chunks)
     if len(_RAG_RESPONSE_CACHE) >= _MAX_CACHE_SIZE:

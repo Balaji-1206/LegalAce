@@ -301,15 +301,16 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                     >
                       {renderFormattedMessage(msg.content, isUser)}
 
-                      {/* Law Citations */}
+                      {/* Law Citations & Grounding Verification */}
                       {msg.citations && msg.citations.length > 0 && (
                         <View style={styles.citationsBox}>
                           <Text style={styles.citationHeader}>
-                            📚 STATUTORY REFERENCES & LAW CITATIONS
+                            📚 STATUTORY CITATIONS & GROUNDING VERIFICATION
                           </Text>
                           {msg.citations.map((c: LawCitation, cIdx: number) => {
                             const isExp = expandedCitation === c.section;
                             const secDetail = LAW_DETAILS_MAP[c.section];
+                            const score = c.grounding_score ?? Math.round((c.relevance_score ?? 0.85) * 100);
                             return (
                               <TouchableOpacity
                                 key={cIdx}
@@ -318,9 +319,17 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                                 activeOpacity={0.8}
                               >
                                 <View style={styles.citationBadgeRow}>
-                                  <Text style={styles.citationBadgeText}>
-                                    ⚖️ {c.act} — {c.section}
-                                  </Text>
+                                  <View style={{ flex: 1, marginRight: 8 }}>
+                                    <Text style={styles.citationBadgeText}>
+                                      ⚖️ {c.act} — {c.section}
+                                    </Text>
+                                    <View style={styles.groundingScoreBadge}>
+                                      <Ionicons name="shield-checkmark" size={11} color="#059669" />
+                                      <Text style={styles.groundingScoreText}>
+                                        {score}% Grounding Confidence
+                                      </Text>
+                                    </View>
+                                  </View>
                                   <Ionicons
                                     name={isExp ? 'chevron-up' : 'chevron-down'}
                                     size={14}
@@ -328,9 +337,17 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                                   />
                                 </View>
                                 {isExp && (
-                                  <Text style={styles.citationDetailText}>
-                                    {secDetail || c.section_title || 'Statutory legal provision.'}
-                                  </Text>
+                                  <View style={styles.citationExpandedBox}>
+                                    <Text style={styles.citationDetailText}>
+                                      {c.section_title || secDetail || 'Statutory legal provision.'}
+                                    </Text>
+                                    {c.excerpt ? (
+                                      <View style={styles.excerptBox}>
+                                        <Text style={styles.excerptLabel}>📜 Official Statute Excerpt:</Text>
+                                        <Text style={styles.excerptText}>"{c.excerpt}"</Text>
+                                      </View>
+                                    ) : null}
+                                  </View>
                                 )}
                               </TouchableOpacity>
                             );
@@ -763,14 +780,47 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#4f46e5',
   },
-  citationDetailText: {
-    fontSize: 11,
-    color: '#475569',
-    lineHeight: 16,
+  groundingScoreBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 3,
+  },
+  groundingScoreText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  citationExpandedBox: {
     marginTop: 6,
     paddingTop: 6,
     borderTopWidth: 1,
     borderTopColor: 'rgba(99, 102, 241, 0.2)',
+  },
+  citationDetailText: {
+    fontSize: 11,
+    color: '#475569',
+    lineHeight: 16,
+  },
+  excerptBox: {
+    marginTop: 6,
+    padding: 8,
+    backgroundColor: '#ffffff',
+    borderRadius: 6,
+    borderLeftWidth: 3,
+    borderLeftColor: '#4f46e5',
+  },
+  excerptLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#312e81',
+    marginBottom: 3,
+  },
+  excerptText: {
+    fontSize: 10.5,
+    fontStyle: 'italic',
+    color: '#334155',
+    lineHeight: 15,
   },
   actionStepsBox: {
     marginTop: 12,

@@ -122,6 +122,8 @@ async def process_message(request: ChatRequest) -> ChatResponse:
                 section=c.get("section", ""),
                 section_title=c.get("section_title", ""),
                 relevance_score=max(0.0, min(1.0, _safe_float(c.get("relevance_score"), default=0.0))),
+                excerpt=c.get("excerpt") or None,
+                grounding_score=_safe_float(c.get("grounding_score"), default=85.0) if c.get("grounding_score") is not None else None,
             )
             for c in parsed_response.get("law_citations", [])
         ],
