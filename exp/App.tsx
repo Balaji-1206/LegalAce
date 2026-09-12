@@ -471,6 +471,7 @@ export default function App() {
             startNewChat={startNewChat}
             userId={userId}
             backendUrl={API_BASE_URL}
+            lang={activeLang}
           />
 
           {/* Bottom 5-Tab Navigation Bar */}

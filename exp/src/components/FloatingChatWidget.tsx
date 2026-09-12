@@ -15,6 +15,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../theme/colors';
 import { Message, LawCitation } from '../types';
+import { SupportedLang } from '../config/i18n';
+import {
+  speakText,
+  stopSpeaking,
+  startSpeechRecognition,
+  SpeechRecognizerHandle,
+} from '../utils/speech';
 
 interface FloatingChatWidgetProps {
   messages: Message[];
@@ -31,6 +38,7 @@ interface FloatingChatWidgetProps {
   userId: string;
   backendUrl: string;
   handleStopResponse?: () => void;
+  lang?: SupportedLang;
 }
 
 type AgentMode = 'general' | 'contracts' | 'disputes' | 'rights';
@@ -116,11 +124,63 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
   userId,
   backendUrl,
   handleStopResponse,
+  lang = 'en',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentMode, setCurrentMode] = useState<AgentMode>('general');
   const [reminderSavedMap, setReminderSavedMap] = useState<Record<string, boolean>>({});
+  const [speakingMsgIndex, setSpeakingMsgIndex] = useState<number | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognizerRef = useRef<SpeechRecognizerHandle | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  const handleSpeakMessage = (index: number, content: string) => {
+    if (speakingMsgIndex === index) {
+      stopSpeaking();
+      setSpeakingMsgIndex(null);
+    } else {
+      stopSpeaking();
+      setSpeakingMsgIndex(index);
+      speakText(
+        content,
+        lang,
+        () => setSpeakingMsgIndex(index),
+        () => setSpeakingMsgIndex(null)
+      );
+    }
+  };
+
+  const handleToggleListen = () => {
+    if (isListening) {
+      recognizerRef.current?.stop();
+      setIsListening(false);
+    } else {
+      const handle = startSpeechRecognition({
+        lang,
+        onResult: (transcript: string) => {
+          setInputValue(inputValue ? `${inputValue} ${transcript}` : transcript);
+        },
+        onError: () => {
+          setIsListening(false);
+        },
+        onEnd: () => {
+          setIsListening(false);
+        },
+      });
+      if (handle) {
+        recognizerRef.current = handle;
+        setIsListening(true);
+      }
+    }
+  };
+
+  const handleClose = () => {
+    stopSpeaking();
+    recognizerRef.current?.stop();
+    setIsListening(false);
+    setSpeakingMsgIndex(null);
+    setIsOpen(false);
+  };
 
   const onSend = (textOverride?: string) => {
     const text = textOverride || inputValue;
@@ -186,7 +246,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
       )}
 
       {/* Full Expandable Chat Sheet Modal */}
-      <Modal visible={isOpen} animationType="slide" onRequestClose={() => setIsOpen(false)}>
+      <Modal visible={isOpen} animationType="slide" onRequestClose={handleClose}>
         <KeyboardAvoidingView
           style={styles.modalContainer}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -225,7 +285,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.headerActionBtn}
-                  onPress={() => setIsOpen(false)}
+                  onPress={handleClose}
                   activeOpacity={0.8}
                 >
                   <Ionicons name="close" size={20} color="#ffffff" />
@@ -391,6 +451,34 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                         </View>
                       )}
 
+                      {/* Voice Read Aloud Action */}
+                      {!isUser && (
+                        <View style={styles.msgFooterRow}>
+                          <TouchableOpacity
+                            style={[
+                              styles.ttsBtn,
+                              speakingMsgIndex === index && styles.ttsBtnActive,
+                            ]}
+                            onPress={() => handleSpeakMessage(index, msg.content)}
+                            activeOpacity={0.7}
+                          >
+                            <Ionicons
+                              name={speakingMsgIndex === index ? 'stop-circle' : 'volume-high'}
+                              size={14}
+                              color={speakingMsgIndex === index ? '#ef4444' : '#4f46e5'}
+                            />
+                            <Text
+                              style={[
+                                styles.ttsBtnText,
+                                speakingMsgIndex === index && styles.ttsBtnTextActive,
+                              ]}
+                            >
+                              {speakingMsgIndex === index ? 'Stop Reading' : 'Listen Aloud 🔊'}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+
                       {/* Disclaimer */}
                       {msg.disclaimer ? (
                         <Text style={styles.disclaimerText}>{msg.disclaimer}</Text>
@@ -423,8 +511,32 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
             )}
           </ScrollView>
 
+          {/* Voice Listening Status */}
+          {isListening && (
+            <View style={styles.listeningStrip}>
+              <View style={styles.listeningPulse} />
+              <Text style={styles.listeningText}>
+                🎙️ Listening in {lang === 'hi' ? 'Hindi (हिंदी)' : lang === 'ta' ? 'Tamil (தமிழ்)' : 'English'}... Speak now
+              </Text>
+              <TouchableOpacity onPress={handleToggleListen} style={styles.cancelListenBtn}>
+                <Text style={styles.cancelListenText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Input Bar */}
           <View style={styles.inputBar}>
+            <TouchableOpacity
+              style={[styles.micBtn, isListening && styles.micBtnActive]}
+              onPress={handleToggleListen}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={isListening ? 'mic' : 'mic-outline'}
+                size={20}
+                color={isListening ? '#ffffff' : '#4f46e5'}
+              />
+            </TouchableOpacity>
             <TextInput
               style={styles.inputField}
               placeholder="Ask about your rights, laws, or notices..."
@@ -935,6 +1047,80 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: {
     opacity: 0.45,
+  },
+  micBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  micBtnActive: {
+    backgroundColor: '#ef4444',
+    borderColor: '#dc2626',
+  },
+  msgFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  ttsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#eef2ff',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#c7d2fe',
+    gap: 5,
+  },
+  ttsBtnActive: {
+    backgroundColor: '#fee2e2',
+    borderColor: '#fca5a5',
+  },
+  ttsBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#4f46e5',
+  },
+  ttsBtnTextActive: {
+    color: '#ef4444',
+    fontWeight: '700',
+  },
+  listeningStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#eef2ff',
+    borderTopWidth: 1,
+    borderTopColor: '#c7d2fe',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    gap: 8,
+  },
+  listeningPulse: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ef4444',
+  },
+  listeningText: {
+    flex: 1,
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#4338ca',
+  },
+  cancelListenBtn: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  cancelListenText: {
+    fontSize: 11,
+    color: '#64748b',
+    fontWeight: '600',
   },
 });
 

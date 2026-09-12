@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../theme/colors';
 import { SupportedLang, t } from '../config/i18n';
+import { speakText, stopSpeaking } from '../utils/speech';
 
 interface DailyRightsScreenProps {
   bookmarks: string[];
@@ -77,6 +78,23 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [speakingRightId, setSpeakingRightId] = useState<string | null>(null);
+
+  const handleToggleSpeak = (id: string, text: string) => {
+    if (speakingRightId === id) {
+      stopSpeaking();
+      setSpeakingRightId(null);
+    } else {
+      stopSpeaking();
+      setSpeakingRightId(id);
+      speakText(
+        text,
+        lang,
+        () => setSpeakingRightId(id),
+        () => setSpeakingRightId(null)
+      );
+    }
+  };
 
   const handleShare = async (title: string, body: string) => {
     try {
@@ -105,7 +123,14 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
       <ScrollView style={styles.screen} contentContainerStyle={styles.contentContainer}>
       {/* Top Header */}
       <View style={styles.headerNav}>
-        <TouchableOpacity style={styles.circularBtn} onPress={onBackHome} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.circularBtn}
+          onPress={() => {
+            stopSpeaking();
+            onBackHome();
+          }}
+          activeOpacity={0.8}
+        >
           <Ionicons name="chevron-back" size={20} color="#1a1a5e" />
         </TouchableOpacity>
 
@@ -181,6 +206,24 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
               <Text style={styles.cardBody}>{right.body}</Text>
 
               <View style={styles.cardActionsRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.actionIconBtn,
+                    speakingRightId === right.id && styles.actionIconBtnSpeaking,
+                  ]}
+                  onPress={() =>
+                    handleToggleSpeak(right.id, `${right.title}. ${right.body}`)
+                  }
+                  activeOpacity={0.7}
+                  accessibilityLabel="Read right aloud"
+                >
+                  <Ionicons
+                    name={speakingRightId === right.id ? 'stop-circle' : 'volume-high-outline'}
+                    size={16}
+                    color={speakingRightId === right.id ? '#ef4444' : '#6b7280'}
+                  />
+                </TouchableOpacity>
+
                 <TouchableOpacity
                   style={styles.actionIconBtn}
                   onPress={() => handleShare(right.title, right.body)}
@@ -326,6 +369,9 @@ const styles = StyleSheet.create({
   },
   actionIconBtnBookmarked: {
     backgroundColor: '#fef3c7',
+  },
+  actionIconBtnSpeaking: {
+    backgroundColor: '#fee2e2',
   },
   emptyStateContainer: {
     alignItems: 'center',
