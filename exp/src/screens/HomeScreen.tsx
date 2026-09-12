@@ -22,6 +22,7 @@ interface HomeScreenProps {
   onOpenSpotlight: () => void;
   lang?: SupportedLang;
   onChangeLang?: (lang: SupportedLang) => void;
+  isOffline?: boolean;
 }
 
 const TOP_CATEGORIES = [
@@ -42,6 +43,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onOpenSpotlight,
   lang = 'en',
   onChangeLang,
+  isOffline = false,
 }) => {
   const recentSituations = recentlyViewed
     .map(id => situations.find(s => s.situation_id === id))
@@ -82,8 +84,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       <View style={styles.homeHeader}>
         <View>
           <View style={styles.headerBadge}>
-            <View style={styles.liveDot} />
-            <Text style={styles.headerBadgeText}>{t('home_badge', lang)}</Text>
+            <View style={[styles.liveDot, isOffline && { backgroundColor: '#f59e0b' }]} />
+            <Text style={[styles.headerBadgeText, isOffline && { color: '#b45309' }]}>
+              {isOffline ? '⚡ OFFLINE MODE (CACHED)' : t('home_badge', lang)}
+            </Text>
           </View>
           <Text style={styles.headerTitle}>{t('home_title', lang)}</Text>
         </View>
