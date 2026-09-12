@@ -42,6 +42,12 @@ _metadata: list[dict] = []
 def is_loaded() -> bool:
     return _faiss_index is not None or _numpy_vectors is not None
 
+
+def get_metadata() -> list[dict]:
+    """Return the loaded law corpus metadata list."""
+    global _metadata
+    return _metadata
+
 def _index_path() -> Path:
     return Path(settings.FAISS_INDEX_PATH)
 

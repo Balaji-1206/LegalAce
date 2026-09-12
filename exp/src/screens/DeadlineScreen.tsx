@@ -8,6 +8,8 @@ import {
   Modal,
   TextInput,
   Linking,
+  Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -128,6 +130,7 @@ export const DeadlineScreen: React.FC<DeadlineScreenProps> = ({ userId, onBackHo
         body: JSON.stringify({
           user_id: userId,
           title: newDl.title,
+          description: `Action deadline for ${newDl.title}`,
           category: newDl.category,
           deadline_date: newDl.deadline_date,
           priority: newDl.priority,
@@ -356,7 +359,10 @@ export const DeadlineScreen: React.FC<DeadlineScreenProps> = ({ userId, onBackHo
 
       {/* ─── Add Deadline Modal ────────────────────────────────── */}
       <Modal visible={isAddModalOpen} transparent animationType="slide">
-        <View style={styles.modalBackdrop}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalBackdrop}
+        >
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Add Filing Deadline</Text>
@@ -407,7 +413,7 @@ export const DeadlineScreen: React.FC<DeadlineScreenProps> = ({ userId, onBackHo
               <Text style={styles.submitBtnText}>Save to Health Monitor</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       <View style={{ height: 95 }} />

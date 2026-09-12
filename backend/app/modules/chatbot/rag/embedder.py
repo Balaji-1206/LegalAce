@@ -4,6 +4,7 @@ Handles OS Application Control Policy restrictions gracefully.
 """
 from __future__ import annotations
 
+import hashlib
 import numpy as np
 from app.core.config import settings
 from app.core.logging import get_logger
@@ -43,7 +44,7 @@ def _fallback_embed_text(text: str, dim: int = EMBED_DIM) -> np.ndarray:
         return vec
 
     for word in words:
-        idx = abs(hash(word)) % dim
+        idx = int(hashlib.md5(word.encode("utf-8")).hexdigest(), 16) % dim
         vec[idx] += 1.0
 
     norm = np.linalg.norm(vec)

@@ -7,14 +7,19 @@ import {
   ScrollView,
   Share,
   TextInput,
+  Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../theme/colors';
+import { SupportedLang, t } from '../config/i18n';
+import { speakText, stopSpeaking } from '../utils/speech';
 
 interface DailyRightsScreenProps {
   bookmarks: string[];
   toggleBookmark: (id: string) => void;
   onBackHome: () => void;
+  lang?: SupportedLang;
 }
 
 const RIGHTS_DATA = [
@@ -69,9 +74,27 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
   bookmarks,
   toggleBookmark,
   onBackHome,
+  lang = 'en',
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [speakingRightId, setSpeakingRightId] = useState<string | null>(null);
+
+  const handleToggleSpeak = (id: string, text: string) => {
+    if (speakingRightId === id) {
+      stopSpeaking();
+      setSpeakingRightId(null);
+    } else {
+      stopSpeaking();
+      setSpeakingRightId(id);
+      speakText(
+        text,
+        lang,
+        () => setSpeakingRightId(id),
+        () => setSpeakingRightId(null)
+      );
+    }
+  };
 
   const handleShare = async (title: string, body: string) => {
     try {
@@ -93,10 +116,21 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
   });
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.contentContainer}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+    >
+      <ScrollView style={styles.screen} contentContainerStyle={styles.contentContainer}>
       {/* Top Header */}
       <View style={styles.headerNav}>
-        <TouchableOpacity style={styles.circularBtn} onPress={onBackHome} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.circularBtn}
+          onPress={() => {
+            stopSpeaking();
+            onBackHome();
+          }}
+          activeOpacity={0.8}
+        >
           <Ionicons name="chevron-back" size={20} color="#1a1a5e" />
         </TouchableOpacity>
 
@@ -111,9 +145,9 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
 
       {/* Header Titles */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Daily Rights.</Text>
+        <Text style={styles.headerTitle}>{t('rights_title', lang)}</Text>
         <Text style={styles.headerSubtitle}>
-          Bite-sized, practical legal knowledge to empower your everyday life. Know what you're entitled to.
+          {t('rights_subtitle', lang)}
         </Text>
       </View>
 
@@ -123,7 +157,7 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
           <Ionicons name="search" size={16} color="#6b7280" style={{ marginRight: 8 }} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search daily rights & protections..."
+            placeholder={t('rights_search_placeholder', lang)}
             placeholderTextColor="#9ca3af"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -137,49 +171,87 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
         </View>
       )}
 
-      {/* Rights Cards */}
-      {filteredRights.map((right) => {
-        const isBookmarked = bookmarks.includes(right.id);
-        const catColor = CATEGORY_COLORS[right.category] || '#4f46e5';
+      {/* Rights Cards or Empty State */}
+      {filteredRights.length === 0 ? (
+        <View style={styles.emptyStateContainer}>
+          <Ionicons name="search-outline" size={44} color="#94a3b8" />
+          <Text style={styles.emptyStateTitle}>{t('rights_no_results', lang)}</Text>
+          <Text style={styles.emptyStateSubtitle}>
+            {t('rights_no_results_sub', lang)}
+          </Text>
+          {searchQuery ? (
+            <TouchableOpacity
+              style={styles.clearSearchBtn}
+              onPress={() => setSearchQuery('')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.clearSearchBtnText}>{t('rights_clear', lang)}</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      ) : (
+        filteredRights.map((right) => {
+          const isBookmarked = bookmarks.includes(right.id);
+          const catColor = CATEGORY_COLORS[right.category] || '#4f46e5';
 
-        return (
-          <View key={right.id} style={styles.rightsCard}>
-            <View style={[styles.cardTag, { backgroundColor: catColor + '18' }]}>
-              <Text style={[styles.cardTagText, { color: catColor }]}>
-                {right.category}
-              </Text>
+          return (
+            <View key={right.id} style={styles.rightsCard}>
+              <View style={[styles.cardTag, { backgroundColor: catColor + '18' }]}>
+                <Text style={[styles.cardTagText, { color: catColor }]}>
+                  {right.category}
+                </Text>
+              </View>
+
+              <Text style={styles.cardTitle}>{right.title}</Text>
+              <Text style={styles.cardBody}>{right.body}</Text>
+
+              <View style={styles.cardActionsRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.actionIconBtn,
+                    speakingRightId === right.id && styles.actionIconBtnSpeaking,
+                  ]}
+                  onPress={() =>
+                    handleToggleSpeak(right.id, `${right.title}. ${right.body}`)
+                  }
+                  activeOpacity={0.7}
+                  accessibilityLabel="Read right aloud"
+                >
+                  <Ionicons
+                    name={speakingRightId === right.id ? 'stop-circle' : 'volume-high-outline'}
+                    size={16}
+                    color={speakingRightId === right.id ? '#ef4444' : '#6b7280'}
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.actionIconBtn}
+                  onPress={() => handleShare(right.title, right.body)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="share-social-outline" size={16} color="#6b7280" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionIconBtn, isBookmarked && styles.actionIconBtnBookmarked]}
+                  onPress={() => toggleBookmark(right.id)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
+                    size={16}
+                    color={isBookmarked ? '#d97706' : '#6b7280'}
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
-
-            <Text style={styles.cardTitle}>{right.title}</Text>
-            <Text style={styles.cardBody}>{right.body}</Text>
-
-            <View style={styles.cardActionsRow}>
-              <TouchableOpacity
-                style={styles.actionIconBtn}
-                onPress={() => handleShare(right.title, right.body)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="share-social-outline" size={16} color="#6b7280" />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionIconBtn, isBookmarked && styles.actionIconBtnBookmarked]}
-                onPress={() => toggleBookmark(right.id)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
-                  size={16}
-                  color={isBookmarked ? '#d97706' : '#6b7280'}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-        );
-      })}
+          );
+        })
+      )}
 
       <View style={{ height: 95 }} />
     </ScrollView>
+  </KeyboardAvoidingView>
   );
 };
 
@@ -297,6 +369,47 @@ const styles = StyleSheet.create({
   },
   actionIconBtnBookmarked: {
     backgroundColor: '#fef3c7',
+  },
+  actionIconBtnSpeaking: {
+    backgroundColor: '#fee2e2',
+  },
+  emptyStateContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#334155',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  emptyStateSubtitle: {
+    fontSize: 13,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  clearSearchBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#eff6ff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  clearSearchBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#2563eb',
   },
 });
 

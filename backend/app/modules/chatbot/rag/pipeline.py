@@ -17,7 +17,7 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.chatbot.rag.intent import classify_intent
 from app.modules.chatbot.rag.retriever import retrieve_relevant_laws
-from app.modules.chatbot.rag.prompt import SYSTEM_PROMPT, build_context_block, build_history_block
+from app.modules.chatbot.rag.prompt import build_prompt, build_context_block, build_history_block
 
 logger = get_logger(__name__)
 
@@ -66,11 +66,14 @@ def generate_smart_fallback(query: str, intent: str, law_chunks: list) -> dict:
         for chunk in law_chunks:
             if getattr(chunk, 'score', 0.0) >= 0.45:
                 chunk_highlights.append(f"• **{chunk.act_name} — {chunk.section_number} ({chunk.section_title})**: {chunk.section_text}")
+                score_val = float(getattr(chunk, 'score', 0.85))
                 law_citations.append({
                     "act": chunk.act_name,
                     "section": chunk.section_number,
                     "section_title": chunk.section_title,
-                    "relevance_score": float(chunk.score)
+                    "relevance_score": score_val,
+                    "excerpt": getattr(chunk, "section_text", ""),
+                    "grounding_score": min(99.0, max(45.0, round(score_val * 100, 1))),
                 })
 
     # Domain specific guidance generators
@@ -237,14 +240,15 @@ async def call_gemini_llm(prompt: str) -> dict:
 async def run_rag_pipeline(
     query: str,
     conversation_history: list[dict],
+    language: str = "en",
 ) -> tuple[dict, str, list]:
     """
     Run the query through RAG pipeline with fail-safe legal fallback execution.
     """
-    # 0. Check RAG Cache for identical query
-    query_key = hashlib.md5(f"{query.lower().strip()}".encode('utf-8')).hexdigest()
+    # 0. Check RAG Cache for identical query + language
+    query_key = hashlib.md5(f"{query.lower().strip()}_{language}".encode('utf-8')).hexdigest()
     if not conversation_history and query_key in _RAG_RESPONSE_CACHE:
-        logger.info(f"RAG Cache HIT for query: '{query[:50]}'")
+        logger.info(f"RAG Cache HIT for query: '{query[:50]}' [lang={language}]")
         return _RAG_RESPONSE_CACHE[query_key]
 
     from app.modules.chatbot.rag import embedder, faiss_store
@@ -287,13 +291,9 @@ async def run_rag_pipeline(
     context_block = build_context_block(law_chunks)
     history_block = build_history_block(conversation_history[-8:])
 
-    prompt = SYSTEM_PROMPT.format(
-        context=context_block,
-        history=history_block,
-        question=query,
-    )
+    prompt = build_prompt(context_block, history_block, query, language=language)
 
-    logger.info(f"Executing LLM generation for query: '{query[:80]}'")
+    logger.info(f"Executing LLM generation for query: '{query[:80]}' [lang={language}]")
     parsed = {}
     
     # ── Add-on: Runtime provider override ──
@@ -340,11 +340,7 @@ async def run_rag_pipeline(
             # Trim context block for local model context window safety
             trimmed_context = build_context_block(law_chunks[:3])
             trimmed_history = build_history_block(conversation_history[-4:])
-            ollama_prompt = SYSTEM_PROMPT.format(
-                context=trimmed_context,
-                history=trimmed_history,
-                question=query,
-            )
+            ollama_prompt = build_prompt(trimmed_context, trimmed_history, query, language=language)
             ollama_response = await asyncio.wait_for(
                 ollama_client.chat.completions.create(
                     model=settings.OLLAMA_MODEL,
@@ -391,13 +387,14 @@ async def run_rag_pipeline(
             try:
                 from app.database.mongodb import get_database
                 db = get_database()
-                words = [w for w in re.split(r'\W+', query.lower()) if len(w) > 3 and w not in GENERIC_WORDS]
+                words = [re.escape(w) for w in re.split(r'\W+', query.lower()) if len(w) > 3 and w not in GENERIC_WORDS]
                 if words:
+                    regex_pattern = "|".join(words)
                     matched_sit = await db["situations"].find_one({
                         "category": target_cat,
                         "$or": [
-                            {"title": {"$regex": "|".join(words), "$options": "i"}},
-                            {"description": {"$regex": "|".join(words), "$options": "i"}}
+                            {"title": {"$regex": regex_pattern, "$options": "i"}},
+                            {"description": {"$regex": regex_pattern, "$options": "i"}}
                         ]
                     })
             except Exception as db_err:
@@ -430,7 +427,7 @@ async def run_rag_pipeline(
         else:
             parsed = generate_smart_fallback(query, intent, law_chunks)
 
-    # Ensure law_citations are populated if retrieved law_chunks exist and meet relevance threshold
+    # Ensure law_citations are populated and enriched with statutory excerpts and grounding scores
     if not parsed.get("law_citations") and law_chunks:
         parsed["law_citations"] = [
             {
@@ -438,12 +435,27 @@ async def run_rag_pipeline(
                 "section": chunk.section_number,
                 "section_title": chunk.section_title,
                 "relevance_score": float(chunk.score),
+                "excerpt": getattr(chunk, "section_text", ""),
+                "grounding_score": min(99.0, max(45.0, round(float(chunk.score) * 100, 1))),
             }
             for chunk in law_chunks
             if getattr(chunk, 'score', 0.0) >= 0.45
         ]
+    elif parsed.get("law_citations") and law_chunks:
+        for cit in parsed["law_citations"]:
+            if not cit.get("excerpt"):
+                matched_chunk = next(
+                    (ch for ch in law_chunks if (getattr(ch, 'section_number', '').lower() in cit.get("section", '').lower() or getattr(ch, 'act_name', '').lower() in cit.get("act", '').lower())),
+                    None
+                )
+                if matched_chunk:
+                    cit["excerpt"] = getattr(matched_chunk, "section_text", "")
+                    cit["grounding_score"] = min(99.0, max(45.0, round(float(getattr(matched_chunk, 'score', 0.85)) * 100, 1)))
+                else:
+                    cit["grounding_score"] = min(99.0, max(45.0, round(float(cit.get("relevance_score", 0.85)) * 100, 1)))
 
     res_tuple = (parsed, intent, law_chunks)
-    if len(_RAG_RESPONSE_CACHE) < _MAX_CACHE_SIZE:
-        _RAG_RESPONSE_CACHE[query_key] = res_tuple
+    if len(_RAG_RESPONSE_CACHE) >= _MAX_CACHE_SIZE:
+        _RAG_RESPONSE_CACHE.pop(next(iter(_RAG_RESPONSE_CACHE)))
+    _RAG_RESPONSE_CACHE[query_key] = res_tuple
     return res_tuple

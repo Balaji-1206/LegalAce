@@ -15,6 +15,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../theme/colors';
 import { Message, LawCitation } from '../types';
+import { SupportedLang } from '../config/i18n';
+import {
+  speakText,
+  stopSpeaking,
+  startSpeechRecognition,
+  SpeechRecognizerHandle,
+} from '../utils/speech';
 
 interface FloatingChatWidgetProps {
   messages: Message[];
@@ -31,6 +38,7 @@ interface FloatingChatWidgetProps {
   userId: string;
   backendUrl: string;
   handleStopResponse?: () => void;
+  lang?: SupportedLang;
 }
 
 type AgentMode = 'general' | 'contracts' | 'disputes' | 'rights';
@@ -41,6 +49,65 @@ const AGENT_MODES: { id: AgentMode; label: string; icon: string; prefix: string 
   { id: 'disputes', label: 'Dispute Specialist', icon: '⚡', prefix: '[Dispute Mode]: ' },
   { id: 'rights', label: 'Rights Advisor', icon: '🛡️', prefix: '[Rights Mode]: ' },
 ];
+
+const parseInlineMarkdown = (text: string) => {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, pIdx) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <Text key={pIdx} style={styles.mdBold}>
+          {part.slice(2, -2)}
+        </Text>
+      );
+    }
+    return part;
+  });
+};
+
+const renderFormattedMessage = (content: string, isUser: boolean) => {
+  if (isUser) {
+    return <Text style={[styles.msgText, styles.msgTextUser]}>{content}</Text>;
+  }
+
+  const lines = content.split('\n');
+  return (
+    <View style={{ gap: 4 }}>
+      {lines.map((line, lIdx) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <View key={lIdx} style={{ height: 4 }} />;
+        }
+
+        if (trimmed.startsWith('### ') || trimmed.startsWith('## ') || trimmed.startsWith('# ')) {
+          const headerText = trimmed.replace(/^#+\s*/, '');
+          return (
+            <Text key={lIdx} style={styles.mdHeading}>
+              {parseInlineMarkdown(headerText)}
+            </Text>
+          );
+        }
+
+        const bulletMatch = trimmed.match(/^([*\-•]|\d+\.)\s+(.*)/);
+        if (bulletMatch) {
+          return (
+            <View key={lIdx} style={styles.mdListItem}>
+              <Text style={styles.mdListBullet}>{bulletMatch[1]}</Text>
+              <Text style={styles.mdListText}>
+                {parseInlineMarkdown(bulletMatch[2])}
+              </Text>
+            </View>
+          );
+        }
+
+        return (
+          <Text key={lIdx} style={[styles.msgText, styles.msgTextAssistant]}>
+            {parseInlineMarkdown(trimmed)}
+          </Text>
+        );
+      })}
+    </View>
+  );
+};
 
 export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
   messages,
@@ -57,11 +124,63 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
   userId,
   backendUrl,
   handleStopResponse,
+  lang = 'en',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentMode, setCurrentMode] = useState<AgentMode>('general');
   const [reminderSavedMap, setReminderSavedMap] = useState<Record<string, boolean>>({});
+  const [speakingMsgIndex, setSpeakingMsgIndex] = useState<number | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognizerRef = useRef<SpeechRecognizerHandle | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  const handleSpeakMessage = (index: number, content: string) => {
+    if (speakingMsgIndex === index) {
+      stopSpeaking();
+      setSpeakingMsgIndex(null);
+    } else {
+      stopSpeaking();
+      setSpeakingMsgIndex(index);
+      speakText(
+        content,
+        lang,
+        () => setSpeakingMsgIndex(index),
+        () => setSpeakingMsgIndex(null)
+      );
+    }
+  };
+
+  const handleToggleListen = () => {
+    if (isListening) {
+      recognizerRef.current?.stop();
+      setIsListening(false);
+    } else {
+      const handle = startSpeechRecognition({
+        lang,
+        onResult: (transcript: string) => {
+          setInputValue(inputValue ? `${inputValue} ${transcript}` : transcript);
+        },
+        onError: () => {
+          setIsListening(false);
+        },
+        onEnd: () => {
+          setIsListening(false);
+        },
+      });
+      if (handle) {
+        recognizerRef.current = handle;
+        setIsListening(true);
+      }
+    }
+  };
+
+  const handleClose = () => {
+    stopSpeaking();
+    recognizerRef.current?.stop();
+    setIsListening(false);
+    setSpeakingMsgIndex(null);
+    setIsOpen(false);
+  };
 
   const onSend = (textOverride?: string) => {
     const text = textOverride || inputValue;
@@ -127,7 +246,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
       )}
 
       {/* Full Expandable Chat Sheet Modal */}
-      <Modal visible={isOpen} animationType="slide" onRequestClose={() => setIsOpen(false)}>
+      <Modal visible={isOpen} animationType="slide" onRequestClose={handleClose}>
         <KeyboardAvoidingView
           style={styles.modalContainer}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -166,7 +285,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.headerActionBtn}
-                  onPress={() => setIsOpen(false)}
+                  onPress={handleClose}
                   activeOpacity={0.8}
                 >
                   <Ionicons name="close" size={20} color="#ffffff" />
@@ -240,19 +359,18 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                         isUser ? styles.msgBubbleUser : styles.msgBubbleAssistant,
                       ]}
                     >
-                      <Text style={[styles.msgText, isUser ? styles.msgTextUser : styles.msgTextAssistant]}>
-                        {msg.content}
-                      </Text>
+                      {renderFormattedMessage(msg.content, isUser)}
 
-                      {/* Law Citations */}
+                      {/* Law Citations & Grounding Verification */}
                       {msg.citations && msg.citations.length > 0 && (
                         <View style={styles.citationsBox}>
                           <Text style={styles.citationHeader}>
-                            📚 STATUTORY REFERENCES & LAW CITATIONS
+                            📚 STATUTORY CITATIONS & GROUNDING VERIFICATION
                           </Text>
                           {msg.citations.map((c: LawCitation, cIdx: number) => {
                             const isExp = expandedCitation === c.section;
                             const secDetail = LAW_DETAILS_MAP[c.section];
+                            const score = c.grounding_score ?? Math.round((c.relevance_score ?? 0.85) * 100);
                             return (
                               <TouchableOpacity
                                 key={cIdx}
@@ -261,9 +379,17 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                                 activeOpacity={0.8}
                               >
                                 <View style={styles.citationBadgeRow}>
-                                  <Text style={styles.citationBadgeText}>
-                                    ⚖️ {c.act} — {c.section}
-                                  </Text>
+                                  <View style={{ flex: 1, marginRight: 8 }}>
+                                    <Text style={styles.citationBadgeText}>
+                                      ⚖️ {c.act} — {c.section}
+                                    </Text>
+                                    <View style={styles.groundingScoreBadge}>
+                                      <Ionicons name="shield-checkmark" size={11} color="#059669" />
+                                      <Text style={styles.groundingScoreText}>
+                                        {score}% Grounding Confidence
+                                      </Text>
+                                    </View>
+                                  </View>
                                   <Ionicons
                                     name={isExp ? 'chevron-up' : 'chevron-down'}
                                     size={14}
@@ -271,9 +397,17 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                                   />
                                 </View>
                                 {isExp && (
-                                  <Text style={styles.citationDetailText}>
-                                    {secDetail || c.section_title || 'Statutory legal provision.'}
-                                  </Text>
+                                  <View style={styles.citationExpandedBox}>
+                                    <Text style={styles.citationDetailText}>
+                                      {c.section_title || secDetail || 'Statutory legal provision.'}
+                                    </Text>
+                                    {c.excerpt ? (
+                                      <View style={styles.excerptBox}>
+                                        <Text style={styles.excerptLabel}>📜 Official Statute Excerpt:</Text>
+                                        <Text style={styles.excerptText}>"{c.excerpt}"</Text>
+                                      </View>
+                                    ) : null}
+                                  </View>
                                 )}
                               </TouchableOpacity>
                             );
@@ -317,6 +451,34 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                         </View>
                       )}
 
+                      {/* Voice Read Aloud Action */}
+                      {!isUser && (
+                        <View style={styles.msgFooterRow}>
+                          <TouchableOpacity
+                            style={[
+                              styles.ttsBtn,
+                              speakingMsgIndex === index && styles.ttsBtnActive,
+                            ]}
+                            onPress={() => handleSpeakMessage(index, msg.content)}
+                            activeOpacity={0.7}
+                          >
+                            <Ionicons
+                              name={speakingMsgIndex === index ? 'stop-circle' : 'volume-high'}
+                              size={14}
+                              color={speakingMsgIndex === index ? '#ef4444' : '#4f46e5'}
+                            />
+                            <Text
+                              style={[
+                                styles.ttsBtnText,
+                                speakingMsgIndex === index && styles.ttsBtnTextActive,
+                              ]}
+                            >
+                              {speakingMsgIndex === index ? 'Stop Reading' : 'Listen Aloud 🔊'}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+
                       {/* Disclaimer */}
                       {msg.disclaimer ? (
                         <Text style={styles.disclaimerText}>{msg.disclaimer}</Text>
@@ -349,8 +511,32 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
             )}
           </ScrollView>
 
+          {/* Voice Listening Status */}
+          {isListening && (
+            <View style={styles.listeningStrip}>
+              <View style={styles.listeningPulse} />
+              <Text style={styles.listeningText}>
+                🎙️ Listening in {lang === 'hi' ? 'Hindi (हिंदी)' : lang === 'ta' ? 'Tamil (தமிழ்)' : 'English'}... Speak now
+              </Text>
+              <TouchableOpacity onPress={handleToggleListen} style={styles.cancelListenBtn}>
+                <Text style={styles.cancelListenText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Input Bar */}
           <View style={styles.inputBar}>
+            <TouchableOpacity
+              style={[styles.micBtn, isListening && styles.micBtnActive]}
+              onPress={handleToggleListen}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={isListening ? 'mic' : 'mic-outline'}
+                size={20}
+                color={isListening ? '#ffffff' : '#4f46e5'}
+              />
+            </TouchableOpacity>
             <TextInput
               style={styles.inputField}
               placeholder="Ask about your rights, laws, or notices..."
@@ -649,6 +835,35 @@ const styles = StyleSheet.create({
   msgTextAssistant: {
     color: '#0f172a',
   },
+  mdHeading: {
+    fontSize: 14.5,
+    fontWeight: '800',
+    color: '#1a1a5e',
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  mdBold: {
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  mdListItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginVertical: 2,
+    paddingLeft: 4,
+  },
+  mdListBullet: {
+    fontSize: 13,
+    color: '#4f46e5',
+    marginRight: 6,
+    fontWeight: '700',
+  },
+  mdListText: {
+    flex: 1,
+    fontSize: 13.5,
+    lineHeight: 20,
+    color: '#0f172a',
+  },
   citationsBox: {
     marginTop: 12,
     paddingTop: 10,
@@ -677,14 +892,47 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#4f46e5',
   },
-  citationDetailText: {
-    fontSize: 11,
-    color: '#475569',
-    lineHeight: 16,
+  groundingScoreBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 3,
+  },
+  groundingScoreText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  citationExpandedBox: {
     marginTop: 6,
     paddingTop: 6,
     borderTopWidth: 1,
     borderTopColor: 'rgba(99, 102, 241, 0.2)',
+  },
+  citationDetailText: {
+    fontSize: 11,
+    color: '#475569',
+    lineHeight: 16,
+  },
+  excerptBox: {
+    marginTop: 6,
+    padding: 8,
+    backgroundColor: '#ffffff',
+    borderRadius: 6,
+    borderLeftWidth: 3,
+    borderLeftColor: '#4f46e5',
+  },
+  excerptLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#312e81',
+    marginBottom: 3,
+  },
+  excerptText: {
+    fontSize: 10.5,
+    fontStyle: 'italic',
+    color: '#334155',
+    lineHeight: 15,
   },
   actionStepsBox: {
     marginTop: 12,
@@ -799,6 +1047,80 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: {
     opacity: 0.45,
+  },
+  micBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  micBtnActive: {
+    backgroundColor: '#ef4444',
+    borderColor: '#dc2626',
+  },
+  msgFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  ttsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#eef2ff',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#c7d2fe',
+    gap: 5,
+  },
+  ttsBtnActive: {
+    backgroundColor: '#fee2e2',
+    borderColor: '#fca5a5',
+  },
+  ttsBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#4f46e5',
+  },
+  ttsBtnTextActive: {
+    color: '#ef4444',
+    fontWeight: '700',
+  },
+  listeningStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#eef2ff',
+    borderTopWidth: 1,
+    borderTopColor: '#c7d2fe',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    gap: 8,
+  },
+  listeningPulse: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ef4444',
+  },
+  listeningText: {
+    flex: 1,
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#4338ca',
+  },
+  cancelListenBtn: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  cancelListenText: {
+    fontSize: 11,
+    color: '#64748b',
+    fontWeight: '600',
   },
 });
 

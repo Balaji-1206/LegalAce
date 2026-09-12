@@ -30,6 +30,12 @@ async def connect_to_mongo() -> None:
         # Feature 3 — Document X-Ray indexes
         await _db["document_xray_uploads"].create_index("user_id")
         await _db["document_xray_uploads"].create_index("created_at")
+        # Module 4 — Wizard Sessions indexes
+        await _db["wizard_sessions"].create_index("user_id")
+        await _db["wizard_sessions"].create_index("created_at")
+        # Feature 1 — Situation Finder indexes
+        await _db["situations"].create_index("situation_id", unique=True)
+        await _db["situations"].create_index("category")
         logger.info(f"Connected to MongoDB — database: '{settings.DATABASE_NAME}'")
     except Exception as e:
         logger.warning(f"MongoDB index creation skipped — DB may not be available: {e}")

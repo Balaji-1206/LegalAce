@@ -27,7 +27,17 @@ from app.modules.chatbot.schemas import (
 )
 from app.modules.chatbot import conversation_service
 
-logger = get_logger(__name__)
+def _safe_float(val: Any, default: float = 0.0) -> float:
+    """Safely convert arbitrary values or string percentages to float without crashing."""
+    if val is None:
+        return default
+    try:
+        if isinstance(val, str):
+            val = val.rstrip("% ").strip()
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
 
 async def process_message(request: ChatRequest) -> ChatResponse:
     """
@@ -60,6 +70,7 @@ async def process_message(request: ChatRequest) -> ChatResponse:
     parsed_response, intent, law_chunks = await run_rag_pipeline(
         query=effective_query,
         conversation_history=history,
+        language=request.language or "en",
     )
 
     # Step 5: Build agentic reasoning steps
@@ -111,7 +122,9 @@ async def process_message(request: ChatRequest) -> ChatResponse:
                 act=c.get("act", ""),
                 section=c.get("section", ""),
                 section_title=c.get("section_title", ""),
-                relevance_score=max(0.0, min(1.0, float(c.get("relevance_score", 0.0)))),
+                relevance_score=max(0.0, min(1.0, _safe_float(c.get("relevance_score"), default=0.0))),
+                excerpt=c.get("excerpt") or None,
+                grounding_score=_safe_float(c.get("grounding_score"), default=85.0) if c.get("grounding_score") is not None else None,
             )
             for c in parsed_response.get("law_citations", [])
         ],

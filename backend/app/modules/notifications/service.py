@@ -6,7 +6,9 @@ and scheduled reminder dispatch for deadline alerts.
 """
 from __future__ import annotations
 
-import random
+import hashlib
+import hmac
+import secrets
 import time
 from datetime import datetime, timezone, timedelta
 
@@ -16,36 +18,37 @@ from app.modules.notifications.providers import get_provider
 
 logger = get_logger(__name__)
 
-# ---------------------------------------------------------------------------
-# In-Memory OTP Store (production should use Redis)
-# ---------------------------------------------------------------------------
+OTP_EXPIRY_SECONDS: int = 300
+OTP_MAX_ATTEMPTS: int = 3
+PHONE_VERIFICATION_TTL_SECONDS: int = 3600
 
-_otp_store: dict[str, dict] = {}  # phone -> {otp, expires_at, attempts}
-OTP_EXPIRY_SECONDS = 300  # 5 minutes
-OTP_MAX_ATTEMPTS = 3
+_otp_store: dict[str, dict] = {}
+_verified_phones: dict[str, float] = {}
 
 
-import hashlib
-
-def _hash_otp(phone: str, otp: str) -> str:
-    return hashlib.sha256(f"{phone}:{otp}".encode("utf-8")).hexdigest()
+def _hash_otp(phone: str, otp: str, salt: str) -> str:
+    """Compute salted SHA-256 hash for OTP code."""
+    payload = f"{salt}:{phone}:{otp}".encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
 
 
 def generate_otp(phone: str) -> str:
-    """Generate a 6-digit OTP for phone verification."""
-    otp = str(random.randint(100000, 999999))
+    """Generate a cryptographically secure 6-digit OTP for phone verification."""
+    otp = f"{secrets.randbelow(900000) + 100000:06d}"
+    salt = secrets.token_hex(16)
     _otp_store[phone] = {
-        "otp_hash": _hash_otp(phone, otp),
+        "otp_hash": _hash_otp(phone, otp, salt),
+        "salt": salt,
         "expires_at": time.time() + OTP_EXPIRY_SECONDS,
         "attempts": 0,
     }
     masked = f"{phone[:3]}****{phone[-3:]}" if len(phone) >= 6 else phone
-    logger.info(f"Generated 6-digit verification OTP for phone: {masked}")
+    logger.info(f"Generated secure verification OTP for phone: {masked}")
     return otp
 
 
 def verify_otp(phone: str, otp: str) -> bool:
-    """Verify OTP for the given phone number."""
+    """Verify OTP using constant-time digest comparison and record verification timestamp."""
     entry = _otp_store.get(phone)
     if not entry:
         return False
@@ -59,12 +62,27 @@ def verify_otp(phone: str, otp: str) -> bool:
         del _otp_store[phone]
         return False
 
-    expected_hash = entry.get("otp_hash")
-    if expected_hash == _hash_otp(phone, otp) or entry.get("otp") == otp:
+    salt = entry.get("salt", "")
+    expected_hash = entry.get("otp_hash", "")
+    computed_hash = _hash_otp(phone, otp, salt)
+
+    if hmac.compare_digest(expected_hash, computed_hash):
         del _otp_store[phone]
+        _verified_phones[phone] = time.time() + PHONE_VERIFICATION_TTL_SECONDS
         return True
 
     return False
+
+
+def is_phone_verified(phone: str) -> bool:
+    """Check whether a phone number has passed verification within the active TTL."""
+    expiry = _verified_phones.get(phone)
+    if not expiry:
+        return False
+    if time.time() > expiry:
+        del _verified_phones[phone]
+        return False
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -92,11 +110,12 @@ async def set_notification_preferences(
         return None
 
     db = get_database()
+    verified_flag = True if channel == "none" else is_phone_verified(phone_number)
     prefs = {
         "channel": channel,
         "phone_number": phone_number,
         "reminder_offsets_days": reminder_offsets_days or [7, 3, 1],
-        "verified": True,
+        "verified": verified_flag,
         "updated_at": datetime.now(timezone.utc),
     }
 
@@ -170,7 +189,7 @@ async def check_and_send_reminders() -> int:
         notified = deadline.get("notified_days", [])
 
         for offset in offsets:
-            if days_remaining <= offset and offset not in notified:
+            if 0 <= days_remaining <= offset and offset not in notified:
                 # Build message
                 message = (
                     f"⚖️ LegalAce Reminder\n\n"

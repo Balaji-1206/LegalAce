@@ -9,8 +9,9 @@ Endpoints:
 """
 from __future__ import annotations
 
+from typing import Literal
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.logging import get_logger
 from app.modules.notifications import service
@@ -26,18 +27,18 @@ router = APIRouter(prefix="/api/v1", tags=["notifications"])
 # ---------------------------------------------------------------------------
 
 class SendOtpRequest(BaseModel):
-    phone_number: str
+    phone_number: str = Field(..., pattern=r"^\+?[0-9]{10,15}$")
 
 
 class VerifyOtpRequest(BaseModel):
-    phone_number: str
-    otp: str
+    phone_number: str = Field(..., pattern=r"^\+?[0-9]{10,15}$")
+    otp: str = Field(..., pattern=r"^[0-9]{6}$")
 
 
 class NotificationPrefRequest(BaseModel):
     user_id: str
-    channel: str = "whatsapp"  # whatsapp | sms | none
-    phone_number: str
+    channel: Literal["whatsapp", "sms", "none"] = "whatsapp"
+    phone_number: str = Field(..., pattern=r"^\+?[0-9]{10,15}$")
     reminder_offsets_days: list[int] = [7, 3, 1]
 
 
@@ -63,7 +64,6 @@ async def send_otp(body: SendOtpRequest):
         "success": sent,
         "message": f"OTP sent to {phone[:3]}****{phone[-3:]}" if sent else "Failed to send OTP",
         "provider": provider.provider_name(),
-        "debug_otp": otp,
     }
 
 
@@ -79,6 +79,12 @@ async def verify_otp(body: VerifyOtpRequest):
 @router.post("/deadlines/{deadline_id}/notification-preferences")
 async def set_deadline_notifications(deadline_id: str, body: NotificationPrefRequest):
     """Set notification preferences for a deadline (requires prior OTP verification)."""
+    if body.channel != "none" and not service.is_phone_verified(body.phone_number):
+        raise HTTPException(
+            status_code=403,
+            detail="Phone number has not been verified with OTP. Please verify your phone number first.",
+        )
+
     result = await service.set_notification_preferences(
         deadline_id=deadline_id,
         user_id=body.user_id,

@@ -14,6 +14,8 @@ export interface LawCitation {
   section: string;
   section_title: string;
   relevance_score?: number;
+  excerpt?: string;
+  grounding_score?: number;
 }
 
 export interface Message {

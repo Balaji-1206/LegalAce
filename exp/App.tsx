@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, StatusBar } from 'react-native';
+import { StyleSheet, View, Text, StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 import Colors from './src/theme/colors';
 import { API_BASE_URL } from './src/config/api';
@@ -12,6 +13,13 @@ import {
   Message,
   ConversationSummary,
 } from './src/types';
+import { SupportedLang, getSavedLanguage, saveLanguage } from './src/config/i18n';
+import {
+  saveToOfflineCache,
+  loadFromOfflineCache,
+  CACHE_KEYS,
+  STATIC_OFFLINE_SITUATIONS,
+} from './src/config/offlineCache';
 
 import Header from './src/components/Header';
 import BottomNav from './src/components/BottomNav';
@@ -88,7 +96,10 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [expandedCitation, setExpandedCitation] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
+  const [activeLang, setActiveLang] = useState<SupportedLang>('en');
+  const [isOffline, setIsOffline] = useState(false);
 
   // Load Initial State from AsyncStorage & Backend API
   useEffect(() => {
@@ -108,107 +119,56 @@ export default function App() {
 
         const storedRv = await AsyncStorage.getItem('legalace_recently_viewed');
         if (storedRv && !ignore) setRecentlyViewed(JSON.parse(storedRv));
+
+        const savedLang = await getSavedLanguage();
+        if (!ignore) setActiveLang(savedLang);
+
+        // Pre-hydrate from offline cache for instant display
+        const cachedSits = await loadFromOfflineCache<SituationDetail[]>(CACHE_KEYS.SITUATIONS);
+        if (cachedSits && cachedSits.length > 0 && !ignore) {
+          setSituations(cachedSits);
+        } else if (!ignore) {
+          setSituations(STATIC_OFFLINE_SITUATIONS);
+        }
+
+        const cachedCats = await loadFromOfflineCache<CategoryItem[]>(CACHE_KEYS.CATEGORIES);
+        if (cachedCats && cachedCats.length > 0 && !ignore) {
+          setCategories(cachedCats);
+        }
+
+        // Fetch user conversation history
+        try {
+          const convRes = await fetch(`${API_BASE_URL}/api/v1/conversation/history/${storedId}`);
+          if (convRes.ok && !ignore) {
+            const convData = await convRes.json();
+            if (convData.conversations) {
+              setConversations(convData.conversations);
+            }
+          }
+        } catch { /* offline */ }
       } catch { /* storage offline */ }
 
-      // Fetch categories & situations from backend
+      // Fetch categories & situations from backend and update local cache
       try {
         const [catRes, sitRes] = await Promise.all([
           fetch(`${API_BASE_URL}/api/v1/situations/categories`),
           fetch(`${API_BASE_URL}/api/v1/situations`),
         ]);
 
-        if (catRes.ok && !ignore) {
+        if (catRes.ok && sitRes.ok && !ignore) {
           const fetchedCats = await catRes.json();
-          setCategories(fetchedCats);
-        }
-        if (sitRes.ok && !ignore) {
           const fetchedSits = await sitRes.json();
+          setCategories(fetchedCats);
           setSituations(fetchedSits);
+          setIsOffline(false);
+          saveToOfflineCache(CACHE_KEYS.CATEGORIES, fetchedCats);
+          saveToOfflineCache(CACHE_KEYS.SITUATIONS, fetchedSits);
+        } else if (!ignore) {
+          setIsOffline(true);
         }
       } catch {
-        // Fallback demo situations if backend is starting up
         if (!ignore) {
-          setSituations([
-            {
-              situation_id: 'sit_retrenchment',
-              title: 'Wrongful Job Termination Without Notice',
-              category: 'employment',
-              description: 'Employer terminating service immediately without 30 days notice or retrenchment compensation.',
-              user_rights: [
-                'Right to 30 days written notice or pay in lieu (Sec 25F Industrial Disputes Act).',
-                'Right to retrenchment compensation (15 days average pay per completed year).',
-                'Protection against arbitrary firing without enquiry.',
-              ],
-              action_steps: [
-                'Collect appointment letter, salary slips, and written email termination order.',
-                'Issue a statutory legal demand notice through an advocate or registered speed post.',
-                'File a conciliation petition before the Regional Labour Commissioner (ALC).',
-              ],
-              applicable_laws: [
-                { act: 'Industrial Disputes Act, 1947', section: 'Section 25F', section_title: 'Conditions precedent to retrenchment' },
-              ],
-            },
-            {
-              situation_id: 'sit_security_deposit',
-              title: 'Landlord Withholding Security Deposit',
-              category: 'housing',
-              description: 'Owner refusing to refund the rental advance after peaceful handover of keys.',
-              user_rights: [
-                'Mandatory return of deposit within 30 days of vacating under Model Tenancy Act.',
-                'Landlord cannot make arbitrary deductions without providing itemized repair bills.',
-                'Capped maximum deposit of 2 months rent for residential premises.',
-              ],
-              action_steps: [
-                'Send keys via registered acknowledgement or video record key handover.',
-                'Issue a 15-day statutory demand notice seeking refund with 18% interest.',
-                'Approach the Rent Authority / Rent Tribunal under Tenancy Act.',
-              ],
-              applicable_laws: [
-                { act: 'Model Tenancy Act, 2021', section: 'Section 11', section_title: 'Security Deposit Rules' },
-                { act: 'Transfer of Property Act, 1882', section: 'Section 108(q)', section_title: 'Refund of Lessee Advances' },
-              ],
-            },
-            {
-              situation_id: 'sit_phone_search',
-              title: 'Police Searching Mobile Device During Check',
-              category: 'cyber_crime',
-              description: 'Police officer demanding device unlock or checking WhatsApp messages on public road.',
-              user_rights: [
-                'Police cannot arbitrarily search phone contents without recorded reasonable suspicion (CrPC 165).',
-                'Right to privacy is a fundamental constitutional guarantee under Article 21 (Puttaswamy 2017).',
-                'Right to remain silent against self-incrimination under Article 20(3).',
-              ],
-              action_steps: [
-                'Politely ask for the officer name, badge number, and legal provision under which search is demanded.',
-                'Do not consent to arbitrary copying of private photos or chats.',
-                'Complain to the Superintendent of Police (SP) or State Police Complaints Authority if harassed.',
-              ],
-              applicable_laws: [
-                { act: 'Code of Criminal Procedure, 1973', section: 'Section 165', section_title: 'Search by Police Officer' },
-                { act: 'Constitution of India', section: 'Article 21', section_title: 'Protection of Life and Personal Liberty' },
-              ],
-            },
-            {
-              situation_id: 'sit_defective_product',
-              title: 'Defective Product & E-Commerce Refund Denial',
-              category: 'consumer',
-              description: 'Seller or platform refusing return or replacement of malfunctioning electronics.',
-              user_rights: [
-                'Right to replacement or 100% refund with interest under Section 39 Consumer Protection Act.',
-                'Protection against unfair trade practices and misleading warranty terms.',
-                'Right to file e-Daakhil consumer complaint from home without hiring a lawyer.',
-              ],
-              action_steps: [
-                'Preserve purchase invoice, unboxing photos/video, and courier delivery slip.',
-                'Lodge grievance on National Consumer Helpline (NCH Portal / 1915).',
-                'File complaint before District Consumer Disputes Redressal Commission via e-Daakhil.',
-              ],
-              applicable_laws: [
-                { act: 'Consumer Protection Act, 2019', section: 'Section 35', section_title: 'Manner of Consumer Complaint' },
-                { act: 'Consumer Protection Act, 2019', section: 'Section 39', section_title: 'Order by District Commission' },
-              ],
-            },
-          ]);
+          setIsOffline(true);
         }
       }
     }
@@ -268,6 +228,11 @@ export default function App() {
     } catch { /* use local */ }
   };
 
+  const handleLanguageChange = (lang: SupportedLang) => {
+    setActiveLang(lang);
+    saveLanguage(lang);
+  };
+
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputValue).trim();
     if (!text) return;
@@ -282,19 +247,33 @@ export default function App() {
       let res = await fetch(`${API_BASE_URL}/api/v1/agent/execute-sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, message: text, agent_mode: 'general' }),
+        body: JSON.stringify({
+          user_id: userId,
+          conversation_id: activeConversationId || undefined,
+          message: text,
+          agent_mode: 'general',
+          language: activeLang,
+        }),
       });
 
       if (res.status === 404) {
         res = await fetch(`${API_BASE_URL}/api/v1/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId, message: text }),
+          body: JSON.stringify({
+            user_id: userId,
+            conversation_id: activeConversationId || undefined,
+            message: text,
+            language: activeLang,
+          }),
         });
       }
 
       if (res.ok) {
         const data = await res.json();
+        if (data.conversation_id) {
+          setActiveConversationId(data.conversation_id);
+        }
         const aiMsg: Message = {
           role: 'assistant',
           content: data.final_answer || data.answer || '',
@@ -317,6 +296,7 @@ export default function App() {
   };
 
   const startNewChat = () => {
+    setActiveConversationId(null);
     setMessages([]);
     setErrorMessage(null);
     setExpandedCitation(null);
@@ -327,6 +307,20 @@ export default function App() {
       <ToastProvider>
         <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
           <StatusBar barStyle="dark-content" backgroundColor={Colors.bg} />
+
+          {/* Offline Mode Status Banner */}
+          {isOffline && (
+            <View style={styles.offlineBanner}>
+              <Ionicons name="cloud-offline" size={14} color="#b45309" />
+              <Text style={styles.offlineBannerText}>
+                {activeLang === 'hi'
+                  ? '⚡ ऑफलाइन मोड सक्रिय — स्थानीय कैश से कानूनी डेटा उपलब्ध है'
+                  : activeLang === 'ta'
+                  ? '⚡ ஆஃப்லைன் பயன்முறை — உள்ளூர் தற்காலிக நினைவகத்திலிருந்து இயங்குகிறது'
+                  : '⚡ Offline Mode Active — Operating from Local Cached Legal Knowledge'}
+              </Text>
+            </View>
+          )}
 
           {/* Main Active Screen Area */}
           <View style={styles.screenContainer}>
@@ -339,6 +333,9 @@ export default function App() {
                 recentlyViewed={recentlyViewed}
                 openSituationDetail={openSituationDetail}
                 onOpenSpotlight={() => setIsSpotlightOpen(true)}
+                lang={activeLang}
+                onChangeLang={handleLanguageChange}
+                isOffline={isOffline}
               />
             )}
 
@@ -412,6 +409,7 @@ export default function App() {
                 bookmarks={bookmarks}
                 toggleBookmark={toggleBookmark}
                 onBackHome={() => handleNavigate('home')}
+                lang={activeLang}
               />
             )}
           </View>
@@ -431,10 +429,11 @@ export default function App() {
             startNewChat={startNewChat}
             userId={userId}
             backendUrl={API_BASE_URL}
+            lang={activeLang}
           />
 
           {/* Bottom 5-Tab Navigation Bar */}
-          <BottomNav activeTab={activeTab} onSelectTab={handleNavigate} />
+          <BottomNav activeTab={activeTab} onSelectTab={handleNavigate} lang={activeLang} />
 
           {/* Spotlight Search Modal (Cmd+K) */}
           <SpotlightSearchModal
@@ -463,5 +462,20 @@ const styles = StyleSheet.create({
   },
   screenContainer: {
     flex: 1,
+  },
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fef3c7',
+    borderBottomWidth: 1,
+    borderBottomColor: '#fde68a',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    gap: 8,
+  },
+  offlineBannerText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#92400e',
   },
 });

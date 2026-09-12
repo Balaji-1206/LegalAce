@@ -16,6 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Clipboard from 'expo-clipboard';
 import { API_BASE_URL } from '../config/api';
 import { ConversationSummary, ActiveTab } from '../types';
 
@@ -209,17 +210,18 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     setIsModelModalOpen(false);
   };
 
-  const handleCopyUserId = () => {
+  const handleCopyUserId = async () => {
     setCopiedUserId(true);
+    try {
+      await Clipboard.setStringAsync(userId);
+    } catch {}
     setTimeout(() => setCopiedUserId(false), 2000);
   };
 
   const handleCopyDocText = async (doc: SavedDocItem) => {
     setCopiedDocId(doc.id);
     try {
-      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
-        await navigator.clipboard.writeText(doc.content);
-      }
+      await Clipboard.setStringAsync(doc.content);
     } catch {}
     setTimeout(() => setCopiedDocId(null), 2000);
   };

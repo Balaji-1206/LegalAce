@@ -27,3 +27,4 @@ exp/.expo/
 Thumbs.db
 
 backend/.venv
+.agents/

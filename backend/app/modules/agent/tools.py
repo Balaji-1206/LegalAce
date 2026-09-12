@@ -19,6 +19,7 @@ from app.modules.deadline_engine import extractor as deadline_extractor
 from app.modules.wizard import service as wizard_service
 from app.modules.chatbot import service as chat_service
 from app.modules.chatbot.schemas import DocAnalysisRequest
+from app.modules.legal_aid import service as legal_aid_service
 
 logger = get_logger(__name__)
 
@@ -140,6 +141,23 @@ async def _handle_generate_notice(args: Dict[str, Any]) -> Dict[str, Any]:
     return {"document": doc_res}
 
 
+async def _handle_legal_aid_lookup(args: Dict[str, Any]) -> Dict[str, Any]:
+    """Check statutory eligibility for free legal aid under LSA Act 1987 and find authorities."""
+    annual_income = int(args.get("annual_income", 0))
+    state = args.get("state", "Other / Central")
+    category_flags = args.get("category_flags", [])
+    result = legal_aid_service.check_eligibility(
+        annual_income=annual_income,
+        state=state,
+        category_flags=category_flags,
+    )
+    authorities = legal_aid_service.get_authorities_by_state(state=state)
+    return {
+        "eligibility": result.model_dump(),
+        "authorities": authorities,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Tool Registry Map
 # ---------------------------------------------------------------------------
@@ -248,6 +266,20 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         },
         handler=_handle_generate_notice,
         is_mutating=True,  # User must confirm!
+    ),
+    "legal_aid_lookup": ToolDefinition(
+        name="legal_aid_lookup",
+        description="Check if a citizen qualifies for free legal aid / free advocate under Section 12 of the Legal Services Authorities Act 1987, and find nearest DLSA/SLSA offices.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "annual_income": {"type": "integer", "description": "Annual household income in INR"},
+                "state": {"type": "string", "description": "Indian state name (e.g. Karnataka, Maharashtra, Delhi (NCR), Tamil Nadu)"},
+                "category_flags": {"type": "array", "items": {"type": "string"}, "description": "Demographic flags: sc_st, woman_child, disabled, industrial_workman, custody, trafficking_victim, mass_disaster"}
+            },
+        },
+        handler=_handle_legal_aid_lookup,
+        is_mutating=False,
     ),
 }
 

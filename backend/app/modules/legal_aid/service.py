@@ -177,14 +177,15 @@ AUTHORITY_DIRECTORY = [
 # ---------------------------------------------------------------------------
 
 def check_eligibility(
-    annual_income: int,
-    state: str,
-    category_flags: list[str],
+    annual_income: int | None = None,
+    state: str = "Other / Central",
+    category_flags: list[str] | None = None,
 ) -> EligibilityResult:
     """
     Check free legal aid eligibility under Section 12, LSA Act 1987.
     Returns eligibility result with qualifying categories and reasons.
     """
+    flags = category_flags or []
     qualifying = []
     reasons = []
 
@@ -192,21 +193,22 @@ def check_eligibility(
         cat_id = cat["id"]
 
         # Category flag-based eligibility
-        if cat_id in category_flags:
+        if cat_id in flags:
             if cat_id == "income_below":
-                threshold = STATE_INCOME_THRESHOLDS.get(state, 300000)
-                if annual_income <= threshold:
-                    qualifying.append(cat["name"])
-                    reasons.append(
-                        f"✅ Annual income ₹{annual_income:,} is below the state threshold of ₹{threshold:,} "
-                        f"({cat['statutory_reference']})"
-                    )
+                if annual_income is not None:
+                    threshold = STATE_INCOME_THRESHOLDS.get(state, 300000)
+                    if annual_income <= threshold:
+                        qualifying.append(cat["name"])
+                        reasons.append(
+                            f"✅ Annual income ₹{annual_income:,} is below the state threshold of ₹{threshold:,} "
+                            f"({cat['statutory_reference']})"
+                        )
             else:
                 qualifying.append(cat["name"])
                 reasons.append(f"✅ {cat['description']} ({cat['statutory_reference']})")
 
-    # Auto-check income even if not explicitly flagged
-    if "income_below" not in category_flags and annual_income >= 0:
+    # Auto-check income if explicitly provided and not already flagged
+    if "income_below" not in flags and annual_income is not None and annual_income >= 0:
         threshold = STATE_INCOME_THRESHOLDS.get(state, 300000)
         if annual_income <= threshold:
             qualifying.append("Annual Income Below Threshold")

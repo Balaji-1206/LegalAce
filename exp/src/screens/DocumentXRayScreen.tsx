@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -83,11 +84,18 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
     try {
       const formData = new FormData();
       formData.append('user_id', userId);
-      formData.append('file', {
-        uri: selectedFile.uri,
-        name: selectedFile.name,
-        type: selectedFile.mimeType || 'application/pdf',
-      } as unknown as Blob);
+
+      if (Platform.OS === 'web') {
+        const fileRes = await fetch(selectedFile.uri);
+        const blob = await fileRes.blob();
+        formData.append('file', blob, selectedFile.name);
+      } else {
+        formData.append('file', {
+          uri: selectedFile.uri,
+          name: selectedFile.name,
+          type: selectedFile.mimeType || 'application/pdf',
+        } as unknown as Blob);
+      }
 
       const res = await fetch(`${API_BASE_URL}/api/v1/document-xray/analyze`, {
         method: 'POST',
@@ -99,31 +107,12 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
         setResult(data.result as XRayResult);
       } else {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || `Analysis failed (${res.status})`);
+        throw new Error(errData.detail || `Document analysis failed (${res.status})`);
       }
-    } catch {
-      // Fallback realistic AI audit extraction matching web logic
-      setResult({
-        document_type: 'Residential Lease Agreement',
-        parties: ['Shri R. Sharma (Lessor)', 'Smt. P. Verma (Lessee)'],
-        confidence: 0.94,
-        key_dates: [
-          { label: 'Commencement Date', date: '01 Nov 2024', iso_date: '2024-11-01T00:00:00Z' },
-          { label: 'Lease Expiry Date', date: '31 Oct 2025', iso_date: '2025-10-31T00:00:00Z' },
-          { label: 'Lock-in Period End', date: '30 Apr 2025', iso_date: '2025-04-30T00:00:00Z' },
-        ],
-        obligations: [
-          'Monthly rent of ₹28,000 payable on or before 5th of each calendar month.',
-          'Tenant cannot make structural alterations without prior written consent.',
-          'Notice period for termination is fixed at 30 days by either party.',
-        ],
-        red_flags: [
-          'Clause 14: Forfeiture of entire 6 months security deposit if vacated before 11 months (Potentially unconscionable under Model Tenancy Act).',
-          'Clause 19: Unilateral rent escalation of 15% after 6 months without mutual consent.',
-        ],
-        summary: 'A standard residential rent agreement with two potentially unfair clauses regarding security deposit deduction and steep rent escalation.',
-        suggested_wizard_scenario_id: 'scen_deposit',
-      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not analyze document. Please ensure the document is clear and readable, or try again.';
+      setError(msg);
+      setResult(null);
     } finally {
       setAnalyzing(false);
     }
@@ -280,11 +269,11 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
           )}
 
           {/* Parties Identified */}
-          {result.parties.length > 0 && (
+          {(result.parties?.length ?? 0) > 0 && (
             <View style={styles.cardSection}>
               <Text style={styles.sectionTitle}>👥 Parties Identified</Text>
               <View style={styles.partyChipsWrap}>
-                {result.parties.map((p, i) => (
+                {result.parties?.map((p, i) => (
                   <View key={i} style={styles.partyChip}>
                     <Text style={styles.partyChipText}>{p}</Text>
                   </View>
@@ -294,11 +283,11 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
           )}
 
           {/* Key Dates Timeline */}
-          {result.key_dates.length > 0 && (
+          {(result.key_dates?.length ?? 0) > 0 && (
             <View style={styles.cardSection}>
               <Text style={styles.sectionTitle}>📅 Key Dates</Text>
               <View style={styles.timeline}>
-                {result.key_dates.map((d, i) => (
+                {result.key_dates?.map((d, i) => (
                   <View key={i} style={styles.timelineItem}>
                     <View style={styles.timelineDot} />
                     <Text style={styles.timelineLabel}>{d.label}</Text>
@@ -310,10 +299,10 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
           )}
 
           {/* Obligations */}
-          {result.obligations.length > 0 && (
+          {(result.obligations?.length ?? 0) > 0 && (
             <View style={styles.cardSection}>
               <Text style={styles.sectionTitle}>📋 Your Obligations</Text>
-              {result.obligations.map((o, i) => (
+              {result.obligations?.map((o, i) => (
                 <View key={i} style={styles.obligationItem}>
                   <View style={styles.obligationBadge}>
                     <Text style={styles.obligationBadgeText}>{i + 1}</Text>
@@ -325,12 +314,12 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
           )}
 
           {/* Red Flags */}
-          {result.red_flags.length > 0 && (
+          {(result.red_flags?.length ?? 0) > 0 && (
             <View style={[styles.cardSection, styles.redFlagSection]}>
               <Text style={[styles.sectionTitle, { color: '#dc2626' }]}>
                 🚩 Red Flags Detected
               </Text>
-              {result.red_flags.map((rf, i) => (
+              {result.red_flags?.map((rf, i) => (
                 <View key={i} style={styles.redFlagItem}>
                   <Text style={styles.redFlagIcon}>⚠️</Text>
                   <Text style={styles.redFlagText}>{rf}</Text>
@@ -341,7 +330,7 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
 
           {/* Action Buttons */}
           <View style={styles.actionButtonsWrap}>
-            {result.key_dates.some(d => d.iso_date) && (
+            {result.key_dates?.some(d => d.iso_date) && (
               <TouchableOpacity
                 onPress={handlePushDeadlines}
                 disabled={deadlinesPushed}

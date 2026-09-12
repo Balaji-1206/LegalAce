@@ -25,12 +25,18 @@ class ChatRequest(BaseModel):
         None,
         description="Extracted text content from attached document",
     )
+    language: Optional[str] = Field(
+        "en",
+        description="User preferred language: 'en' | 'hi' | 'ta'",
+    )
 
 class LawCitation(BaseModel):
     act: str = Field(..., description="Full name of the Indian Act")
     section: str = Field(..., description="Section number (e.g., Section 25F)")
     section_title: str = Field(..., description="Title of the section")
     relevance_score: float = Field(0.95, ge=0.0, description="Cosine similarity score")
+    excerpt: Optional[str] = Field(None, description="Verbatim excerpt from statutory text")
+    grounding_score: Optional[float] = Field(None, description="Retrieval grounding confidence percentage (0-100%)")
 
 class ChatResponse(BaseModel):
     conversation_id: str = Field(..., description="ID of the conversation (new or existing)")

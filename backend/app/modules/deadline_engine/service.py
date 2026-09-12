@@ -24,13 +24,17 @@ COLLECTION = "deadlines"
 # Helper
 # ---------------------------------------------------------------------------
 
-def _days_remaining(deadline_date: datetime | str) -> int:
+def _days_remaining(deadline_date: datetime | str | None) -> int:
+    if not deadline_date:
+        return 0
     now = datetime.now(timezone.utc)
     if isinstance(deadline_date, str):
         try:
             deadline_date = datetime.fromisoformat(deadline_date)
         except ValueError:
             return 0
+    if not isinstance(deadline_date, datetime):
+        return 0
     if deadline_date.tzinfo is None:
         deadline_date = deadline_date.replace(tzinfo=timezone.utc)
     delta = deadline_date - now
@@ -138,7 +142,7 @@ async def dismiss_deadline(deadline_id: str, user_id: str) -> Optional[dict]:
         current_date = current_date.replace(tzinfo=timezone.utc)
     new_date = current_date + timedelta(days=7)
     result = await db[COLLECTION].find_one_and_update(
-        {"_id": ObjectId(deadline_id)},
+        {"_id": ObjectId(deadline_id), "user_id": user_id},
         {"$set": {"deadline_date": new_date, "updated_at": datetime.now(timezone.utc)}},
         return_document=True,
     )
@@ -255,6 +259,11 @@ async def compute_health_score(user_id: str) -> dict:
         "completed": len(completed),
         "expired": len(expired),
         "high_priority_active": len(high_active),
+        "stats": {
+            "active": len(active),
+            "completed": len(completed),
+            "expired": len(expired),
+        },
         "strengths": strengths[:4],
         "risks": risks[:5],
         "computed_at": datetime.now(timezone.utc).isoformat(),
@@ -271,6 +280,11 @@ def _empty_health_score(user_id: str) -> dict:
         "completed": 0,
         "expired": 0,
         "high_priority_active": 0,
+        "stats": {
+            "active": 0,
+            "completed": 0,
+            "expired": 0,
+        },
         "strengths": ["No deadlines tracked yet", "Start by adding a deadline or chatting with AI"],
         "risks": [],
         "computed_at": datetime.now(timezone.utc).isoformat(),
