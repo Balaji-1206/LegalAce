@@ -65,3 +65,62 @@ async def test_dispatch_notice_endpoint_generates_valid_response():
     assert "Model Tenancy Act" in res["document_text"]
     assert res["ref_code"] != ""
 
+
+def test_generate_notice_pdf_produces_valid_pdf_bytes():
+    from app.modules.wizard.service import generate_notice_pdf
+    pdf_bytes = generate_notice_pdf(
+        document_text="LEGAL NOTICE\n\nTo Landlord,\nRefund deposit of Rs. 50,000.",
+        title="STATUTORY LEGAL DEMAND NOTICE",
+        ref_code="LA-1024",
+    )
+    assert pdf_bytes.startswith(b"%PDF-1.")
+    assert b"%%EOF" in pdf_bytes
+    assert len(pdf_bytes) > 200
+
+
+@pytest.mark.anyio
+async def test_download_pdf_endpoint_returns_pdf_stream():
+    from app.modules.wizard.api import download_pdf
+    response = await download_pdf(
+        text="Sample statutory notice text for eviction/deposit.",
+        title="Demand Notice",
+        ref_code="LA-2026-9999",
+    )
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert "Legal_Notice_LA-2026-9999.pdf" in response.headers["content-disposition"]
+    assert response.body.startswith(b"%PDF-1.")
+
+
+def test_generate_notice_pdf_valid_with_pypdf_reader():
+    import io
+    import pypdf
+    from app.modules.wizard.service import generate_notice_pdf
+
+    notice_text = "LEGAL DEMAND NOTICE\n\nTo: Landlord\nUnder Section 106 of Transfer of Property Act, refund Rs. 50,000 within 15 days.\n\nFailing which legal action will be initiated."
+    pdf_bytes = generate_notice_pdf(notice_text, title="DEMAND NOTICE", ref_code="LA-TEST-123")
+
+    reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+    assert len(reader.pages) >= 1
+    page1_text = reader.pages[0].extract_text()
+    assert "DEMAND NOTICE" in page1_text
+    assert "Transfer of Property Act" in page1_text
+
+
+@pytest.mark.anyio
+async def test_render_pdf_endpoint_returns_valid_pdf():
+    from app.modules.wizard.api import render_pdf, RenderPdfRequest
+
+    req = RenderPdfRequest(
+        document_text="Statutory legal demand notice under Model Tenancy Act 2021.",
+        title="TENANCY NOTICE",
+        ref_code="REF-456",
+    )
+    res = await render_pdf(req)
+    assert res.status_code == 200
+    assert res.headers["content-type"] == "application/pdf"
+    assert "Legal_Notice_REF-456.pdf" in res.headers["content-disposition"]
+    assert res.body.startswith(b"%PDF-1.")
+
+
+

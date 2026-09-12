@@ -1140,4 +1140,152 @@ def build_dispatch_channels(
     }
 
 
+def generate_notice_pdf(
+    document_text: str,
+    title: str = "STATUTORY LEGAL DEMAND NOTICE",
+    ref_code: str = "",
+) -> bytes:
+    """
+    Generate a formatted, printable PDF 1.4 document for a statutory legal notice.
+    Pure Python implementation without external dependencies (no reportlab required).
+    """
+    # 1. Clean and normalize text
+    sanitized = (
+        document_text.replace("₹", "Rs.")
+        .replace("’", "'")
+        .replace("‘", "'")
+        .replace("“", '"')
+        .replace("”", '"')
+        .replace("—", " - ")
+        .replace("–", "-")
+    )
+
+    # Word wrap lines to max ~75 characters
+    raw_lines = sanitized.splitlines()
+    wrapped_lines: list[str] = []
+    for rline in raw_lines:
+        if not rline.strip():
+            wrapped_lines.append("")
+            continue
+        words = rline.split(" ")
+        curr = ""
+        for w in words:
+            if len(curr) + len(w) + 1 <= 78:
+                curr = f"{curr} {w}".strip()
+            else:
+                if curr:
+                    wrapped_lines.append(curr)
+                curr = w
+        if curr:
+            wrapped_lines.append(curr)
+
+    # 2. Paginate lines (approx 44 lines per page)
+    LINES_PER_PAGE = 44
+    pages_lines: list[list[str]] = []
+    if not wrapped_lines:
+        pages_lines = [[""]]
+    else:
+        for i in range(0, len(wrapped_lines), LINES_PER_PAGE):
+            pages_lines.append(wrapped_lines[i : i + LINES_PER_PAGE])
+
+    num_pages = len(pages_lines)
+
+    # Helper to escape PDF string
+    def pdf_escape(s: str) -> str:
+        clean = s.encode("latin-1", "replace").decode("latin-1")
+        return clean.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+
+    page_obj_ids = [3 + i for i in range(num_pages)]
+    stream_obj_ids = [3 + num_pages + i for i in range(num_pages)]
+    font1_id = 3 + 2 * num_pages
+    font2_id = font1_id + 1
+
+    catalog = b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+    kids_str = " ".join([f"{pid} 0 R" for pid in page_obj_ids])
+    pages_obj = f"2 0 obj\n<< /Type /Pages /Kids [{kids_str}] /Count {num_pages} >>\nendobj\n".encode("latin-1")
+
+    # Fonts (Helvetica, Helvetica-Bold)
+    font1 = f"{font1_id} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n".encode("latin-1")
+    font2 = f"{font2_id} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n".encode("latin-1")
+
+    # Streams
+    streams: list[bytes] = []
+    for p_idx, p_lines in enumerate(pages_lines):
+        stream_body_parts: list[str] = []
+        # Header banner
+        safe_title = pdf_escape(title[:60])
+        stream_body_parts.append(f"BT /F2 10.5 Tf 50 805 Td ({safe_title}) Tj ET\n")
+        ref_text = f"Ref: {ref_code or 'NOTICE'}  |  Page {p_idx + 1} of {num_pages}"
+        stream_body_parts.append(f"BT /F1 8.5 Tf 380 805 Td ({pdf_escape(ref_text)}) Tj ET\n")
+        # Line separator under header
+        stream_body_parts.append("0.75 w 50 795 m 545 795 l S\n")
+
+        # Content lines
+        y = 775
+        for line in p_lines:
+            stripped = line.strip()
+            # If line is all-caps heading or starts with numbered clause or SUBJECT
+            if stripped.isupper() and 3 < len(stripped) < 70:
+                font_tag = "/F2 9.5 Tf"
+            elif stripped.startswith("SUBJECT:") or stripped.startswith("Ref No:") or stripped.startswith("Date:"):
+                font_tag = "/F2 9.5 Tf"
+            else:
+                font_tag = "/F1 9.5 Tf"
+            escaped = pdf_escape(line)
+            stream_body_parts.append(f"BT {font_tag} 50 {y} Td ({escaped}) Tj ET\n")
+            y -= 15.5
+
+        # Line separator above footer
+        stream_body_parts.append("0.5 w 50 45 m 545 45 l S\n")
+        stream_body_parts.append(
+            "BT /F1 7.5 Tf 50 33 Td (LegalAce Statutory Notice Generator - Certified Citizen Legal Aid Dispatch) Tj ET\n"
+        )
+
+        stream_body = "".join(stream_body_parts).encode("latin-1")
+        stream_obj = (
+            f"{stream_obj_ids[p_idx]} 0 obj\n"
+            f"<< /Length {len(stream_body)} >>\n"
+            f"stream\n".encode("latin-1")
+            + stream_body
+            + b"\nendstream\nendobj\n"
+        )
+        streams.append(stream_obj)
+
+    # Page objects
+    page_objs: list[bytes] = []
+    for p_idx in range(num_pages):
+        p_obj = (
+            f"{page_obj_ids[p_idx]} 0 obj\n"
+            f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842]\n"
+            f"   /Contents {stream_obj_ids[p_idx]} 0 R\n"
+            f"   /Resources << /Font << /F1 {font1_id} 0 R /F2 {font2_id} 0 R >> >>\n"
+            f">> endobj\n"
+        ).encode("latin-1")
+        page_objs.append(p_obj)
+
+    all_objs = [catalog, pages_obj] + page_objs + streams + [font1, font2]
+
+    # Build PDF binary with xref table
+    header = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n"
+    out = bytearray(header)
+    offsets = []
+    for obj in all_objs:
+        offsets.append(len(out))
+        out.extend(obj)
+
+    startxref = len(out)
+    total_objects = len(all_objs) + 1
+    xref = f"xref\n0 {total_objects}\n0000000000 65535 f \n"
+    for offset in offsets:
+        xref += f"{offset:010d} 00000 n \n"
+    trailer = (
+        f"trailer\n<< /Size {total_objects} /Root 1 0 R >>\n"
+        f"startxref\n{startxref}\n%%EOF\n"
+    )
+    out.extend(xref.encode("latin-1"))
+    out.extend(trailer.encode("latin-1"))
+    return bytes(out)
+
+
+
 

@@ -13,6 +13,7 @@ Endpoints:
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import Optional, Any
 
@@ -66,6 +67,13 @@ class NoticeDispatchRequest(BaseModel):
     facts_summary: Optional[str] = None
     notice_days: Optional[int] = 15
     custom_text: Optional[str] = None
+
+
+class RenderPdfRequest(BaseModel):
+    document_text: str
+    title: Optional[str] = "STATUTORY LEGAL DEMAND NOTICE"
+    ref_code: Optional[str] = "NOTICE"
+
 
 
 # ---------------------------------------------------------------------------
@@ -156,10 +164,75 @@ async def dispatch_notice(body: NoticeDispatchRequest):
             "financial_breakdown": generated["financial_breakdown"],
             "notice_days": body.notice_days,
             "ref_code": generated.get("ref_code", ""),
+            "pdf_download_url": f"/api/v1/wizard/download-pdf?template_id={body.template_id}&ref_code={generated.get('ref_code', '')}",
         }
     except Exception as e:
         logger.error(f"Error in dispatch_notice: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to prepare notice dispatch channels.")
+
+
+@router.get("/download-pdf")
+async def download_pdf(
+    text: Optional[str] = None,
+    template_id: Optional[str] = None,
+    title: Optional[str] = "STATUTORY LEGAL DEMAND NOTICE",
+    ref_code: Optional[str] = None,
+):
+    """
+    Download a formatted, printable PDF statutory legal notice.
+    """
+    try:
+        notice_text = text or ""
+        if not notice_text and template_id:
+            gen = service.generate_legal_document(template_id, {})
+            notice_text = gen.get("document_text", "")
+            title = gen.get("title", title)
+            ref_code = str(gen.get("ref_code", ref_code or "NOTICE"))
+
+        if not notice_text:
+            notice_text = "LEGAL DEMAND NOTICE\n\nNo content provided."
+
+        clean_ref = (ref_code or "LEGAL_NOTICE").replace("/", "_").replace(" ", "_")
+        pdf_bytes = service.generate_notice_pdf(
+            document_text=notice_text,
+            title=title or "STATUTORY LEGAL DEMAND NOTICE",
+            ref_code=clean_ref,
+        )
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="Legal_Notice_{clean_ref}.pdf"'
+            },
+        )
+    except Exception as e:
+        logger.error(f"Error compiling notice PDF: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to compile legal notice PDF.")
+
+
+@router.post("/render-pdf")
+async def render_pdf(body: RenderPdfRequest):
+    """
+    Render a printable PDF from custom or edited legal notice text.
+    """
+    try:
+        clean_ref = (body.ref_code or "NOTICE").replace("/", "_").replace(" ", "_")
+        pdf_bytes = service.generate_notice_pdf(
+            document_text=body.document_text,
+            title=body.title or "STATUTORY LEGAL DEMAND NOTICE",
+            ref_code=clean_ref,
+        )
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="Legal_Notice_{clean_ref}.pdf"'
+            },
+        )
+    except Exception as e:
+        logger.error(f"Error rendering notice PDF: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to render legal notice PDF.")
+
 
 
 @router.get("/categories")
