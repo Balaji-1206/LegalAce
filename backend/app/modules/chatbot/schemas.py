@@ -25,6 +25,10 @@ class ChatRequest(BaseModel):
         None,
         description="Extracted text content from attached document",
     )
+    language: Optional[str] = Field(
+        "en",
+        description="User preferred language: 'en' | 'hi' | 'ta'",
+    )
 
 class LawCitation(BaseModel):
     act: str = Field(..., description="Full name of the Indian Act")

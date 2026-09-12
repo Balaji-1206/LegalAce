@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../theme/colors';
+import { SupportedLang } from '../config/i18n';
 
 interface HeaderProps {
   onPressProfile: () => void;
@@ -9,6 +10,8 @@ interface HeaderProps {
   subtitle?: string;
   showBack?: boolean;
   onPressBack?: () => void;
+  lang?: SupportedLang;
+  onChangeLang?: (lang: SupportedLang) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -17,6 +20,8 @@ export const Header: React.FC<HeaderProps> = ({
   subtitle = 'Indian Law Companion',
   showBack = false,
   onPressBack,
+  lang = 'en',
+  onChangeLang,
 }) => {
   return (
     <View style={styles.container}>
@@ -35,13 +40,31 @@ export const Header: React.FC<HeaderProps> = ({
         </View>
       </View>
 
-      <TouchableOpacity
-        style={styles.profileBtn}
-        onPress={onPressProfile}
-        activeOpacity={0.7}
-      >
-        <Ionicons name="person-outline" size={18} color={Colors.textNavy} />
-      </TouchableOpacity>
+      <View style={styles.rightActionsRow}>
+        {onChangeLang && (
+          <View style={styles.langPill}>
+            {(['en', 'hi', 'ta'] as SupportedLang[]).map((l) => (
+              <TouchableOpacity
+                key={l}
+                style={[styles.langChoice, lang === l && styles.langChoiceActive]}
+                onPress={() => onChangeLang(l)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.langChoiceText, lang === l && styles.langChoiceTextActive]}>
+                  {l.toUpperCase()}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+        <TouchableOpacity
+          style={styles.profileBtn}
+          onPress={onPressProfile}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="person-outline" size={18} color={Colors.textNavy} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -118,6 +141,35 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  rightActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  langPill: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 16,
+    padding: 2,
+  },
+  langChoice: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 14,
+  },
+  langChoiceActive: {
+    backgroundColor: Colors.primary,
+  },
+  langChoiceText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.textMuted,
+  },
+  langChoiceTextActive: {
+    color: '#ffffff',
   },
 });
 

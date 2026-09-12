@@ -70,6 +70,7 @@ async def process_message(request: ChatRequest) -> ChatResponse:
     parsed_response, intent, law_chunks = await run_rag_pipeline(
         query=effective_query,
         conversation_history=history,
+        language=request.language or "en",
     )
 
     # Step 5: Build agentic reasoning steps

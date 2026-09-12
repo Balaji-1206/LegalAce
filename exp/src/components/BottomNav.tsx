@@ -12,10 +12,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActiveTab } from '../types';
+import { SupportedLang, t } from '../config/i18n';
 
 interface BottomNavProps {
   activeTab: ActiveTab;
   onSelectTab: (tab: ActiveTab) => void;
+  lang?: SupportedLang;
 }
 
 interface NavItem {
@@ -38,6 +40,7 @@ interface TabButtonProps {
   index: number;
   hoveredIdx: number | null;
   isActive: boolean;
+  lang?: SupportedLang;
 }
 
 const TabButton: React.FC<TabButtonProps> = ({
@@ -45,6 +48,7 @@ const TabButton: React.FC<TabButtonProps> = ({
   index,
   hoveredIdx,
   isActive,
+  lang = 'en',
 }) => {
   const hoverAnim = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
@@ -161,7 +165,11 @@ const TabButton: React.FC<TabButtonProps> = ({
             !isActive && isSideNeighbor && styles.labelNeighbor,
           ]}
         >
-          {item.label}
+          {item.key === 'home' ? t('nav_home', lang) :
+           item.key === 'wizard' ? t('nav_wizard', lang) :
+           item.key === 'situations' ? t('nav_situations', lang) :
+           item.key === 'deadlines' ? t('nav_deadlines', lang) :
+           item.key === 'profile' ? t('nav_profile', lang) : item.label}
         </Text>
 
         {/* Active micro-dot indicator */}
@@ -179,7 +187,11 @@ const TabButton: React.FC<TabButtonProps> = ({
   );
 };
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab }) => {
+export const BottomNav: React.FC<BottomNavProps> = ({
+  activeTab,
+  onSelectTab,
+  lang = 'en',
+}) => {
   const insets = useSafeAreaInsets();
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [containerWidth, setContainerWidth] = useState(Dimensions.get('window').width);
@@ -430,13 +442,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab }) 
       )}
 
       {/* 5 Navigation Tab Buttons */}
-      {NAV_ITEMS.map((item, idx) => (
+      {NAV_ITEMS.map((item, index) => (
         <TabButton
           key={item.key}
           item={item}
-          index={idx}
+          index={index}
           hoveredIdx={hoveredIdx}
           isActive={activeTab === item.key}
+          lang={lang}
         />
       ))}
     </View>

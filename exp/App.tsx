@@ -12,6 +12,7 @@ import {
   Message,
   ConversationSummary,
 } from './src/types';
+import { SupportedLang, getSavedLanguage, saveLanguage } from './src/config/i18n';
 
 import Header from './src/components/Header';
 import BottomNav from './src/components/BottomNav';
@@ -90,6 +91,7 @@ export default function App() {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
+  const [activeLang, setActiveLang] = useState<SupportedLang>('en');
 
   // Load Initial State from AsyncStorage & Backend API
   useEffect(() => {
@@ -109,6 +111,9 @@ export default function App() {
 
         const storedRv = await AsyncStorage.getItem('legalace_recently_viewed');
         if (storedRv && !ignore) setRecentlyViewed(JSON.parse(storedRv));
+
+        const savedLang = await getSavedLanguage();
+        if (!ignore) setActiveLang(savedLang);
 
         // Fetch user conversation history
         try {
@@ -280,6 +285,11 @@ export default function App() {
     } catch { /* use local */ }
   };
 
+  const handleLanguageChange = (lang: SupportedLang) => {
+    setActiveLang(lang);
+    saveLanguage(lang);
+  };
+
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputValue).trim();
     if (!text) return;
@@ -299,6 +309,7 @@ export default function App() {
           conversation_id: activeConversationId || undefined,
           message: text,
           agent_mode: 'general',
+          language: activeLang,
         }),
       });
 
@@ -310,6 +321,7 @@ export default function App() {
             user_id: userId,
             conversation_id: activeConversationId || undefined,
             message: text,
+            language: activeLang,
           }),
         });
       }
@@ -364,6 +376,8 @@ export default function App() {
                 recentlyViewed={recentlyViewed}
                 openSituationDetail={openSituationDetail}
                 onOpenSpotlight={() => setIsSpotlightOpen(true)}
+                lang={activeLang}
+                onChangeLang={handleLanguageChange}
               />
             )}
 
@@ -437,6 +451,7 @@ export default function App() {
                 bookmarks={bookmarks}
                 toggleBookmark={toggleBookmark}
                 onBackHome={() => handleNavigate('home')}
+                lang={activeLang}
               />
             )}
           </View>
@@ -459,7 +474,7 @@ export default function App() {
           />
 
           {/* Bottom 5-Tab Navigation Bar */}
-          <BottomNav activeTab={activeTab} onSelectTab={handleNavigate} />
+          <BottomNav activeTab={activeTab} onSelectTab={handleNavigate} lang={activeLang} />
 
           {/* Spotlight Search Modal (Cmd+K) */}
           <SpotlightSearchModal

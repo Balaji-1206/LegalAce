@@ -29,9 +29,29 @@ Provide accurate, actionable legal information under Indian statutes (BNS/IPC, B
 ## CONVERSATION HISTORY
 {history}
 
+## LANGUAGE & LOCALIZATION
+{language_instruction}
+
 ## USER QUERY
+<untrusted_user_request>
 {question}
+</untrusted_user_request>
 """
+
+def build_prompt(context: str, history: str, question: str, language: str = "en") -> str:
+    """Format SYSTEM_PROMPT with context, history, and language instructions."""
+    lang_inst = "Respond in clear, accessible English with standard Indian legal terminology."
+    if language == "hi":
+        lang_inst = "CRITICAL LANGUAGE INSTRUCTION: The user has selected Hindi. You MUST formulate the 'answer', 'rights', and 'action_steps' in fluent Hindi (Devanagari script) with accurate Indian statutory references."
+    elif language == "ta":
+        lang_inst = "CRITICAL LANGUAGE INSTRUCTION: The user has selected Tamil. You MUST formulate the 'answer', 'rights', and 'action_steps' in fluent Tamil with accurate Indian statutory references."
+
+    return SYSTEM_PROMPT.format(
+        context=context,
+        history=history,
+        language_instruction=lang_inst,
+        question=question,
+    )
 
 def build_context_block(law_chunks: list) -> str:
     """Format retrieved law chunks into a context string."""

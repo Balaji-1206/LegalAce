@@ -12,11 +12,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../theme/colors';
+import { SupportedLang, t } from '../config/i18n';
 
 interface DailyRightsScreenProps {
   bookmarks: string[];
   toggleBookmark: (id: string) => void;
   onBackHome: () => void;
+  lang?: SupportedLang;
 }
 
 const RIGHTS_DATA = [
@@ -71,6 +73,7 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
   bookmarks,
   toggleBookmark,
   onBackHome,
+  lang = 'en',
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -117,9 +120,9 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
 
       {/* Header Titles */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Daily Rights.</Text>
+        <Text style={styles.headerTitle}>{t('rights_title', lang)}</Text>
         <Text style={styles.headerSubtitle}>
-          Bite-sized, practical legal knowledge to empower your everyday life. Know what you're entitled to.
+          {t('rights_subtitle', lang)}
         </Text>
       </View>
 
@@ -129,7 +132,7 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
           <Ionicons name="search" size={16} color="#6b7280" style={{ marginRight: 8 }} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search daily rights & protections..."
+            placeholder={t('rights_search_placeholder', lang)}
             placeholderTextColor="#9ca3af"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -147,9 +150,9 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
       {filteredRights.length === 0 ? (
         <View style={styles.emptyStateContainer}>
           <Ionicons name="search-outline" size={44} color="#94a3b8" />
-          <Text style={styles.emptyStateTitle}>No matching rights found</Text>
+          <Text style={styles.emptyStateTitle}>{t('rights_no_results', lang)}</Text>
           <Text style={styles.emptyStateSubtitle}>
-            Try searching for terms like "MRP", "salary", "FIR", or "eviction".
+            {t('rights_no_results_sub', lang)}
           </Text>
           {searchQuery ? (
             <TouchableOpacity
@@ -157,7 +160,7 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
               onPress={() => setSearchQuery('')}
               activeOpacity={0.8}
             >
-              <Text style={styles.clearSearchBtnText}>Clear Search</Text>
+              <Text style={styles.clearSearchBtnText}>{t('rights_clear', lang)}</Text>
             </TouchableOpacity>
           ) : null}
         </View>

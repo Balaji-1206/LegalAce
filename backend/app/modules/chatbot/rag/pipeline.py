@@ -17,7 +17,7 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.chatbot.rag.intent import classify_intent
 from app.modules.chatbot.rag.retriever import retrieve_relevant_laws
-from app.modules.chatbot.rag.prompt import SYSTEM_PROMPT, build_context_block, build_history_block
+from app.modules.chatbot.rag.prompt import build_prompt, build_context_block, build_history_block
 
 logger = get_logger(__name__)
 
@@ -240,14 +240,15 @@ async def call_gemini_llm(prompt: str) -> dict:
 async def run_rag_pipeline(
     query: str,
     conversation_history: list[dict],
+    language: str = "en",
 ) -> tuple[dict, str, list]:
     """
     Run the query through RAG pipeline with fail-safe legal fallback execution.
     """
-    # 0. Check RAG Cache for identical query
-    query_key = hashlib.md5(f"{query.lower().strip()}".encode('utf-8')).hexdigest()
+    # 0. Check RAG Cache for identical query + language
+    query_key = hashlib.md5(f"{query.lower().strip()}_{language}".encode('utf-8')).hexdigest()
     if not conversation_history and query_key in _RAG_RESPONSE_CACHE:
-        logger.info(f"RAG Cache HIT for query: '{query[:50]}'")
+        logger.info(f"RAG Cache HIT for query: '{query[:50]}' [lang={language}]")
         return _RAG_RESPONSE_CACHE[query_key]
 
     from app.modules.chatbot.rag import embedder, faiss_store
@@ -290,13 +291,9 @@ async def run_rag_pipeline(
     context_block = build_context_block(law_chunks)
     history_block = build_history_block(conversation_history[-8:])
 
-    prompt = SYSTEM_PROMPT.format(
-        context=context_block,
-        history=history_block,
-        question=query,
-    )
+    prompt = build_prompt(context_block, history_block, query, language=language)
 
-    logger.info(f"Executing LLM generation for query: '{query[:80]}'")
+    logger.info(f"Executing LLM generation for query: '{query[:80]}' [lang={language}]")
     parsed = {}
     
     # ── Add-on: Runtime provider override ──
@@ -343,11 +340,7 @@ async def run_rag_pipeline(
             # Trim context block for local model context window safety
             trimmed_context = build_context_block(law_chunks[:3])
             trimmed_history = build_history_block(conversation_history[-4:])
-            ollama_prompt = SYSTEM_PROMPT.format(
-                context=trimmed_context,
-                history=trimmed_history,
-                question=query,
-            )
+            ollama_prompt = build_prompt(trimmed_context, trimmed_history, query, language=language)
             ollama_response = await asyncio.wait_for(
                 ollama_client.chat.completions.create(
                     model=settings.OLLAMA_MODEL,

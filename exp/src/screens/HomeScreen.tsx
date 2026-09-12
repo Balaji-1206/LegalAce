@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../theme/colors';
 import { SituationDetail, ActiveTab, CategoryItem } from '../types';
+import { SupportedLang, t } from '../config/i18n';
 
 interface HomeScreenProps {
   userId: string;
@@ -19,6 +20,8 @@ interface HomeScreenProps {
   recentlyViewed: string[];
   openSituationDetail: (id: string) => void;
   onOpenSpotlight: () => void;
+  lang?: SupportedLang;
+  onChangeLang?: (lang: SupportedLang) => void;
 }
 
 const TOP_CATEGORIES = [
@@ -37,6 +40,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   recentlyViewed,
   openSituationDetail,
   onOpenSpotlight,
+  lang = 'en',
+  onChangeLang,
 }) => {
   const recentSituations = recentlyViewed
     .map(id => situations.find(s => s.situation_id === id))
@@ -78,17 +83,35 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <View>
           <View style={styles.headerBadge}>
             <View style={styles.liveDot} />
-            <Text style={styles.headerBadgeText}>Indian Law Companion</Text>
+            <Text style={styles.headerBadgeText}>{t('home_badge', lang)}</Text>
           </View>
-          <Text style={styles.headerTitle}>LegalAce</Text>
+          <Text style={styles.headerTitle}>{t('home_title', lang)}</Text>
         </View>
-        <TouchableOpacity
-          style={styles.profileBtn}
-          onPress={() => onNavigate('profile')}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="person-outline" size={20} color={Colors.textNavy} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {onChangeLang && (
+            <View style={styles.langPill}>
+              {(['en', 'hi', 'ta'] as SupportedLang[]).map((l) => (
+                <TouchableOpacity
+                  key={l}
+                  style={[styles.langChoice, lang === l && styles.langChoiceActive]}
+                  onPress={() => onChangeLang(l)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.langChoiceText, lang === l && styles.langChoiceTextActive]}>
+                    {l.toUpperCase()}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+          <TouchableOpacity
+            style={styles.profileBtn}
+            onPress={() => onNavigate('profile')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="person-outline" size={20} color={Colors.textNavy} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* ─── Search Bar ───────────────────────────────────────── */}
@@ -100,7 +123,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         >
           <Ionicons name="search" size={18} color="#6366f1" />
           <Text style={styles.searchInputPlaceholder}>
-            Search rights, laws or situations...
+            {t('home_search_placeholder', lang)}
           </Text>
           <View style={styles.searchTag}>
             <Text style={styles.searchTagText}>Search</Text>
@@ -620,6 +643,30 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#64748b',
     textAlign: 'center',
+  },
+  langPill: {
+    flexDirection: 'row',
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#e8eaf0',
+    borderRadius: 18,
+    padding: 2,
+  },
+  langChoice: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 14,
+  },
+  langChoiceActive: {
+    backgroundColor: '#1a1a5e',
+  },
+  langChoiceText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748b',
+  },
+  langChoiceTextActive: {
+    color: '#ffffff',
   },
   recentSitCard: {
     width: 230,
