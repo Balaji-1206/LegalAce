@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+import urllib.parse
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Any
 
 from app.core.logging import get_logger
 from app.database.mongodb import get_database
@@ -1068,7 +1070,74 @@ Complainant / Issuing Party
         },
         "verification_affidavit": affidavit,
         "notice_days": notice_days,
+        "ref_code": f"LA/NOT/{datetime.now().year}/{ref_code}",
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
+
+
+def normalize_phone_for_whatsapp(phone: str | None) -> str:
+    """
+    Format phone number to standard international WhatsApp format for Indian / global numbers.
+    E.g., '+91 98765 43210' -> '919876543210'
+    '9876543210' (10 digits) -> '919876543210'
+    """
+    if not phone:
+        return ""
+    clean = re.sub(r"\D", "", str(phone))
+    if not clean:
+        return ""
+    if len(clean) == 10:
+        return f"91{clean}"
+    if clean.startswith("0") and len(clean) == 11:
+        return f"91{clean[1:]}"
+    return clean
+
+
+def build_dispatch_channels(
+    notice_text: str,
+    recipient_phone: str | None = None,
+    recipient_email: str | None = None,
+    subject: str = "Statutory Legal Demand Notice",
+    executive_summary: str | None = None,
+) -> dict[str, Any]:
+    """
+    Build 1-tap dispatch deep links for WhatsApp and Email with URL-length safeguards.
+    """
+    clean_phone = normalize_phone_for_whatsapp(recipient_phone)
+
+    # WhatsApp URL length safeguard:
+    # Most mobile browsers / WhatsApp handlers truncate URLs beyond ~2000 chars.
+    # If full notice text is over 1500 chars, produce a concise executive notice for wa.me.
+    if len(notice_text) > 1500:
+        if executive_summary:
+            wa_text = f"⚖️ *STATUTORY LEGAL DEMAND NOTICE*\n\n{executive_summary}\n\n*(Full legal notice attached and served via formal communication)*"
+        else:
+            first_chunk = notice_text[:1200].rstrip()
+            wa_text = f"{first_chunk}...\n\n[Full legal notice served via formal communication / PDF]"
+    else:
+        wa_text = notice_text
+
+    encoded_wa_text = urllib.parse.quote(wa_text)
+    if clean_phone:
+        whatsapp_url = f"https://wa.me/{clean_phone}?text={encoded_wa_text}"
+    else:
+        whatsapp_url = f"https://wa.me/?text={encoded_wa_text}"
+
+    encoded_subject = urllib.parse.quote(subject)
+    encoded_body = urllib.parse.quote(notice_text)
+    if recipient_email:
+        clean_email = recipient_email.strip()
+        mailto_url = f"mailto:{clean_email}?subject={encoded_subject}&body={encoded_body}"
+    else:
+        mailto_url = f"mailto:?subject={encoded_subject}&body={encoded_body}"
+
+    return {
+        "whatsapp_url": whatsapp_url,
+        "mailto_url": mailto_url,
+        "executive_notice": wa_text,
+        "recipient_phone": clean_phone,
+        "recipient_email": recipient_email.strip() if recipient_email else None,
+    }
+
 
 

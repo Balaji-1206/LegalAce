@@ -51,6 +51,23 @@ class GenerateDocBody(BaseModel):
     details: dict[str, Any] = {}
 
 
+class NoticeDispatchRequest(BaseModel):
+    template_id: str
+    scenario_id: Optional[str] = None
+    sender_name: str = "Aggrieved Citizen"
+    sender_phone: Optional[str] = None
+    sender_email: Optional[str] = None
+    sender_address: Optional[str] = None
+    recipient_name: str
+    recipient_phone: Optional[str] = None
+    recipient_email: Optional[str] = None
+    recipient_address: Optional[str] = None
+    dispute_amount: Optional[str] = "50000"
+    facts_summary: Optional[str] = None
+    notice_days: Optional[int] = 15
+    custom_text: Optional[str] = None
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -79,6 +96,71 @@ async def generate_document(body: GenerateDocBody):
     except Exception as e:
         logger.error(f"Error generating legal document: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to generate legal document.")
+
+
+@router.post("/dispatch-notice")
+async def dispatch_notice(body: NoticeDispatchRequest):
+    """
+    Generate or finalize statutory notice, compile 1-tap WhatsApp and Email dispatch links,
+    and produce financial breakdown and statutory citations.
+    """
+    try:
+        details = {
+            "sender_name": body.sender_name,
+            "sender_phone": body.sender_phone or "",
+            "sender_email": body.sender_email or "",
+            "sender_address": body.sender_address or "",
+            "recipient_name": body.recipient_name,
+            "recipient_phone": body.recipient_phone or "",
+            "recipient_email": body.recipient_email or "",
+            "recipient_address": body.recipient_address or "",
+            "dispute_amount": body.dispute_amount or "50000",
+            "facts_summary": body.facts_summary or "",
+            "notice_days": body.notice_days or 15,
+        }
+
+        generated = service.generate_legal_document(body.template_id, details)
+        doc_text = (
+            body.custom_text.strip()
+            if body.custom_text and body.custom_text.strip()
+            else generated["document_text"]
+        )
+
+        statutes = ", ".join(generated.get("statutory_sections", []))
+        total_claim = generated["financial_breakdown"]["total_claim"]
+        executive_summary = (
+            f"TO: {body.recipient_name}\n"
+            f"FROM: {body.sender_name}\n"
+            f"DEMAND: Refund/Payment of Rs. {total_claim:,.2f}/- within {body.notice_days} days.\n"
+            f"STATUTES: {statutes}\n"
+            f"GROUNDS: {body.facts_summary or 'Statutory breach & failure to perform legal obligations'}"
+        )
+
+        channels = service.build_dispatch_channels(
+            notice_text=doc_text,
+            recipient_phone=body.recipient_phone,
+            recipient_email=body.recipient_email,
+            subject=f"Legal Demand Notice — {generated['title']}",
+            executive_summary=executive_summary,
+        )
+
+        return {
+            "title": generated["title"],
+            "document_text": doc_text,
+            "executive_notice": channels["executive_notice"],
+            "whatsapp_url": channels["whatsapp_url"],
+            "mailto_url": channels["mailto_url"],
+            "recipient_phone": channels["recipient_phone"],
+            "recipient_email": channels["recipient_email"],
+            "statutory_sections": generated["statutory_sections"],
+            "financial_breakdown": generated["financial_breakdown"],
+            "notice_days": body.notice_days,
+            "ref_code": generated.get("ref_code", ""),
+        }
+    except Exception as e:
+        logger.error(f"Error in dispatch_notice: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to prepare notice dispatch channels.")
+
 
 @router.get("/categories")
 async def get_categories():
