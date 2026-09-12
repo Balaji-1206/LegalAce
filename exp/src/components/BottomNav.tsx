@@ -269,9 +269,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab }) 
         const pageX = evt.nativeEvent.pageX || gestureState.moveX;
         const idx = getIndexFromPageX(pageX);
         setHoveredIdx(idx);
-        if (isDraggingRef.current) {
-          selectTabByIndex(idx);
-        }
       },
 
       onPanResponderRelease: (evt, gestureState) => {

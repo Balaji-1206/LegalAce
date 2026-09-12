@@ -4,8 +4,8 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # MongoDB
-    MONGODB_URL: str
-    DATABASE_NAME: str
+    MONGODB_URL: str = "mongodb://localhost:27017"
+    DATABASE_NAME: str = "legalace"
 
     # Server Host & Port
     HOST: str = "0.0.0.0"

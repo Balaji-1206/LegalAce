@@ -138,7 +138,7 @@ async def dismiss_deadline(deadline_id: str, user_id: str) -> Optional[dict]:
         current_date = current_date.replace(tzinfo=timezone.utc)
     new_date = current_date + timedelta(days=7)
     result = await db[COLLECTION].find_one_and_update(
-        {"_id": ObjectId(deadline_id)},
+        {"_id": ObjectId(deadline_id), "user_id": user_id},
         {"$set": {"deadline_date": new_date, "updated_at": datetime.now(timezone.utc)}},
         return_document=True,
     )

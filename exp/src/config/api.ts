@@ -35,6 +35,14 @@ export const getApiBaseUrl = (): string => {
     return `http://${expoHost}:8000`;
   }
 
+  // Web browser resolution
+  if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined' && window.location?.hostname) {
+      return `http://${window.location.hostname}:8000`;
+    }
+    return 'http://localhost:8000';
+  }
+
   // Android emulator fallback
   if (Platform.OS === 'android' && !Constants.isDevice) {
     return 'http://10.0.2.2:8000';

@@ -111,12 +111,13 @@ class Fast2SMSProvider(NotificationProvider):
         clean_phone = "".join(filter(str.isdigit, phone))
         if clean_phone.startswith("91") and len(clean_phone) == 12:
             clean_phone = clean_phone[2:]
+        elif clean_phone.startswith("0") and len(clean_phone) == 11:
+            clean_phone = clean_phone[1:]
 
         url = "https://www.fast2sms.com/dev/bulkV2"
         params = {
-            "authorization": self._api_key,
             "route": "q",
-            "message": message[:160],  # 160 char SMS limit
+            "message": message[:160],
             "language": "english",
             "flash": "0",
             "numbers": clean_phone,
@@ -127,7 +128,10 @@ class Fast2SMSProvider(NotificationProvider):
             try:
                 req = urllib.request.Request(
                     f"{url}?{urllib.parse.urlencode(params)}",
-                    headers={"cache-control": "no-cache"}
+                    headers={
+                        "authorization": self._api_key,
+                        "cache-control": "no-cache",
+                    }
                 )
                 with urllib.request.urlopen(req, timeout=8) as response:
                     res_body = response.read().decode("utf-8")

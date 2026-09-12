@@ -56,10 +56,10 @@ async def _job_send_reminders():
 async def _job_purge_stale_temp_data():
     """Purge temporary document uploads older than 30 days for data privacy compliance."""
     try:
-        from datetime import datetime, timedelta
+        from datetime import datetime, timezone, timedelta
         from app.database.mongodb import get_database
         db = get_database()
-        cutoff = datetime.utcnow() - timedelta(days=30)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=30)
         res = await db["document_xray_uploads"].delete_many({"created_at": {"$lt": cutoff}})
         logger.info(f"[Scheduler] Purged {res.deleted_count} stale document upload(s) >30 days old")
     except Exception as e:

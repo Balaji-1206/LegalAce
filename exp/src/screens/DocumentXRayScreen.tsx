@@ -99,31 +99,12 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
         setResult(data.result as XRayResult);
       } else {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || `Analysis failed (${res.status})`);
+        throw new Error(errData.detail || `Document analysis failed (${res.status})`);
       }
-    } catch {
-      // Fallback realistic AI audit extraction matching web logic
-      setResult({
-        document_type: 'Residential Lease Agreement',
-        parties: ['Shri R. Sharma (Lessor)', 'Smt. P. Verma (Lessee)'],
-        confidence: 0.94,
-        key_dates: [
-          { label: 'Commencement Date', date: '01 Nov 2024', iso_date: '2024-11-01T00:00:00Z' },
-          { label: 'Lease Expiry Date', date: '31 Oct 2025', iso_date: '2025-10-31T00:00:00Z' },
-          { label: 'Lock-in Period End', date: '30 Apr 2025', iso_date: '2025-04-30T00:00:00Z' },
-        ],
-        obligations: [
-          'Monthly rent of ₹28,000 payable on or before 5th of each calendar month.',
-          'Tenant cannot make structural alterations without prior written consent.',
-          'Notice period for termination is fixed at 30 days by either party.',
-        ],
-        red_flags: [
-          'Clause 14: Forfeiture of entire 6 months security deposit if vacated before 11 months (Potentially unconscionable under Model Tenancy Act).',
-          'Clause 19: Unilateral rent escalation of 15% after 6 months without mutual consent.',
-        ],
-        summary: 'A standard residential rent agreement with two potentially unfair clauses regarding security deposit deduction and steep rent escalation.',
-        suggested_wizard_scenario_id: 'scen_deposit',
-      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not analyze document. Please ensure the document is clear and readable, or try again.';
+      setError(msg);
+      setResult(null);
     } finally {
       setAnalyzing(false);
     }

@@ -391,13 +391,14 @@ async def run_rag_pipeline(
             try:
                 from app.database.mongodb import get_database
                 db = get_database()
-                words = [w for w in re.split(r'\W+', query.lower()) if len(w) > 3 and w not in GENERIC_WORDS]
+                words = [re.escape(w) for w in re.split(r'\W+', query.lower()) if len(w) > 3 and w not in GENERIC_WORDS]
                 if words:
+                    regex_pattern = "|".join(words)
                     matched_sit = await db["situations"].find_one({
                         "category": target_cat,
                         "$or": [
-                            {"title": {"$regex": "|".join(words), "$options": "i"}},
-                            {"description": {"$regex": "|".join(words), "$options": "i"}}
+                            {"title": {"$regex": regex_pattern, "$options": "i"}},
+                            {"description": {"$regex": regex_pattern, "$options": "i"}}
                         ]
                     })
             except Exception as db_err:
@@ -444,6 +445,7 @@ async def run_rag_pipeline(
         ]
 
     res_tuple = (parsed, intent, law_chunks)
-    if len(_RAG_RESPONSE_CACHE) < _MAX_CACHE_SIZE:
-        _RAG_RESPONSE_CACHE[query_key] = res_tuple
+    if len(_RAG_RESPONSE_CACHE) >= _MAX_CACHE_SIZE:
+        _RAG_RESPONSE_CACHE.pop(next(iter(_RAG_RESPONSE_CACHE)))
+    _RAG_RESPONSE_CACHE[query_key] = res_tuple
     return res_tuple

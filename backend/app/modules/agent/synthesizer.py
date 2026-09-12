@@ -47,7 +47,7 @@ async def synthesize_agent_response_async(
                         citation.act.strip().lower() in m.get("act_name", "").lower()
                         or m.get("act_name", "").lower() in citation.act.strip().lower()
                     )
-                    for m in faiss_store._metadata
+                    for m in faiss_store.get_metadata()
                 )
                 if match:
                     citation.relevance_score = max(0.90, citation.relevance_score)
@@ -185,6 +185,33 @@ def synthesize_agent_response(
                 for d in ext:
                     ext_lines.append(f"• **{d.get('title')}**: {d.get('description')}")
                 additional_sections.append("\n".join(ext_lines))
+
+        # Legal aid lookup results
+        elif res.tool == "legal_aid_lookup":
+            eligibility = data.get("eligibility", {})
+            authorities = data.get("authorities", [])
+            is_eligible = eligibility.get("eligible", False)
+            auth_suggested = eligibility.get("suggested_authority", "NALSA")
+
+            aid_lines = [
+                "### Free Legal Aid Evaluation (Section 12, LSA Act 1987)",
+                f"**Status**: {'✅ Eligible for 100% Free Legal Aid' if is_eligible else 'ℹ️ Guidance / General Legal Services'}",
+                f"**Suggested Authority**: {auth_suggested}",
+            ]
+            for r in eligibility.get("reasons", []):
+                aid_lines.append(f"• {r}")
+            if authorities:
+                first_auth = authorities[0]
+                aid_lines.append(
+                    f"\n**Nearest Office**: {first_auth.get('name')}\n"
+                    f"• Address: {first_auth.get('address', 'N/A')}\n"
+                    f"• Phone: {first_auth.get('phone', '15100')}\n"
+                    f"• Website: {first_auth.get('website', 'https://nalsa.gov.in')}"
+                )
+
+            additional_sections.append("\n\n".join(aid_lines))
+            rights_set.append("Right to free legal aid and representation under Section 12 of Legal Services Authorities Act, 1987")
+            action_steps_set.append(f"Contact {auth_suggested} or call national toll-free helpline 15100")
 
     # Assemble final text
     parts = []

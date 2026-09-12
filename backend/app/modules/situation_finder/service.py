@@ -55,13 +55,18 @@ async def get_situation_by_id(situation_id: str) -> SituationResponse | None:
 async def get_categories_summary() -> list[CategorySummary]:
     """
     Computes total situation counts matching each pre-defined category,
-    combining them with gradient visual settings.
+    combining them with gradient visual settings using a single $group aggregation.
     """
     db = get_database()
+    pipeline = [{"$group": {"_id": "$category", "count": {"$sum": 1}}}]
+    category_counts: dict[str, int] = {}
+    async for doc in db[SITUATION_COLLECTION].aggregate(pipeline):
+        if "_id" in doc and doc["_id"]:
+            category_counts[doc["_id"]] = doc.get("count", 0)
+
     summaries: list[CategorySummary] = []
-    
     for cat in CATEGORIES_METADATA:
-        count = await db[SITUATION_COLLECTION].count_documents({"category": cat["id"]})
+        count = category_counts.get(cat["id"], 0)
         summaries.append(
             CategorySummary(
                 id=cat["id"],

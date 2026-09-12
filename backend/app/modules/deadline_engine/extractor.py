@@ -109,6 +109,8 @@ def rule_based_extract(text: str) -> List[dict]:
                 "priority": priority if days <= 30 else "medium",
                 "warning_days": valid_warnings,
             })
+            break  # One deadline per match
+        if deadlines:
             break  # One deadline per text block
 
     # Look for explicit date deadlines

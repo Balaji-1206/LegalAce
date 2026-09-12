@@ -98,7 +98,7 @@ export const LegalAidScreen: React.FC<LegalAidScreenProps> = ({ onBackHome }) =>
     } catch {
       // Statutory fallback matching Section 12 criteria
       const incomeNum = parseInt(annualIncome) || 0;
-      const isEligible = selectedCategories.length > 0 || (incomeNum > 0 && incomeNum <= 300000);
+      const isEligible = selectedCategories.length > 0 || (annualIncome.trim() !== '' && incomeNum >= 0 && incomeNum <= 300000);
 
       setResult({
         eligible: isEligible,

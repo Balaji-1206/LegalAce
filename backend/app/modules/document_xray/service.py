@@ -87,9 +87,9 @@ def _try_ocr_fallback(file_bytes: bytes) -> str:
         import pytesseract
         from PIL import Image
         from pdf2image import convert_from_bytes
-        images = convert_from_bytes(file_bytes)
+        images = convert_from_bytes(file_bytes, first_page=1, last_page=5)
         texts = []
-        for img in images[:5]:  # Limit to first 5 pages
+        for img in images:
             texts.append(pytesseract.image_to_string(img))
         return "\n\n".join(texts)
     except ImportError:
@@ -118,6 +118,7 @@ def extract_text_from_image(file_bytes: bytes) -> str:
 
 import hashlib
 
+_MAX_XRAY_CACHE_SIZE: int = 100
 _XRAY_CACHE: dict[str, DocumentXRayResult] = {}
 
 EXTRACTION_PROMPT = """You are a legal document analyzer specializing in Indian law.
@@ -228,6 +229,8 @@ async def analyze_document(extracted_text: str) -> DocumentXRayResult:
         summary=parsed.get("summary", ""),
         confidence=0.85 if parsed.get("document_type") else 0.4,
     )
+    if len(_XRAY_CACHE) >= _MAX_XRAY_CACHE_SIZE:
+        _XRAY_CACHE.pop(next(iter(_XRAY_CACHE)))
     _XRAY_CACHE[text_hash] = res
     return res
 

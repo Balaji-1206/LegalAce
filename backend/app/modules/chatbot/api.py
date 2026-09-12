@@ -61,24 +61,43 @@ async def get_prompts() -> List[QuickPromptItem]:
     return chat_service.get_quick_prompts()
 
 
+ALLOWED_CHAT_DOC_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt"}
+MAX_CHAT_DOC_SIZE = 10 * 1024 * 1024  # 10 MB
+
+
 @router.post(
     "/upload-document",
     summary="Upload PDF/DOCX/TXT legal document and extract text",
     description="Parses uploaded document file and extracts text for AI analysis.",
 )
 async def upload_document(file: UploadFile = File(...)):
+    filename = file.filename or "upload.pdf"
+    ext = "." + filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in ALLOWED_CHAT_DOC_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type '{ext}'. Allowed: {', '.join(ALLOWED_CHAT_DOC_EXTENSIONS)}",
+        )
+
     try:
         from app.modules.chatbot.document_parser import extract_text_from_file
         content = await file.read()
-        extracted_text = extract_text_from_file(file.filename or "document.pdf", content)
+        if len(content) > MAX_CHAT_DOC_SIZE:
+            raise HTTPException(status_code=400, detail="File too large. Maximum size is 10 MB.")
+        if len(content) == 0:
+            raise HTTPException(status_code=400, detail="Empty file uploaded.")
+
+        extracted_text = extract_text_from_file(filename, content)
         word_count = len(extracted_text.split()) if extracted_text else 0
-        logger.info(f"Uploaded and extracted '{file.filename}': {word_count} words")
+        logger.info(f"Uploaded and extracted '{filename}': {word_count} words")
         return {
-            "filename": file.filename,
+            "filename": filename,
             "extracted_text": extracted_text,
             "word_count": word_count,
             "success": bool(extracted_text),
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error uploading document {file.filename}: {e}", exc_info=True)
+        logger.error(f"Error uploading document {filename}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to parse uploaded document: {e}")

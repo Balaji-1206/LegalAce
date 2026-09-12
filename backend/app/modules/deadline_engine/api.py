@@ -34,7 +34,7 @@ router = APIRouter(prefix="/api/v1", tags=["deadline-engine"])
 class DeadlineCreateBody(BaseModel):
     user_id: str
     title: str
-    description: str
+    description: str = ""
     category: str = "general"
     deadline_date: datetime
     source_type: str = "manual"

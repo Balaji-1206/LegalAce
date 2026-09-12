@@ -88,6 +88,7 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [expandedCitation, setExpandedCitation] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
 
   // Load Initial State from AsyncStorage & Backend API
@@ -108,6 +109,17 @@ export default function App() {
 
         const storedRv = await AsyncStorage.getItem('legalace_recently_viewed');
         if (storedRv && !ignore) setRecentlyViewed(JSON.parse(storedRv));
+
+        // Fetch user conversation history
+        try {
+          const convRes = await fetch(`${API_BASE_URL}/api/v1/conversation/history/${storedId}`);
+          if (convRes.ok && !ignore) {
+            const convData = await convRes.json();
+            if (convData.conversations) {
+              setConversations(convData.conversations);
+            }
+          }
+        } catch { /* offline */ }
       } catch { /* storage offline */ }
 
       // Fetch categories & situations from backend
@@ -282,19 +294,31 @@ export default function App() {
       let res = await fetch(`${API_BASE_URL}/api/v1/agent/execute-sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, message: text, agent_mode: 'general' }),
+        body: JSON.stringify({
+          user_id: userId,
+          conversation_id: activeConversationId || undefined,
+          message: text,
+          agent_mode: 'general',
+        }),
       });
 
       if (res.status === 404) {
         res = await fetch(`${API_BASE_URL}/api/v1/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId, message: text }),
+          body: JSON.stringify({
+            user_id: userId,
+            conversation_id: activeConversationId || undefined,
+            message: text,
+          }),
         });
       }
 
       if (res.ok) {
         const data = await res.json();
+        if (data.conversation_id) {
+          setActiveConversationId(data.conversation_id);
+        }
         const aiMsg: Message = {
           role: 'assistant',
           content: data.final_answer || data.answer || '',
@@ -317,6 +341,7 @@ export default function App() {
   };
 
   const startNewChat = () => {
+    setActiveConversationId(null);
     setMessages([]);
     setErrorMessage(null);
     setExpandedCitation(null);

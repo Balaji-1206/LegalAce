@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.logging import get_logger
 from app.modules.legal_aid import service
@@ -27,7 +27,7 @@ router = APIRouter(prefix="/api/v1/legal-aid", tags=["legal-aid"])
 # ---------------------------------------------------------------------------
 
 class EligibilityCheckRequest(BaseModel):
-    annual_income: int = 0
+    annual_income: int = Field(0, ge=0, description="Annual income in INR (must be non-negative)")
     state: str = "Other / Central"
     category_flags: list[str] = []  # e.g. ["sc_st", "woman_child", "disabled"]
 

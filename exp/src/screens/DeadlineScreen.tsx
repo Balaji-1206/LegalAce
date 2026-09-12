@@ -128,6 +128,7 @@ export const DeadlineScreen: React.FC<DeadlineScreenProps> = ({ userId, onBackHo
         body: JSON.stringify({
           user_id: userId,
           title: newDl.title,
+          description: `Action deadline for ${newDl.title}`,
           category: newDl.category,
           deadline_date: newDl.deadline_date,
           priority: newDl.priority,
