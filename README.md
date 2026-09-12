@@ -1,6 +1,6 @@
 # ⚖️ LegalAce — AI Legal Companion & Rights Engine for India
 
-**LegalAce** is an AI-powered legal rights companion designed specifically for Indian citizens. It provides structured statutory information, interactive legal scenario resolution, deadline tracking, legal document analysis, and free legal aid eligibility checking under Indian Law.
+**LegalAce** is an enterprise-grade AI legal companion and statutory rights engine engineered specifically for Indian citizens. It provides structured statutory guidance, conversational multi-agent assistance, interactive dispute resolution, deadline monitoring under the Limitation Act, AI document X-Ray analysis, and automated legal aid eligibility determination under Indian law.
 
 ---
 
@@ -17,7 +17,7 @@
   ┌──────────▼──────────┐           ┌──────────▼──────────┐           ┌──────────▼──────────┐
   │ Module 1: AI Chatbot│           │Module 2: Situation  │           │ Module 3: Deadline  │
   │ RAG Vector Search   │           │       Finder        │           │     Monitor         │
-  │ FAISS + LLM Chain   │           │ 13 Legal Categories │           │ Health Score + APSched│
+  │ FAISS + Multi-Agent │           │ 13 Legal Categories │           │ Health Score + APSched│
   └──────────┬──────────┘           └──────────┬──────────┘           └──────────┬──────────┘
              │                                 │                                 │
              └─────────────────────────────────┼─────────────────────────────────┘
@@ -35,22 +35,25 @@
 
 ## 🚀 Key Modules & Novel Features
 
-### 🤖 1. Agentic Legal AI Chatbot (RAG Pipeline)
-- **Vector Retrieval**: Local FAISS vector index built on real Indian Acts (Transfer of Property Act, Consumer Protection Act 2019, Industrial Disputes Act, POSH Act, IT Act, CrPC, Domestic Violence Act).
-- **Multi-LLM Fallback & Switcher**: Resilient LLM tier supporting Google Gemini 2.0 Flash → OpenAI GPT-4o → Ollama (local) → Smart Rule-Based Engine. Switchable on-the-fly from the mobile app.
+### 🤖 1. Agentic Legal AI Chatbot (RAG Pipeline & Tool Calling)
+- **Vector Retrieval**: Local FAISS vector index built on real Indian statutory acts (Transfer of Property Act, Consumer Protection Act 2019, Industrial Disputes Act, POSH Act, Information Technology Act, CrPC/BNSS, Domestic Violence Act).
+- **Agent Tool Registry**: Built-in planner capable of dispatching dynamic tools (such as `legal_aid_lookup`) to synthesize statutory authorities and legal remedies directly into conversation turns.
+- **Multi-LLM Fallback & Switcher**: Resilient multi-tier LLM fallback: Google Gemini 2.0 Flash → OpenAI GPT-4o → Ollama (local) → Smart Rule-Based Engine. Switchable on-the-fly from the mobile app.
 - **Citations & Guardrails**: Cites exact act names, sections, relevance scores, statutory rights, and action steps with educational disclaimers.
+- **Rich Markdown Formatting**: Native mobile parsing and formatted rendering for section headers (`###`), bold highlights (`**text**`), and bullet points.
 
 ### 🛡️ 2. Situation Finder
-- **13 Specialized Categories**: Housing, Employment, Consumer, Banking, Cyber Crime, Traffic, Women Rights, Education, Cheque Debt, RTI, Real Estate, Insurance, Family & Support.
-- **Interactive Scenarios**: Instant search, penalty calculator, and key statutory rights cards for every situation.
+- **13 Specialized Categories**: Housing, Employment, Consumer, Banking, Cyber Crime, Traffic, Women's Rights, Education, Cheque Debt, RTI, Real Estate, Insurance, and Family & Support.
+- **Interactive Scenarios**: Instant search, penalty calculators, and key statutory rights cards for everyday citizen disputes.
+- **Optimized Performance**: Single-pass MongoDB `$group` aggregation pipeline for real-time category counts without repetitive collection queries.
 
 ### ⏳ 3. Legal Health Monitor & Statutory Deadlines (Feature 4)
 - **Limitation Act Engine**: Calculates statutory limitation periods under the Limitation Act 1963, Consumer Protection Act, NI Act Section 138, and RTI Act.
-- **Health Score Ring**: Real-time legal health score dynamically calculated based on active, completed, and expired legal filing deadlines.
-- **Automated Reminders**:
+- **Health Score Ring**: Real-time legal health score dynamically calculated from active, completed, and expired legal filing deadlines with nested analytics.
+- **Multi-Channel Reminders**:
   - 💬 **Direct WhatsApp (`wa.me`)**: 1-tap pre-filled reminder links (100% Free).
   - 🔔 **Native Device Push Alerts**: System notifications with urgency badges.
-  - 📲 **Automated SMS via Fast2SMS / Twilio**: Scheduled background reminder jobs via APScheduler.
+  - 📲 **Automated SMS via Fast2SMS / Twilio**: Scheduled background reminder jobs via APScheduler with strict OTP phone verification.
 
 ### 📝 4. Guided Legal Wizard & AI Scenario Generator
 - **Interactive Question Trees**: Step-by-step decision guidance tailored to citizen disputes.
@@ -60,16 +63,17 @@
 ### 📄 5. Document X-Ray (Feature 3 — Upload & Auto-Extract)
 - **AI Document Parser**: Upload legal PDFs or images (rental agreements, cheque bounce notices, FIR copies, termination letters).
 - **Structured Extraction**: Extracts document type, party names, key dates timeline, obligations checklist, and red flags (unfavorable/illegal clauses).
-- **Cross-Module Integration**: 1-tap push to Deadline Monitor and Wizard.
+- **Cross-Platform Resilience**: Cross-platform Web `Blob` and mobile native `FormData` handling with null-safe defensive rendering.
 
 ### ⚖️ 6. Free Legal Aid (DLSA) Checker (Feature 5)
 - **Statutory Eligibility**: Evaluates user criteria under **Section 12 of the Legal Services Authorities Act, 1987** (SC/ST, Women/Children, Persons with Disabilities, Industrial Workmen, Under-Trial Prisoners, Annual Income < ₹3,00,000, etc.).
 - **Nearest Authority Locator**: Built-in DLSA/SLSA office directory for Indian states + NALSA nationwide helpline (15100) with 1-tap calling.
 
-### 🔒 7. Encrypted Document Vault & Citizen Hub
-- **Encrypted Document Storage**: Local encrypted vault for legal notices, agreements, evidence, and complaints.
-- **Formal Letterhead Paper Reader**: Clean document reading view with copy, share, and export capabilities.
-- **State Jurisdiction & Legal Persona**: Customizable jurisdiction settings for state-specific legal procedures.
+### 🔒 7. Security & Privacy Hardening
+- **IDOR Safeguards**: Scoped multi-tenant queries by `{"conversation_id": conversation_id, "user_id": user_id}` and `{"_id": ObjectId(id), "user_id": user_id}`.
+- **Cryptographic OTP Verification**: CSPRNG generation (`secrets.randbelow`), salted SHA-256 hash storage, and constant-time comparison (`hmac.compare_digest`).
+- **Prompt Injection Sandboxing**: Isolation of untrusted user queries within `<untrusted_user_request>` XML tags.
+- **ReDoS Prevention**: Regex escaping (`re.escape`) for RAG fallback keyword searches.
 
 ---
 
@@ -84,6 +88,7 @@
 | **Database** | MongoDB (Motor async driver) |
 | **PDF & OCR** | `pypdf`, `pytesseract` |
 | **Scheduler** | APScheduler (AsyncIOScheduler) |
+| **Testing** | Pytest, Pytest-AsyncIO, TypeScript Compiler (`tsc`) |
 
 ---
 
@@ -97,22 +102,23 @@ LegalAce/
 │   │   ├── core/                    # Config & Logging
 │   │   ├── database/                # Async MongoDB connection
 │   │   └── modules/
-│   │       ├── agent/               # Agentic planner & workflow engine
-│   │       ├── chatbot/             # RAG pipeline, retriever & prompt
+│   │       ├── agent/               # Agentic planner, tools & synthesizer
+│   │       ├── chatbot/             # RAG pipeline, retriever & conversation API
 │   │       ├── deadline_engine/     # Health score & APScheduler jobs
 │   │       ├── document_xray/       # Feature 3: Upload & AI PDF extraction
 │   │       ├── legal_aid/           # Feature 5: Section 12 LSA eligibility
 │   │       ├── notifications/       # Feature 4: WhatsApp/SMS notification providers
 │   │       ├── situation_finder/    # 13 Category situation data & search
-│   │       └── wizard/              # Guided legal questionnaires & templates
+│   │       └── wizard/              # Guided legal questionnaires & notice drafting
 │   ├── data/                        # Indian Law Corpus (FAISS source)
 │   ├── faiss_index/                 # Pre-built vector index
+│   ├── tests/                       # 50 Automated Unit & Integration Tests
 │   ├── requirements.txt
 │   └── .env
 └── exp/                             # Unified Cross-Platform React Native App (Expo)
     ├── assets/                      # App icons, splash screens & adaptive graphics
     ├── src/
-    │   ├── components/              # BottomNav (sliding glass bar), Header, Spotlight, Toast
+    │   ├── components/              # BottomNav (sliding glass bar), FloatingChatWidget, Spotlight
     │   ├── config/                  # API client & multi-platform LAN URL auto-resolver
     │   ├── screens/                 # All 8 core screens:
     │   │   ├── HomeScreen.tsx       # Citizen Dashboard & quick actions
@@ -173,6 +179,34 @@ From the interactive terminal prompt, you can press:
 - `i` — Open on **iOS Simulator**
 - `w` — Open in **Web Browser** (`http://localhost:8081`)
 - **Scan QR Code** — Open in the **Expo Go** app on your physical smartphone!
+
+---
+
+## 🧪 Testing & Verification
+
+LegalAce includes a comprehensive automated test suite enforcing clean code standards, boundary conditions, and contract alignment.
+
+### Running Backend Tests
+```bash
+cd backend
+.\.venv\Scripts\pytest -v
+```
+*Current test suite: **50 tests passed**, covering:*
+- `test_agent_tools.py`: Tool registry validation and planner dispatching
+- `test_conversation_security.py`: Cross-tenant scoping (IDOR) & safe float parsing
+- `test_deadlines.py`: Health score nested stats, bounds, and rule-based extraction
+- `test_document_upload.py`: 10MB size limits and file extension sanitization
+- `test_embedder.py`: Deterministic vector hashing across worker restarts
+- `test_legal_aid.py`: Section 12 criteria, income boundaries, and state fallbacks
+- `test_notifications.py`: OTP format, hashing, lockout, and 403 verification checks
+- `test_wizard.py`: Notice calculation, scenario generation, and dynamic value schemas
+
+### Running Frontend Type Checks
+```bash
+cd exp
+npx tsc --noEmit
+```
+*Current typecheck: **0 errors** across all TSX screens, components, and types.*
 
 ---
 
