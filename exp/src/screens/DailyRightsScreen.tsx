@@ -7,6 +7,8 @@ import {
   ScrollView,
   Share,
   TextInput,
+  Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../theme/colors';
@@ -93,7 +95,11 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
   });
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.contentContainer}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+    >
+      <ScrollView style={styles.screen} contentContainerStyle={styles.contentContainer}>
       {/* Top Header */}
       <View style={styles.headerNav}>
         <TouchableOpacity style={styles.circularBtn} onPress={onBackHome} activeOpacity={0.8}>
@@ -137,49 +143,69 @@ export const DailyRightsScreen: React.FC<DailyRightsScreenProps> = ({
         </View>
       )}
 
-      {/* Rights Cards */}
-      {filteredRights.map((right) => {
-        const isBookmarked = bookmarks.includes(right.id);
-        const catColor = CATEGORY_COLORS[right.category] || '#4f46e5';
+      {/* Rights Cards or Empty State */}
+      {filteredRights.length === 0 ? (
+        <View style={styles.emptyStateContainer}>
+          <Ionicons name="search-outline" size={44} color="#94a3b8" />
+          <Text style={styles.emptyStateTitle}>No matching rights found</Text>
+          <Text style={styles.emptyStateSubtitle}>
+            Try searching for terms like "MRP", "salary", "FIR", or "eviction".
+          </Text>
+          {searchQuery ? (
+            <TouchableOpacity
+              style={styles.clearSearchBtn}
+              onPress={() => setSearchQuery('')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.clearSearchBtnText}>Clear Search</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      ) : (
+        filteredRights.map((right) => {
+          const isBookmarked = bookmarks.includes(right.id);
+          const catColor = CATEGORY_COLORS[right.category] || '#4f46e5';
 
-        return (
-          <View key={right.id} style={styles.rightsCard}>
-            <View style={[styles.cardTag, { backgroundColor: catColor + '18' }]}>
-              <Text style={[styles.cardTagText, { color: catColor }]}>
-                {right.category}
-              </Text>
+          return (
+            <View key={right.id} style={styles.rightsCard}>
+              <View style={[styles.cardTag, { backgroundColor: catColor + '18' }]}>
+                <Text style={[styles.cardTagText, { color: catColor }]}>
+                  {right.category}
+                </Text>
+              </View>
+
+              <Text style={styles.cardTitle}>{right.title}</Text>
+              <Text style={styles.cardBody}>{right.body}</Text>
+
+              <View style={styles.cardActionsRow}>
+                <TouchableOpacity
+                  style={styles.actionIconBtn}
+                  onPress={() => handleShare(right.title, right.body)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="share-social-outline" size={16} color="#6b7280" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionIconBtn, isBookmarked && styles.actionIconBtnBookmarked]}
+                  onPress={() => toggleBookmark(right.id)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
+                    size={16}
+                    color={isBookmarked ? '#d97706' : '#6b7280'}
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
-
-            <Text style={styles.cardTitle}>{right.title}</Text>
-            <Text style={styles.cardBody}>{right.body}</Text>
-
-            <View style={styles.cardActionsRow}>
-              <TouchableOpacity
-                style={styles.actionIconBtn}
-                onPress={() => handleShare(right.title, right.body)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="share-social-outline" size={16} color="#6b7280" />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionIconBtn, isBookmarked && styles.actionIconBtnBookmarked]}
-                onPress={() => toggleBookmark(right.id)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
-                  size={16}
-                  color={isBookmarked ? '#d97706' : '#6b7280'}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-        );
-      })}
+          );
+        })
+      )}
 
       <View style={{ height: 95 }} />
     </ScrollView>
+  </KeyboardAvoidingView>
   );
 };
 
@@ -297,6 +323,44 @@ const styles = StyleSheet.create({
   },
   actionIconBtnBookmarked: {
     backgroundColor: '#fef3c7',
+  },
+  emptyStateContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#334155',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  emptyStateSubtitle: {
+    fontSize: 13,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  clearSearchBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#eff6ff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  clearSearchBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#2563eb',
   },
 });
 

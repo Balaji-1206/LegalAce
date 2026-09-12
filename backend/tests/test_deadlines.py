@@ -93,3 +93,36 @@ def test_rule_based_extract_within_days_pattern_urgent_priority():
     assert len(extracted) == 1
     assert extracted[0]["days_from_now"] == 10
     assert extracted[0]["priority"] == "high"
+
+
+def test_empty_health_score_includes_nested_stats():
+    from app.modules.deadline_engine.service import _empty_health_score
+    result = _empty_health_score("usr_999")
+    assert "stats" in result
+    assert result["stats"] == {"active": 0, "completed": 0, "expired": 0}
+    assert result["score"] == 100
+    assert result["grade"] == "Excellent"
+
+
+@pytest.mark.anyio
+async def test_compute_health_score_with_docs_includes_nested_stats():
+    from unittest.mock import AsyncMock, MagicMock, patch
+    from app.modules.deadline_engine import service
+
+    mock_db = {}
+    mock_col = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.to_list = AsyncMock(return_value=[
+        {"status": "active", "priority": "medium", "deadline_date": None},
+        {"status": "completed", "priority": "medium"},
+    ])
+    mock_col.find = MagicMock(return_value=mock_cursor)
+    mock_db[service.COLLECTION] = mock_col
+
+    with patch("app.modules.deadline_engine.service.get_database", return_value=mock_db):
+        score_data = await service.compute_health_score("usr_123")
+        assert "stats" in score_data
+        assert score_data["stats"]["active"] == 1
+        assert score_data["stats"]["completed"] == 1
+        assert score_data["stats"]["expired"] == 0
+

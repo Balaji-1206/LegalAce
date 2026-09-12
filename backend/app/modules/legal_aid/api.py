@@ -27,7 +27,7 @@ router = APIRouter(prefix="/api/v1/legal-aid", tags=["legal-aid"])
 # ---------------------------------------------------------------------------
 
 class EligibilityCheckRequest(BaseModel):
-    annual_income: int = Field(0, ge=0, description="Annual income in INR (must be non-negative)")
+    annual_income: Optional[int] = Field(None, ge=0, description="Annual income in INR (must be non-negative if provided)")
     state: str = "Other / Central"
     category_flags: list[str] = []  # e.g. ["sc_st", "woman_child", "disabled"]
 

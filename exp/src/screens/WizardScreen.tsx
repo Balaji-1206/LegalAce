@@ -12,6 +12,7 @@ import {
   Share,
   Alert,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -759,7 +760,10 @@ _____________________________
 
       {/* --- NOTICE GENERATION MODAL --- */}
       <Modal visible={isDocModalOpen} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalContent}>
             <View style={styles.modalHeaderRow}>
               <Text style={styles.modalTitle}>Draft Statutory Notice</Text>
@@ -860,7 +864,7 @@ _____________________________
               )}
             </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </ScrollView>
   );

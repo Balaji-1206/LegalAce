@@ -60,3 +60,20 @@ def test_notification_pref_invalid_channel_raises_validation_error():
             channel="invalid_channel",
             phone_number="9876543210",
         )
+
+
+@pytest.mark.anyio
+async def test_set_deadline_notifications_unverified_raises_403():
+    from fastapi import HTTPException
+    from app.modules.notifications.api import set_deadline_notifications
+
+    req = NotificationPrefRequest(
+        user_id="usr_123",
+        channel="whatsapp",
+        phone_number="9999999999",
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        await set_deadline_notifications("deadline_123", req)
+    assert exc_info.value.status_code == 403
+

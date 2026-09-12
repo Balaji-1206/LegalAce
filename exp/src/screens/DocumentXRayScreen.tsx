@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -83,11 +84,18 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
     try {
       const formData = new FormData();
       formData.append('user_id', userId);
-      formData.append('file', {
-        uri: selectedFile.uri,
-        name: selectedFile.name,
-        type: selectedFile.mimeType || 'application/pdf',
-      } as unknown as Blob);
+
+      if (Platform.OS === 'web') {
+        const fileRes = await fetch(selectedFile.uri);
+        const blob = await fileRes.blob();
+        formData.append('file', blob, selectedFile.name);
+      } else {
+        formData.append('file', {
+          uri: selectedFile.uri,
+          name: selectedFile.name,
+          type: selectedFile.mimeType || 'application/pdf',
+        } as unknown as Blob);
+      }
 
       const res = await fetch(`${API_BASE_URL}/api/v1/document-xray/analyze`, {
         method: 'POST',
@@ -261,11 +269,11 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
           )}
 
           {/* Parties Identified */}
-          {result.parties.length > 0 && (
+          {(result.parties?.length ?? 0) > 0 && (
             <View style={styles.cardSection}>
               <Text style={styles.sectionTitle}>👥 Parties Identified</Text>
               <View style={styles.partyChipsWrap}>
-                {result.parties.map((p, i) => (
+                {result.parties?.map((p, i) => (
                   <View key={i} style={styles.partyChip}>
                     <Text style={styles.partyChipText}>{p}</Text>
                   </View>
@@ -275,11 +283,11 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
           )}
 
           {/* Key Dates Timeline */}
-          {result.key_dates.length > 0 && (
+          {(result.key_dates?.length ?? 0) > 0 && (
             <View style={styles.cardSection}>
               <Text style={styles.sectionTitle}>📅 Key Dates</Text>
               <View style={styles.timeline}>
-                {result.key_dates.map((d, i) => (
+                {result.key_dates?.map((d, i) => (
                   <View key={i} style={styles.timelineItem}>
                     <View style={styles.timelineDot} />
                     <Text style={styles.timelineLabel}>{d.label}</Text>
@@ -291,10 +299,10 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
           )}
 
           {/* Obligations */}
-          {result.obligations.length > 0 && (
+          {(result.obligations?.length ?? 0) > 0 && (
             <View style={styles.cardSection}>
               <Text style={styles.sectionTitle}>📋 Your Obligations</Text>
-              {result.obligations.map((o, i) => (
+              {result.obligations?.map((o, i) => (
                 <View key={i} style={styles.obligationItem}>
                   <View style={styles.obligationBadge}>
                     <Text style={styles.obligationBadgeText}>{i + 1}</Text>
@@ -306,12 +314,12 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
           )}
 
           {/* Red Flags */}
-          {result.red_flags.length > 0 && (
+          {(result.red_flags?.length ?? 0) > 0 && (
             <View style={[styles.cardSection, styles.redFlagSection]}>
               <Text style={[styles.sectionTitle, { color: '#dc2626' }]}>
                 🚩 Red Flags Detected
               </Text>
-              {result.red_flags.map((rf, i) => (
+              {result.red_flags?.map((rf, i) => (
                 <View key={i} style={styles.redFlagItem}>
                   <Text style={styles.redFlagIcon}>⚠️</Text>
                   <Text style={styles.redFlagText}>{rf}</Text>
@@ -322,7 +330,7 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
 
           {/* Action Buttons */}
           <View style={styles.actionButtonsWrap}>
-            {result.key_dates.some(d => d.iso_date) && (
+            {result.key_dates?.some(d => d.iso_date) && (
               <TouchableOpacity
                 onPress={handlePushDeadlines}
                 disabled={deadlinesPushed}

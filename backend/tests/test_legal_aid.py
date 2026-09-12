@@ -9,6 +9,21 @@ def test_eligibility_request_zero_income_valid():
     assert req.annual_income == 0
 
 
+def test_eligibility_request_none_income_valid():
+    req = EligibilityCheckRequest(annual_income=None, state="Karnataka")
+    assert req.annual_income is None
+
+
+def test_check_eligibility_none_income_without_flags_not_eligible():
+    result = service.check_eligibility(
+        annual_income=None,
+        state="Karnataka",
+        category_flags=[],
+    )
+    assert result.eligible is False
+    assert len(result.qualifying_categories) == 0
+
+
 def test_eligibility_request_positive_income_valid():
     req = EligibilityCheckRequest(annual_income=250000, state="Delhi (NCR)")
     assert req.annual_income == 250000

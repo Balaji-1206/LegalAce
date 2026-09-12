@@ -33,11 +33,14 @@ async def create_conversation(user_id: str) -> str:
     logger.info(f"Created conversation '{conversation_id}' for user '{user_id}'")
     return conversation_id
 
-async def get_conversation(conversation_id: str) -> ConversationResponse | None:
-    """Fetch a full conversation document by its ID."""
+async def get_conversation(conversation_id: str, user_id: str | None = None) -> ConversationResponse | None:
+    """Fetch a full conversation document by its ID, scoped to user_id if provided."""
     db = get_database()
+    query: dict[str, Any] = {"conversation_id": conversation_id}
+    if user_id:
+        query["user_id"] = user_id
     doc = await db[CONVERSATION_COLLECTION].find_one(
-        {"conversation_id": conversation_id},
+        query,
         {"_id": 0},
     )
     if not doc:
@@ -126,15 +129,18 @@ async def conversation_exists(conversation_id: str) -> bool:
     )
     return count > 0
 
-async def delete_conversation(conversation_id: str) -> bool:
-    """Delete a conversation document."""
+async def delete_conversation(conversation_id: str, user_id: str | None = None) -> bool:
+    """Delete a conversation document, scoped to user_id if provided."""
     db = get_database()
-    result = await db[CONVERSATION_COLLECTION].delete_one({"conversation_id": conversation_id})
+    query: dict[str, Any] = {"conversation_id": conversation_id}
+    if user_id:
+        query["user_id"] = user_id
+    result = await db[CONVERSATION_COLLECTION].delete_one(query)
     deleted = result.deleted_count > 0
     if deleted:
-        logger.info(f"Deleted conversation '{conversation_id}'")
+        logger.info(f"Deleted conversation '{conversation_id}' (user: {user_id})")
     else:
-        logger.warning(f"Attempted to delete non-existent conversation '{conversation_id}'")
+        logger.warning(f"Attempted to delete non-existent or unauthorized conversation '{conversation_id}'")
     return deleted
 
 async def get_conversation_messages(conversation_id: str) -> list[dict]:

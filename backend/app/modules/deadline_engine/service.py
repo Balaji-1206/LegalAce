@@ -24,13 +24,17 @@ COLLECTION = "deadlines"
 # Helper
 # ---------------------------------------------------------------------------
 
-def _days_remaining(deadline_date: datetime | str) -> int:
+def _days_remaining(deadline_date: datetime | str | None) -> int:
+    if not deadline_date:
+        return 0
     now = datetime.now(timezone.utc)
     if isinstance(deadline_date, str):
         try:
             deadline_date = datetime.fromisoformat(deadline_date)
         except ValueError:
             return 0
+    if not isinstance(deadline_date, datetime):
+        return 0
     if deadline_date.tzinfo is None:
         deadline_date = deadline_date.replace(tzinfo=timezone.utc)
     delta = deadline_date - now
@@ -255,6 +259,11 @@ async def compute_health_score(user_id: str) -> dict:
         "completed": len(completed),
         "expired": len(expired),
         "high_priority_active": len(high_active),
+        "stats": {
+            "active": len(active),
+            "completed": len(completed),
+            "expired": len(expired),
+        },
         "strengths": strengths[:4],
         "risks": risks[:5],
         "computed_at": datetime.now(timezone.utc).isoformat(),
@@ -271,6 +280,11 @@ def _empty_health_score(user_id: str) -> dict:
         "completed": 0,
         "expired": 0,
         "high_priority_active": 0,
+        "stats": {
+            "active": 0,
+            "completed": 0,
+            "expired": 0,
+        },
         "strengths": ["No deadlines tracked yet", "Start by adding a deadline or chatting with AI"],
         "risks": [],
         "computed_at": datetime.now(timezone.utc).isoformat(),

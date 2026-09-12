@@ -27,7 +27,17 @@ from app.modules.chatbot.schemas import (
 )
 from app.modules.chatbot import conversation_service
 
-logger = get_logger(__name__)
+def _safe_float(val: Any, default: float = 0.0) -> float:
+    """Safely convert arbitrary values or string percentages to float without crashing."""
+    if val is None:
+        return default
+    try:
+        if isinstance(val, str):
+            val = val.rstrip("% ").strip()
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
 
 async def process_message(request: ChatRequest) -> ChatResponse:
     """
@@ -111,7 +121,7 @@ async def process_message(request: ChatRequest) -> ChatResponse:
                 act=c.get("act", ""),
                 section=c.get("section", ""),
                 section_title=c.get("section_title", ""),
-                relevance_score=max(0.0, min(1.0, float(c.get("relevance_score", 0.0)))),
+                relevance_score=max(0.0, min(1.0, _safe_float(c.get("relevance_score"), default=0.0))),
             )
             for c in parsed_response.get("law_citations", [])
         ],

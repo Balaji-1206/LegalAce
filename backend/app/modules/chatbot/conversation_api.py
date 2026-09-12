@@ -51,12 +51,15 @@ async def get_user_history(user_id: str) -> ConversationHistoryResponse:
     summary="Get a conversation by ID",
     description="Returns the full conversation including all messages and law citations.",
 )
-async def get_conversation(conversation_id: str) -> ConversationResponse:
-    result = await conversation_service.get_conversation(conversation_id)
+async def get_conversation(
+    conversation_id: str,
+    user_id: str | None = None,
+) -> ConversationResponse:
+    result = await conversation_service.get_conversation(conversation_id, user_id=user_id)
     if result is None:
         raise HTTPException(
             status_code=404,
-            detail=f"Conversation '{conversation_id}' not found.",
+            detail=f"Conversation '{conversation_id}' not found or access denied.",
         )
     return result
 
@@ -66,11 +69,14 @@ async def get_conversation(conversation_id: str) -> ConversationResponse:
     summary="Delete a conversation",
     description="Permanently deletes a conversation and all its messages.",
 )
-async def delete_conversation(conversation_id: str) -> DeleteConversationResponse:
-    deleted = await conversation_service.delete_conversation(conversation_id)
+async def delete_conversation(
+    conversation_id: str,
+    user_id: str | None = None,
+) -> DeleteConversationResponse:
+    deleted = await conversation_service.delete_conversation(conversation_id, user_id=user_id)
     if not deleted:
         raise HTTPException(
             status_code=404,
-            detail=f"Conversation '{conversation_id}' not found.",
+            detail=f"Conversation '{conversation_id}' not found or access denied.",
         )
     return DeleteConversationResponse(conversation_id=conversation_id)

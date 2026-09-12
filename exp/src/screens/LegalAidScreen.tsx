@@ -5,8 +5,10 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  TextInput,
   Linking,
+  Platform,
+  KeyboardAvoidingView,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -70,14 +72,19 @@ export const LegalAidScreen: React.FC<LegalAidScreenProps> = ({ onBackHome }) =>
 
   const handleCheckEligibility = async () => {
     try {
+      const parsedIncome = annualIncome.trim() ? parseInt(annualIncome, 10) : null;
+      const payload: Record<string, any> = {
+        state: selectedState,
+        category_flags: selectedCategories,
+      };
+      if (parsedIncome !== null && !isNaN(parsedIncome)) {
+        payload.annual_income = parsedIncome;
+      }
+
       const res = await fetch(`${API_BASE_URL}/api/v1/legal-aid/check-eligibility`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          annual_income: parseInt(annualIncome) || 0,
-          state: selectedState,
-          category_flags: selectedCategories,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
@@ -97,8 +104,9 @@ export const LegalAidScreen: React.FC<LegalAidScreenProps> = ({ onBackHome }) =>
       }
     } catch {
       // Statutory fallback matching Section 12 criteria
-      const incomeNum = parseInt(annualIncome) || 0;
-      const isEligible = selectedCategories.length > 0 || (annualIncome.trim() !== '' && incomeNum >= 0 && incomeNum <= 300000);
+      const parsedIncome = annualIncome.trim() ? parseInt(annualIncome, 10) : null;
+      const incomeQualifies = parsedIncome !== null && !isNaN(parsedIncome) && parsedIncome >= 0 && parsedIncome <= 300000;
+      const isEligible = selectedCategories.length > 0 || incomeQualifies;
 
       setResult({
         eligible: isEligible,
@@ -141,7 +149,11 @@ export const LegalAidScreen: React.FC<LegalAidScreenProps> = ({ onBackHome }) =>
   };
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.contentContainer}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+    >
+      <ScrollView style={styles.screen} contentContainerStyle={styles.contentContainer}>
       {/* Back Button */}
       <TouchableOpacity style={styles.backBtn} onPress={onBackHome} activeOpacity={0.7}>
         <Ionicons name="chevron-back" size={16} color="#059669" />
@@ -371,6 +383,7 @@ export const LegalAidScreen: React.FC<LegalAidScreenProps> = ({ onBackHome }) =>
 
       <View style={{ height: 95 }} />
     </ScrollView>
+  </KeyboardAvoidingView>
   );
 };
 

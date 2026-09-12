@@ -79,6 +79,12 @@ async def verify_otp(body: VerifyOtpRequest):
 @router.post("/deadlines/{deadline_id}/notification-preferences")
 async def set_deadline_notifications(deadline_id: str, body: NotificationPrefRequest):
     """Set notification preferences for a deadline (requires prior OTP verification)."""
+    if body.channel != "none" and not service.is_phone_verified(body.phone_number):
+        raise HTTPException(
+            status_code=403,
+            detail="Phone number has not been verified with OTP. Please verify your phone number first.",
+        )
+
     result = await service.set_notification_preferences(
         deadline_id=deadline_id,
         user_id=body.user_id,

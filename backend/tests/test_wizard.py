@@ -60,3 +60,19 @@ def test_generate_action_plan_unknown_scenario_fallback():
     plan = generate_action_plan("unknown_custom_scenario", {})
     assert plan["title"] == "General Legal Action Plan"
     assert len(plan["steps"]) > 0
+
+
+def test_generate_doc_body_accepts_arbitrary_value_types():
+    from app.modules.wizard.api import GenerateDocBody
+    body = GenerateDocBody(
+        template_id="legal_notice",
+        details={
+            "sender_name": "Advocate Ramesh",
+            "notice_days": 15,
+            "dispute_amount": 50000,
+            "is_urgent": True,
+        },
+    )
+    assert body.details["notice_days"] == 15
+    assert body.details["is_urgent"] is True
+

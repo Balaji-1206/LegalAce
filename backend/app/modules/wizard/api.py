@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Any
 
 from app.core.logging import get_logger
 from app.modules.wizard import scenarios_data, service
@@ -48,7 +48,7 @@ class DynamicScenarioBody(BaseModel):
 
 class GenerateDocBody(BaseModel):
     template_id: str
-    details: dict[str, str] = {}
+    details: dict[str, Any] = {}
 
 
 # ---------------------------------------------------------------------------

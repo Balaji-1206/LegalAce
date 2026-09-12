@@ -42,6 +42,65 @@ const AGENT_MODES: { id: AgentMode; label: string; icon: string; prefix: string 
   { id: 'rights', label: 'Rights Advisor', icon: '🛡️', prefix: '[Rights Mode]: ' },
 ];
 
+const parseInlineMarkdown = (text: string) => {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, pIdx) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <Text key={pIdx} style={styles.mdBold}>
+          {part.slice(2, -2)}
+        </Text>
+      );
+    }
+    return part;
+  });
+};
+
+const renderFormattedMessage = (content: string, isUser: boolean) => {
+  if (isUser) {
+    return <Text style={[styles.msgText, styles.msgTextUser]}>{content}</Text>;
+  }
+
+  const lines = content.split('\n');
+  return (
+    <View style={{ gap: 4 }}>
+      {lines.map((line, lIdx) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <View key={lIdx} style={{ height: 4 }} />;
+        }
+
+        if (trimmed.startsWith('### ') || trimmed.startsWith('## ') || trimmed.startsWith('# ')) {
+          const headerText = trimmed.replace(/^#+\s*/, '');
+          return (
+            <Text key={lIdx} style={styles.mdHeading}>
+              {parseInlineMarkdown(headerText)}
+            </Text>
+          );
+        }
+
+        const bulletMatch = trimmed.match(/^([*\-•]|\d+\.)\s+(.*)/);
+        if (bulletMatch) {
+          return (
+            <View key={lIdx} style={styles.mdListItem}>
+              <Text style={styles.mdListBullet}>{bulletMatch[1]}</Text>
+              <Text style={styles.mdListText}>
+                {parseInlineMarkdown(bulletMatch[2])}
+              </Text>
+            </View>
+          );
+        }
+
+        return (
+          <Text key={lIdx} style={[styles.msgText, styles.msgTextAssistant]}>
+            {parseInlineMarkdown(trimmed)}
+          </Text>
+        );
+      })}
+    </View>
+  );
+};
+
 export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
   messages,
   inputValue,
@@ -240,9 +299,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                         isUser ? styles.msgBubbleUser : styles.msgBubbleAssistant,
                       ]}
                     >
-                      <Text style={[styles.msgText, isUser ? styles.msgTextUser : styles.msgTextAssistant]}>
-                        {msg.content}
-                      </Text>
+                      {renderFormattedMessage(msg.content, isUser)}
 
                       {/* Law Citations */}
                       {msg.citations && msg.citations.length > 0 && (
@@ -647,6 +704,35 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   msgTextAssistant: {
+    color: '#0f172a',
+  },
+  mdHeading: {
+    fontSize: 14.5,
+    fontWeight: '800',
+    color: '#1a1a5e',
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  mdBold: {
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  mdListItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginVertical: 2,
+    paddingLeft: 4,
+  },
+  mdListBullet: {
+    fontSize: 13,
+    color: '#4f46e5',
+    marginRight: 6,
+    fontWeight: '700',
+  },
+  mdListText: {
+    flex: 1,
+    fontSize: 13.5,
+    lineHeight: 20,
     color: '#0f172a',
   },
   citationsBox: {

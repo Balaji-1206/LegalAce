@@ -46,11 +46,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const fallbackRecent = situations.slice(0, 4);
   const displayRecent = recentSituations.length > 0 ? recentSituations : fallbackRecent;
 
-  const formatTimeAgo = (id: string) => {
-    const idx = recentlyViewed.indexOf(id);
-    if (idx === 0) return 'Just now';
-    if (idx === 1) return '2d ago';
-    return '5d ago';
+  const formatTimeAgo = (sit: SituationDetail) => {
+    const rawTime = (sit as any).updated_at || (sit as any).created_at || (sit as any).timestamp;
+    if (rawTime) {
+      const diffMs = Date.now() - new Date(rawTime).getTime();
+      if (!isNaN(diffMs) && diffMs >= 0) {
+        const diffMins = Math.floor(diffMs / 60000);
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        const diffHours = Math.floor(diffMins / 60);
+        if (diffHours < 24) return `${diffHours}h ago`;
+        const diffDays = Math.floor(diffHours / 24);
+        return `${diffDays}d ago`;
+      }
+    }
+    if (recentlyViewed.includes(sit.situation_id)) {
+      const idx = recentlyViewed.indexOf(sit.situation_id);
+      return idx === 0 ? 'Just viewed' : 'Recently viewed';
+    }
+    return 'Explore';
   };
 
   return (
@@ -250,39 +264,46 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.recentScroll}
-      >
-        {displayRecent.map((sit, i) => (
-          <TouchableOpacity
-            key={sit.situation_id || i}
-            style={styles.recentSitCard}
-            onPress={() => openSituationDetail(sit.situation_id)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.recentSitCategory}>
-              <Ionicons name="shield" size={11} color="#4f46e5" />
-              <Text style={styles.recentSitCategoryText}>
-                {(sit.category || '').toUpperCase().replace('_', ' ')}
+      {displayRecent.length === 0 ? (
+        <View style={styles.recentEmptyCard}>
+          <Ionicons name="documents-outline" size={24} color="#94a3b8" />
+          <Text style={styles.recentEmptyText}>No recent guides available yet.</Text>
+        </View>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.recentScroll}
+        >
+          {displayRecent.map((sit, i) => (
+            <TouchableOpacity
+              key={sit.situation_id || i}
+              style={styles.recentSitCard}
+              onPress={() => openSituationDetail(sit.situation_id)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.recentSitCategory}>
+                <Ionicons name="shield" size={11} color="#4f46e5" />
+                <Text style={styles.recentSitCategoryText}>
+                  {(sit.category || '').toUpperCase().replace('_', ' ')}
+                </Text>
+              </View>
+              <Text style={styles.recentSitTitle} numberOfLines={2}>
+                {sit.title}
               </Text>
-            </View>
-            <Text style={styles.recentSitTitle} numberOfLines={2}>
-              {sit.title}
-            </Text>
-            <Text style={styles.recentSitDesc} numberOfLines={2}>
-              {sit.description || 'Explore statutory rights, procedures and guidelines.'}
-            </Text>
-            <View style={styles.recentSitBadge}>
-              <Ionicons name="time-outline" size={11} color="#15803d" />
-              <Text style={styles.recentSitBadgeText}>
-                {recentlyViewed.includes(sit.situation_id) ? formatTimeAgo(sit.situation_id) : 'Explore'}
+              <Text style={styles.recentSitDesc} numberOfLines={2}>
+                {sit.description || 'Explore statutory rights, procedures and guidelines.'}
               </Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              <View style={styles.recentSitBadge}>
+                <Ionicons name="time-outline" size={11} color="#15803d" />
+                <Text style={styles.recentSitBadgeText}>
+                  {formatTimeAgo(sit)}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
 
       <View style={{ height: 95 }} />
     </ScrollView>
@@ -582,6 +603,23 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 16,
     paddingBottom: 10,
+  },
+  recentEmptyCard: {
+    marginHorizontal: 16,
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  recentEmptyText: {
+    fontSize: 13,
+    color: '#64748b',
+    textAlign: 'center',
   },
   recentSitCard: {
     width: 230,

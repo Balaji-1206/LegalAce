@@ -141,12 +141,12 @@ async def get_user_deadlines(
 @router.get("/deadlines/upcoming/{user_id}")
 async def get_upcoming_deadlines(
     user_id: str,
-    days_ahead: int = Query(90, description="How many days ahead to look"),
+    days_ahead: int = Query(90, ge=1, le=365, description="How many days ahead to look (1 to 365)"),
+    seed_demo: bool = Query(False, description="Whether to seed sample deadlines if user has none"),
 ):
     """Get upcoming deadlines within the next N days."""
-    # Auto-seed demo data if user has no deadlines
     deadlines = await service.get_upcoming_deadlines(user_id, days_ahead=days_ahead)
-    if not deadlines:
+    if not deadlines and seed_demo:
         seeded = await service.seed_sample_deadlines(user_id)
         if seeded:
             deadlines = await service.get_upcoming_deadlines(user_id, days_ahead=days_ahead)
@@ -181,15 +181,17 @@ async def delete_deadline(deadline_id: str, user_id: str = Query(...)):
 
 
 @router.get("/health-score/{user_id}")
-async def get_health_score(user_id: str):
+async def get_health_score(
+    user_id: str,
+    seed_demo: bool = Query(False, description="Whether to seed sample deadlines if user has none"),
+):
     """
     Compute and return the Legal Health Score (0–100) for a user.
-    Auto-seeds demo data if user has no deadlines.
     """
     await service.update_expired_statuses()
     score_data = await service.compute_health_score(user_id)
     
-    if score_data["total_deadlines"] == 0:
+    if score_data["total_deadlines"] == 0 and seed_demo:
         await service.seed_sample_deadlines(user_id)
         score_data = await service.compute_health_score(user_id)
     
