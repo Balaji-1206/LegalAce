@@ -122,6 +122,7 @@ from app.modules.chatbot.conversation_api import router as conversation_router
 from app.modules.situation_finder.api import router as situations_router
 from app.modules.deadline_engine.api import router as deadline_router
 from app.modules.wizard.api import router as wizard_router
+from app.modules.wizard.outcome_api import router as outcome_router
 from app.modules.agent.api import router as agent_router
 from app.modules.document_xray.api import router as document_xray_router
 from app.modules.notifications.api import router as notifications_router
@@ -134,6 +135,7 @@ app.include_router(conversation_router)
 app.include_router(situations_router)
 app.include_router(deadline_router)
 app.include_router(wizard_router)
+app.include_router(outcome_router)
 app.include_router(agent_router)
 app.include_router(document_xray_router)
 app.include_router(notifications_router)
