@@ -66,18 +66,24 @@ async def process_message(request: ChatRequest) -> ChatResponse:
     # Step 3: Load conversation history for context
     history = await conversation_service.get_conversation_messages(conversation_id)
 
-    # Step 4: Run RAG pipeline
+    # Step 4: Deterministic Intent & Statutory Tagging (<1ms, $0 cost)
+    from app.modules.chatbot.intent_router import classify_citizen_query
+    fast_intent = classify_citizen_query(effective_query)
+
+    # Step 5: Run RAG pipeline
     parsed_response, intent, law_chunks = await run_rag_pipeline(
         query=effective_query,
         conversation_history=history,
         language=request.language or "en",
     )
 
-    # Step 5: Build agentic reasoning steps
+    # Step 6: Build agentic reasoning steps
     reasoning_steps = [
-        f"1. Initialized {agent_mode.title()} Agent persona & intent classifier ('{intent}')",
-        f"2. Retrieved {len(law_chunks)} relevant Indian statutory law sections from database",
+        f"1. Fast Intent Router (<1ms): Detected '{fast_intent['detected_category']}' (Statute: {fast_intent['relevant_statute']})",
+        f"2. Retrieved {len(law_chunks)} relevant Indian statutory law sections from FAISS index",
     ]
+    if fast_intent.get("is_urgent"):
+        reasoning_steps.insert(0, "🚨 High Urgency Detected: Emergency / Police intervention keywords flagged")
     if law_chunks:
         cited_sections = ", ".join([f"{c.act_name} {c.section_number}" for c in law_chunks[:2]])
         reasoning_steps.append(f"3. Matched key statutory provisions: {cited_sections}")

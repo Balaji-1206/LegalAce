@@ -5,12 +5,15 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "jsEngine": "hermes",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "jsEngine": "hermes"
     },
     "android": {
       "package": "com.legalace.app",
+      "jsEngine": "hermes",
       "adaptiveIcon": {
         "backgroundColor": "#1a1a5e",
         "foregroundImage": "./assets/android-icon-foreground.png"

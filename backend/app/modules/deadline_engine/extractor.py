@@ -185,29 +185,24 @@ Today: {today}
 
 
 async def ai_extract_deadlines(text: str) -> List[dict]:
-    """Use OpenAI to extract structured deadlines from text."""
-    from openai import AsyncOpenAI
-    
-    client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+    """Use Unified LLM Gateway (Ollama local GPU -> Gemini fallback -> OpenAI) to extract structured deadlines."""
+    from app.core.llm_gateway import call_unified_llm
+
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    
     prompt = AI_EXTRACTION_PROMPT.format(text=text[:2000], today=today)
-    
+
     try:
-        response = await client.chat.completions.create(
-            model=settings.OPENAI_MODEL,
-            messages=[{"role": "user", "content": prompt}],
+        parsed = await call_unified_llm(
+            prompt=prompt,
+            json_mode=True,
             temperature=0.0,
-            response_format={"type": "json_object"},
+            timeout_seconds=20.0,
         )
-        raw = response.choices[0].message.content or '{"deadlines":[]}'
-        parsed = json.loads(raw)
-        
-        # Handle both {"deadlines": [...]} and bare array
         if isinstance(parsed, list):
             return parsed
-        return parsed.get("deadlines", [])
-    
+        if isinstance(parsed, dict):
+            return parsed.get("deadlines", [])
+        return []
     except Exception as e:
         logger.warning(f"AI extraction failed, using rule-based fallback: {e}")
         return rule_based_extract(text)

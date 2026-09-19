@@ -45,26 +45,55 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
   onNavigateDeadlines,
   onNavigateWizard,
 }) => {
-  const [selectedFile, setSelectedFile] = useState<{ uri: string; name: string; size?: number; mimeType?: string } | null>(null);
+  const [selectedFile, setSelectedFile] = useState<{
+    uri: string;
+    name: string;
+    size?: number;
+    mimeType?: string;
+    file?: any;
+  } | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<XRayResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deadlinesPushed, setDeadlinesPushed] = useState(false);
 
+  const resolveMimeType = (filename: string, mime?: string): string => {
+    if (mime && mime !== 'application/octet-stream') return mime;
+    const ext = filename.split('.').pop()?.toLowerCase();
+    switch (ext) {
+      case 'pdf': return 'application/pdf';
+      case 'png': return 'image/png';
+      case 'jpg':
+      case 'jpeg': return 'image/jpeg';
+      case 'webp': return 'image/webp';
+      case 'docx': return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case 'txt': return 'text/plain';
+      default: return 'application/pdf';
+    }
+  };
+
   const handlePickDocument = async () => {
     try {
       const res = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'image/*'],
+        type: [
+          'application/pdf',
+          'image/*',
+          'text/plain',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/msword',
+        ],
         copyToCacheDirectory: true,
       });
 
       if (!res.canceled && res.assets && res.assets.length > 0) {
         const file = res.assets[0];
+        const mime = resolveMimeType(file.name, file.mimeType);
         setSelectedFile({
           uri: file.uri,
           name: file.name,
           size: file.size,
-          mimeType: file.mimeType,
+          mimeType: mime,
+          file: (file as any).file, // Native browser File object if on Web
         });
         setResult(null);
         setError(null);
@@ -75,6 +104,19 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
     }
   };
 
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const res = reader.result as string;
+        const b64 = res.includes(',') ? res.split(',')[1] : res;
+        resolve(b64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const handleAnalyze = async () => {
     if (!selectedFile) return;
     setAnalyzing(true);
@@ -82,24 +124,81 @@ export const DocumentXRayScreen: React.FC<DocumentXRayScreenProps> = ({
     setResult(null);
 
     try {
-      const formData = new FormData();
-      formData.append('user_id', userId);
+      const mimeType = resolveMimeType(selectedFile.name, selectedFile.mimeType);
 
-      if (Platform.OS === 'web') {
-        const fileRes = await fetch(selectedFile.uri);
-        const blob = await fileRes.blob();
-        formData.append('file', blob, selectedFile.name);
+      // Step 1: Obtain a real Blob instance
+      let fileBlob: Blob | null = null;
+      if (selectedFile.file) {
+        fileBlob = selectedFile.file;
       } else {
-        formData.append('file', {
-          uri: selectedFile.uri,
-          name: selectedFile.name,
-          type: selectedFile.mimeType || 'application/pdf',
-        } as unknown as Blob);
+        try {
+          const fileRes = await fetch(selectedFile.uri);
+          fileBlob = await fileRes.blob();
+        } catch (fetchErr) {
+          console.warn('Could not fetch file URI as blob:', fetchErr);
+        }
       }
 
-      const res = await fetch(`${API_BASE_URL}/api/v1/document-xray/analyze`, {
+      // Step 2: Attempt standard FormData upload with real Blob/File
+      let uploadSuccess = false;
+      if (fileBlob) {
+        try {
+          const formData = new FormData();
+          formData.append('user_id', userId);
+
+          const filePayload = typeof File !== 'undefined'
+            ? new File([fileBlob], selectedFile.name, { type: mimeType })
+            : fileBlob;
+
+          formData.append('file', filePayload, selectedFile.name);
+
+          const res = await fetch(`${API_BASE_URL}/api/v1/document-xray/analyze`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            setResult(data.result as XRayResult);
+            uploadSuccess = true;
+          } else {
+            const errData = await res.json().catch(() => ({}));
+            // If server explicitly returned validation or parsing error, raise it
+            if (res.status === 400 || res.status === 422) {
+              throw new Error(errData.detail || `Document analysis failed (${res.status})`);
+            }
+          }
+        } catch (formErr: any) {
+          console.warn('Multipart FormData upload error, falling back to Base64:', formErr?.message);
+        }
+      }
+
+      if (uploadSuccess) return;
+
+      // Step 3: Base64 JSON fallback for environments where FormDataPart fails
+      let base64Content = '';
+      if (fileBlob) {
+        base64Content = await blobToBase64(fileBlob);
+      } else {
+        // Direct fetch as blob then base64
+        const fileRes = await fetch(selectedFile.uri);
+        const blob = await fileRes.blob();
+        base64Content = await blobToBase64(blob);
+      }
+
+      if (!base64Content) {
+        throw new Error('Could not read document contents. Please re-select the file.');
+      }
+
+      const res = await fetch(`${API_BASE_URL}/api/v1/document-xray/analyze-base64`, {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file_base64: base64Content,
+          filename: selectedFile.name,
+          mime_type: mimeType,
+          user_id: userId,
+        }),
       });
 
       if (res.ok) {

@@ -735,33 +735,18 @@ Return ONLY a valid JSON matching this schema:
   }}
 }}"""
 
-    llm_provider = get_active_provider()
+    from app.core.llm_gateway import call_unified_llm
 
-    # Tier 1: Gemini
-    if settings.GEMINI_API_KEY and llm_provider in ("auto", "gemini"):
-        try:
-            from google import genai
-            from google.genai import types
-
-            client = genai.Client(api_key=settings.GEMINI_API_KEY)
-            loop = asyncio.get_running_loop()
-            def _gen():
-                return client.models.generate_content(
-                    model=settings.GEMINI_MODEL or "gemini-2.0-flash",
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        response_mime_type="application/json",
-                        temperature=0.2,
-                    )
-                )
-            res = await asyncio.wait_for(loop.run_in_executor(None, _gen), timeout=4.0)
-            data = json.loads(res.text or "{}")
-            if "questions" in data and "default_plan" in data:
-                if len(_DYNAMIC_SCENARIO_CACHE) < _MAX_SCENARIO_CACHE:
-                    _DYNAMIC_SCENARIO_CACHE[topic_key] = data
-                return data
-        except Exception as e:
-            logger.warning(f"Dynamic scenario LLM generation (Gemini) failed: {e}")
+    data = await call_unified_llm(
+        prompt=prompt,
+        json_mode=True,
+        temperature=0.2,
+        timeout_seconds=20.0,
+    )
+    if isinstance(data, dict) and "questions" in data and "default_plan" in data:
+        if len(_DYNAMIC_SCENARIO_CACHE) < _MAX_SCENARIO_CACHE:
+            _DYNAMIC_SCENARIO_CACHE[topic_key] = data
+        return data
 
     # Fallback / Rule-based dynamic scenario
     clean_topic = user_topic.strip().capitalize()

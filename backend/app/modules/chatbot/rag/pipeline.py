@@ -216,7 +216,7 @@ async def call_gemini_llm(prompt: str) -> dict:
     from google.genai import types
 
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
-    model_name = settings.GEMINI_MODEL or "gemini-2.0-flash"
+    model_name = settings.GEMINI_MODEL or "gemini-3.6-flash"
 
     loop = asyncio.get_running_loop()
     def _generate():
@@ -296,69 +296,20 @@ async def run_rag_pipeline(
     logger.info(f"Executing LLM generation for query: '{query[:80]}' [lang={language}]")
     parsed = {}
     
-    # ── Add-on: Runtime provider override ──
-    from app.api.llm_settings import get_active_provider as _get_llm_provider
-    _llm_override = _get_llm_provider()  # "auto" | "gemini" | "openai" | "ollama"
+    # ── Unified LLM Gateway (In-Memory Cache -> Local Ollama GPU -> Gemini Flash -> OpenAI) ──
+    from app.core.llm_gateway import call_unified_llm
 
-    # 1. Primary: Try Gemini API
-    if settings.GEMINI_API_KEY and _llm_override in ("auto", "gemini"):
-        try:
-            logger.info(f"Executing Gemini LLM ({settings.GEMINI_MODEL}) generation [override={_llm_override}]...")
-            parsed = await call_gemini_llm(prompt)
-        except Exception as e:
-            logger.error(f"Gemini LLM API call error: {e}")
-            parsed = {}
+    trimmed_context = build_context_block(law_chunks[:3])
+    trimmed_history = build_history_block(conversation_history[-4:])
+    gateway_prompt = build_prompt(trimmed_context, trimmed_history, query, language=language)
 
-    # 2. Secondary: OpenAI
-    if not parsed and _openai_client and settings.OPENAI_API_KEY and _llm_override in ("auto", "openai"):
-        try:
-            logger.info(f"Executing OpenAI LLM generation [override={_llm_override}]...")
-            response = await asyncio.wait_for(
-                _openai_client.chat.completions.create(
-                    model=settings.OPENAI_MODEL,
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.2,
-                    response_format={"type": "json_object"},
-                ),
-                timeout=4.0,
-            )
-            raw_content = response.choices[0].message.content or "{}"
-            parsed = clean_and_parse_json(raw_content)
-        except Exception as e:
-            logger.error(f"OpenAI LLM API call error: {e}")
-            parsed = {}
-
-    # 3. Tier 3: Ollama local LLM — GPU-accelerated on RTX 4060, fully private
-    if not parsed and settings.OLLAMA_BASE_URL and _llm_override in ("auto", "ollama"):
-        try:
-            from openai import AsyncOpenAI as AsyncOpenAIClient
-            logger.info(f"Executing Ollama ({settings.OLLAMA_MODEL}) local LLM generation...")
-            ollama_client = AsyncOpenAIClient(
-                base_url=settings.OLLAMA_BASE_URL,
-                api_key="ollama",
-            )
-            # Trim context block for local model context window safety
-            trimmed_context = build_context_block(law_chunks[:3])
-            trimmed_history = build_history_block(conversation_history[-4:])
-            ollama_prompt = build_prompt(trimmed_context, trimmed_history, query, language=language)
-            ollama_response = await asyncio.wait_for(
-                ollama_client.chat.completions.create(
-                    model=settings.OLLAMA_MODEL,
-                    messages=[{"role": "user", "content": ollama_prompt}],
-                    temperature=0.2,
-                ),
-                timeout=5.0,
-            )
-            raw_ollama = ollama_response.choices[0].message.content or "{}"
-            parsed = clean_and_parse_json(raw_ollama)
-            if parsed and "answer" in parsed:
-                logger.info(f"Ollama ({settings.OLLAMA_MODEL}) generated response successfully.")
-            else:
-                parsed = {}
-                logger.warning("Ollama response could not be parsed as JSON — falling back to rule-based.")
-        except Exception as e:
-            logger.error(f"Ollama LLM API call error: {e}")
-            parsed = {}
+    raw_parsed = await call_unified_llm(
+        prompt=gateway_prompt,
+        json_mode=True,
+        temperature=0.2,
+        timeout_seconds=22.0,
+    )
+    parsed = raw_parsed if isinstance(raw_parsed, dict) else {}
 
     # 4. Fallback Execution if all LLMs unavailable or parsing failed
     if not parsed or "answer" not in parsed:

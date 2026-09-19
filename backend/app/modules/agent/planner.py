@@ -238,86 +238,16 @@ async def generate_agent_plan(
 
     parsed: Dict[str, Any] = {}
 
-    # ── Add-on: Runtime provider override (does NOT change tier chain structure) ──
-    from app.api.llm_settings import get_active_provider as _get_provider
-    _llm_override = _get_provider()  # "auto" | "gemini" | "openai" | "ollama"
+    # ── Unified LLM Gateway (In-Memory Cache -> Ollama GPU -> Gemini Flash -> OpenAI) ──
+    from app.core.llm_gateway import call_unified_llm
 
-    # Tier 1: Gemini
-    if settings.GEMINI_API_KEY and _llm_override in ("auto", "gemini"):
-        try:
-            from google import genai
-            from google.genai import types
-
-            client = genai.Client(api_key=settings.GEMINI_API_KEY)
-            model_name = settings.GEMINI_MODEL or "gemini-2.0-flash"
-
-            loop = asyncio.get_running_loop()
-            def _gen():
-                return client.models.generate_content(
-                    model=model_name,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        response_mime_type="application/json",
-                        temperature=0.1,
-                    )
-                )
-
-            res = await asyncio.wait_for(loop.run_in_executor(None, _gen), timeout=3.5)
-            raw = res.text or "{}"
-            parsed = _clean_json_output(raw)
-            logger.info(f"Planner generated plan via Gemini LLM [override={_llm_override}].")
-        except asyncio.TimeoutError:
-            logger.warning("Gemini LLM planning timed out after 3.5s — failing over...")
-        except Exception as e:
-            logger.warning(f"Gemini LLM planning failed: {e}")
-
-    # Tier 2: OpenAI
-    if not parsed and settings.OPENAI_API_KEY and _llm_override in ("auto", "openai"):
-        try:
-            from openai import AsyncOpenAI
-            client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-            res = await client.chat.completions.create(
-                model=settings.OPENAI_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,
-                response_format={"type": "json_object"},
-            )
-            raw = res.choices[0].message.content or "{}"
-            parsed = _clean_json_output(raw)
-            logger.info(f"Planner generated plan via OpenAI LLM [override={_llm_override}].")
-        except Exception as e:
-            logger.warning(f"OpenAI LLM planning failed: {e}")
-
-    # Tier 3: Ollama local LLM — privacy-first, GPU-accelerated (RTX 4060)
-    # Uses OpenAI-compatible API endpoint exposed by Ollama
-    if not parsed and settings.OLLAMA_BASE_URL and _llm_override in ("auto", "ollama"):
-        try:
-            from openai import AsyncOpenAI
-            ollama_client = AsyncOpenAI(
-                base_url=settings.OLLAMA_BASE_URL,
-                api_key="ollama",          # Ollama ignores auth but client requires non-empty
-            )
-            # Build a tighter prompt for local models — strip history to fit context window
-            short_history = _format_full_history(history_messages[-4:]) if history_messages else "No prior history."
-            ollama_prompt = PLANNER_SYSTEM_PROMPT.format(
-                tools_description=tools_desc,
-                history=short_history,
-                user_message=user_message,
-            )
-            res = await ollama_client.chat.completions.create(
-                model=settings.OLLAMA_MODEL,
-                messages=[{"role": "user", "content": ollama_prompt}],
-                temperature=0.1,
-            )
-            raw = res.choices[0].message.content or "{}"
-            parsed = _clean_json_output(raw)
-            if parsed and "steps" in parsed:
-                logger.info(f"Planner generated plan via Ollama ({settings.OLLAMA_MODEL}) successfully.")
-            else:
-                parsed = {}
-                logger.warning("Ollama returned malformed plan JSON — falling back to rule-based planner.")
-        except Exception as e:
-            logger.warning(f"Ollama LLM planning failed: {e}")
+    raw_parsed = await call_unified_llm(
+        prompt=prompt,
+        json_mode=True,
+        temperature=0.1,
+        timeout_seconds=20.0,
+    )
+    parsed = raw_parsed if isinstance(raw_parsed, dict) else {}
 
     # If LLM parsed successfully, convert to AgentPlan
     if parsed and "steps" in parsed and isinstance(parsed["steps"], list) and len(parsed["steps"]) > 0:

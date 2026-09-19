@@ -27,11 +27,11 @@ class Settings(BaseSettings):
 
     # Gemini
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MODEL: str = "gemini-3.6-flash"
 
-    # Ollama Local LLM (Tier-3 fallback)
+    # Ollama Local LLM (Primary Engine — runs on RTX 4060 GPU)
     OLLAMA_BASE_URL: str = "http://localhost:11434/v1"
-    OLLAMA_MODEL: str = "qwen2.5:7b"
+    OLLAMA_MODEL: str = "qwen3:8b"
 
     # Embeddings
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"

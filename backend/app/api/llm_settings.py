@@ -40,10 +40,10 @@ def set_active_provider(provider: str) -> None:
 # ---------------------------------------------------------------------------
 
 PROVIDER_META = {
-    "auto":   {"label": "Auto (Fallback Chain)", "icon": "🔄", "description": "Gemini → OpenAI → Ollama → Rule-based"},
-    "gemini": {"label": "Google Gemini",          "icon": "✨", "description": "Cloud — best legal reasoning quality"},
-    "openai": {"label": "OpenAI GPT-4o",           "icon": "🧠", "description": "Cloud — strong reasoning, JSON output"},
-    "ollama": {"label": "Ollama (Local GPU)",       "icon": "🦙", "description": "Private — fully on-device, RTX 4060"},
+    "auto":   {"label": "Auto (Local-First)",   "icon": "⚡", "description": "Ollama (qwen3:8b) → Gemini Flash (Fallback) → Rule-based ($0 cost)"},
+    "ollama": {"label": "Ollama (Local GPU)",   "icon": "🦙", "description": "Local RTX 4060 — 100% on-device, $0 cost, zero data sharing"},
+    "gemini": {"label": "Google Gemini",       "icon": "✨", "description": "Cloud — Vision OCR & high-complexity reasoning"},
+    "openai": {"label": "OpenAI GPT-4o",        "icon": "🧠", "description": "Cloud — Premium fallback"},
 }
 
 

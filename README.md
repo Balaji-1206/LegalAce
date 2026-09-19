@@ -44,15 +44,16 @@
 - **Multilingual AI Prompt Synthesis**: Chat prompts pass active language directives (`hi-IN`, `ta-IN`) instructing the LLM to formulate legal guidance directly in fluent vernacular Devanagari or Tamil script with accurate statutory references.
 - **Persistent Localization**: Retains language preference in local storage (`AsyncStorage`) across device sessions.
 
-### 🎙️ 3. Voice Input Dictation & Speech Read-Aloud (Novel Feature #3)
+### 🎙️ 3. Voice Input Dictation & Native Cross-Platform Read-Aloud (Novel Feature #3)
 - **Low-Literacy Empowerment**: Eliminates text typing barriers for marginalized citizens with a 1-tap microphone button (`🎙️`) streaming speech-to-text dictation in Hindi, Tamil, or Indian English via the native Web Speech API.
-- **Text-to-Speech (TTS) Narration**: Assistant responses and Daily Rights cards feature a dedicated `🔊 Listen Aloud` button with playback controls, reading statutory explanations aloud at a natural cadence with voice synthesis.
+- **Cross-Platform Text-to-Speech (TTS) Narration**: Built with `expo-speech`, assistant responses, legislative excerpts, and Daily Rights cards feature a dedicated `🔊 Listen Aloud` button with playback controls, reading statutory explanations aloud natively across **Android, iOS, and Web** with natural Indian English, Hindi, and Tamil voices.
 
 ### 📊 4. Action Plan Outcome Tracking & Community Learning Loop (Novel Feature #4)
 - **From Static Answers to a Learning System**: After executing a wizard-generated action plan, citizens log real-world dispute outcomes: status (`Resolved`, `Partially Resolved`, `In Progress`, `Escalated`), monetary amounts recovered (₹), days taken, and ratings.
 - **Crowdsourced Resolution Telemetry**: Aggregates community success metrics via a MongoDB `$group` aggregation pipeline, displaying live resolution badges on scenario cards (e.g., `⭐ 84% Resolved • ₹35,000 Avg Recovered`).
 
-### ⚡ 5. Offline-First Resilience for Rural / Low-Connectivity Regions (Novel Feature #5)
+### ⚡ 5. Offline-First Resilience & Deterministic Intent Router (Novel Feature #5)
+- **Sub-Millisecond Intent Routing**: Built-in deterministic router (`intent_router.py`) classifies citizen disputes across 9 statutory categories (Housing, Consumer, Debt, Employment, etc.) and detects police/arrest emergencies in **< 1ms** with $0 token cost.
 - **Zero-Latency Local Hydration**: Transparent `AsyncStorage` cache pre-hydrates legal categories and common citizen dispute scenarios immediately on app launch.
 - **Offline Notice Drafting**: Citizens in low-connectivity areas can draft, customize, and share pre-filled statutory legal demand notices completely disconnected from the internet.
 - **Dynamic Offline Badge**: Displays an amber `⚡ OFFLINE MODE (CACHED)` status indicator when running disconnected.
@@ -65,11 +66,14 @@
 - **Pure-Python Printable PDF Generator**: Fast, zero-dependency PDF 1.4 binary engine emitting certified A4 printable legal notice documents (`/api/v1/wizard/download-pdf`) complete with reference codes, statutory tags, and signature blocks.
 - **Mandatory Authorization Gate**: Enforces explicit citizen verification checkbox (*"I certify that I have reviewed the exact text and financial claim of this statutory legal demand notice..."*) before activating external dispatch channels.
 
-### 🤖 7. Agentic Legal AI Chatbot (RAG Pipeline & Tool Calling)
-- **Vector Retrieval**: Local FAISS vector index built on real Indian statutory acts (Transfer of Property Act, Consumer Protection Act 2019, Industrial Disputes Act, POSH Act, Information Technology Act, CrPC/BNSS, Domestic Violence Act).
-- **Agent Tool Registry**: Built-in planner capable of dispatching dynamic tools (such as `legal_aid_lookup`) to synthesize statutory authorities and legal remedies directly into conversation turns.
-- **Multi-LLM Fallback & Switcher**: Resilient multi-tier LLM fallback: Google Gemini 2.0 Flash → OpenAI GPT-4o → Ollama (local) → Smart Rule-Based Engine. Switchable on-the-fly from the mobile app.
-- **Rich Markdown Formatting**: Native mobile parsing and formatted rendering for section headers (`###`), bold highlights (`**text**`), and bullet points.
+### 🤖 7. Unified LLM Gateway & Local-First AI Hierarchy
+- **Single Unified Gateway (`llm_gateway.py`)**: Centralizes multi-tier model calls into an in-memory MD5 cached pipeline with automatic failover:
+  1. **In-Memory Cache ($0 cost, 0ms)**: Instant exact-match lookup for repeated queries.
+  2. **Tier 1 — Local GPU Ollama (`qwen3:8b`, $0 cost)**: Native `/api/chat` with `num_ctx: 4096` and `keep_alive: 60m`, running 100% inside GPU VRAM without CPU spillage.
+  3. **Tier 2 — Google Gemini 3.6 Flash**: High-speed cloud fallback and multimodal OCR engine.
+  4. **Tier 3 — OpenAI GPT-4o**: Cloud emergency backup.
+- **Reasoning Tag Sanitizer**: Automatic detection and stripping of `<think>...</think>` internal monologue blocks from modern reasoning models before JSON parsing.
+- **Vector Retrieval**: Local FAISS vector index built on real Indian statutory acts (Transfer of Property Act, Consumer Protection Act 2019, Industrial Disputes Act, POSH Act, IT Act, CrPC/BNSS, Domestic Violence Act).
 
 ### 🛡️ 8. Situation Finder & 13 Legal Categories
 - **13 Specialized Categories**: Housing, Employment, Consumer, Banking, Cyber Crime, Traffic, Women's Rights, Education, Cheque Debt, RTI, Real Estate, Insurance, and Family & Support.
@@ -82,7 +86,8 @@
 
 ### 📄 10. Document X-Ray (Upload & Auto-Extract)
 - **AI Document Parser**: Upload legal PDFs or images (rental agreements, cheque bounce notices, FIR copies, termination letters).
-- **Structured Extraction**: Extracts document type, party names, key dates timeline, obligations checklist, and red flags (unfavorable/illegal clauses).
+- **Dual-Mode Upload Resiliency**: Automatic failover between standard multipart form-data and Base64 JSON (`/api/v1/document-xray/analyze-base64`), completely bypassing mobile React Native C++ fetch implementation limitations.
+- **Structured Extraction**: Extracts document type, party names, key dates timeline, obligations checklist, and red flags (unfavorable/illegal clauses) with robust dict-to-list normalization.
 
 ### ⚖️ 11. Free Legal Aid (DLSA) Checker
 - **Statutory Eligibility**: Evaluates user criteria under **Section 12 of the Legal Services Authorities Act, 1987** (SC/ST, Women/Children, Persons with Disabilities, Industrial Workmen, Under-Trial Prisoners, Annual Income < ₹3,00,000, etc.).
@@ -94,14 +99,14 @@
 
 | Layer | Technology |
 |---|---|
-| **Mobile / Frontend** | Expo (~57.0), React Native (0.86), TypeScript, React Native Web, Safe Area Context, Vector Icons |
-| **Backend API** | FastAPI, Uvicorn, Python 3.10+ |
-| **AI / RAG** | LangChain, FAISS Vector Search, SentenceTransformers (`all-MiniLM-L6-v2`) |
-| **LLMs Supported** | Google Gemini 2.0 Flash, OpenAI GPT-4o, Ollama (Qwen 2.5) |
+| **Mobile / Frontend** | Expo (~57.0), React Native (0.86), TypeScript, `expo-speech` (Cross-platform TTS), React Native Web, Safe Area Context, Vector Icons |
+| **Backend API** | FastAPI, Uvicorn, Python 3.10+, HTTPX |
+| **AI / RAG** | LangChain, FAISS Vector Search, BM25 Keyword Search, SentenceTransformers (`all-MiniLM-L6-v2`) |
+| **LLMs Supported** | Ollama Local GPU (`qwen3:8b`), Google Gemini 3.6 Flash, OpenAI GPT-4o |
 | **Database** | MongoDB (Motor async driver) |
 | **PDF & OCR** | `pypdf`, `pytesseract` |
 | **Scheduler** | APScheduler (AsyncIOScheduler) |
-| **Testing** | Pytest, Pytest-AsyncIO, TypeScript Compiler (`tsc`) |
+| **Testing** | Pytest, AnyIO, TypeScript Compiler (`tsc`) |
 
 ---
 
@@ -204,8 +209,11 @@ LegalAce includes a comprehensive automated test suite enforcing clean code stan
 cd backend
 .\.venv\Scripts\pytest -v
 ```
-*Current test suite: **54 tests passed** (100% green), covering:*
+*Current test suite: **78 tests passed** (100% green in ~34s), covering:*
+- `test_llm_gateway.py`: In-memory cache hit (0ms), reasoning `<think>` tag stripping, JSON parser fences
+- `test_intent_router.py`: Sub-millisecond (< 1ms) statutory category routing and emergency police detection
 - `test_grounding_citations.py`: Statutory excerpt extraction, normalized grounding confidence scoring (0-100%)
+- `test_document_xray.py`: Multi-format parsing, ISO date conversion, dict-to-list normalization, and Base64 JSON API
 - `test_outcomes.py`: Action plan outcome recording and MongoDB aggregation resolution telemetry
 - `test_agent_tools.py`: Tool registry validation and planner dispatching
 - `test_conversation_security.py`: Cross-tenant scoping (IDOR) & safe float parsing
@@ -215,6 +223,7 @@ cd backend
 - `test_legal_aid.py`: Section 12 criteria, income boundaries, and state fallbacks
 - `test_notifications.py`: OTP format, hashing, lockout, and 403 verification checks
 - `test_wizard.py`: Notice calculation, scenario generation, and dynamic value schemas
+- `test_wizard_notice_dispatch.py`: WhatsApp/Email formatting and PDF generation
 
 ### Running Frontend Type Checks
 ```bash

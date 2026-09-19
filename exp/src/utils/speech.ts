@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import * as Speech from 'expo-speech';
 import { SupportedLang } from '../config/i18n';
 
 /**
@@ -14,13 +15,11 @@ export function cleanTextForSpeech(raw: string): string {
 }
 
 /**
- * Check if Web Speech Synthesis is available in current environment
+ * Check if Speech Synthesis (TTS) is available.
+ * expo-speech supports iOS, Android, and Web out of the box.
  */
 export function isSpeechSynthesisSupported(): boolean {
-  if (Platform.OS !== 'web' && typeof window === 'undefined') {
-    return false;
-  }
-  return typeof window !== 'undefined' && 'speechSynthesis' in window;
+  return true;
 }
 
 /**
@@ -52,7 +51,7 @@ export function getVoiceLocale(lang: SupportedLang): string {
 }
 
 /**
- * Read text aloud using Text-to-Speech
+ * Read text aloud using native React Native Text-to-Speech (via expo-speech)
  */
 export function speakText(
   text: string,
@@ -60,37 +59,33 @@ export function speakText(
   onStart?: () => void,
   onEnd?: () => void
 ): void {
-  if (!isSpeechSynthesisSupported()) {
-    console.warn('Speech synthesis is not supported on this platform/browser.');
-    return;
-  }
-
   try {
-    window.speechSynthesis.cancel(); // Stop any pending speech
-
     const clean = cleanTextForSpeech(text);
-    if (!clean) return;
-
-    const utterance = new SpeechSynthesisUtterance(clean);
-    utterance.lang = getVoiceLocale(lang);
-    utterance.rate = 0.95; // Slightly slower for crisp legal clarity
-    utterance.pitch = 1.0;
-
-    // Pick best matching voice if available
-    const voices = window.speechSynthesis.getVoices();
-    const targetPrefix = lang === 'hi' ? 'hi' : lang === 'ta' ? 'ta' : 'en';
-    const match = voices.find((v) => v.lang.toLowerCase().startsWith(targetPrefix));
-    if (match) {
-      utterance.voice = match;
+    if (!clean) {
+      if (onEnd) onEnd();
+      return;
     }
 
-    if (onStart) utterance.onstart = () => onStart();
-    if (onEnd) utterance.onend = () => onEnd();
-    utterance.onerror = () => {
-      if (onEnd) onEnd();
-    };
+    // Stop any pending or ongoing speech before starting a new one
+    Speech.stop();
 
-    window.speechSynthesis.speak(utterance);
+    Speech.speak(clean, {
+      language: getVoiceLocale(lang),
+      rate: 0.95, // Slightly slower for crisp legal statutory clarity
+      pitch: 1.0,
+      onStart: () => {
+        if (onStart) onStart();
+      },
+      onDone: () => {
+        if (onEnd) onEnd();
+      },
+      onStopped: () => {
+        if (onEnd) onEnd();
+      },
+      onError: () => {
+        if (onEnd) onEnd();
+      },
+    });
   } catch (err) {
     console.error('Speech synthesis error:', err);
     if (onEnd) onEnd();
@@ -101,12 +96,10 @@ export function speakText(
  * Cancel any ongoing speech synthesis
  */
 export function stopSpeaking(): void {
-  if (isSpeechSynthesisSupported()) {
-    try {
-      window.speechSynthesis.cancel();
-    } catch (err) {
-      console.warn('Error stopping speech:', err);
-    }
+  try {
+    Speech.stop();
+  } catch (err) {
+    console.warn('Error stopping speech:', err);
   }
 }
 

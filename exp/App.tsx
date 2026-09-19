@@ -107,69 +107,73 @@ export default function App() {
 
     async function init() {
       try {
-        let storedId = await AsyncStorage.getItem('legalace_user_id');
-        if (!storedId) {
-          storedId = 'user_' + Math.random().toString(36).substring(2, 11);
-          await AsyncStorage.setItem('legalace_user_id', storedId);
-        }
-        if (!ignore) setUserId(storedId);
-
-        const storedBm = await AsyncStorage.getItem('legalace_bookmarks');
-        if (storedBm && !ignore) setBookmarks(JSON.parse(storedBm));
-
-        const storedRv = await AsyncStorage.getItem('legalace_recently_viewed');
-        if (storedRv && !ignore) setRecentlyViewed(JSON.parse(storedRv));
-
-        const savedLang = await getSavedLanguage();
-        if (!ignore) setActiveLang(savedLang);
-
-        // Pre-hydrate from offline cache for instant display
-        const cachedSits = await loadFromOfflineCache<SituationDetail[]>(CACHE_KEYS.SITUATIONS);
-        if (cachedSits && cachedSits.length > 0 && !ignore) {
-          setSituations(cachedSits);
-        } else if (!ignore) {
-          setSituations(STATIC_OFFLINE_SITUATIONS);
-        }
-
-        const cachedCats = await loadFromOfflineCache<CategoryItem[]>(CACHE_KEYS.CATEGORIES);
-        if (cachedCats && cachedCats.length > 0 && !ignore) {
-          setCategories(cachedCats);
-        }
-
-        // Fetch user conversation history
-        try {
-          const convRes = await fetch(`${API_BASE_URL}/api/v1/conversation/history/${storedId}`);
-          if (convRes.ok && !ignore) {
-            const convData = await convRes.json();
-            if (convData.conversations) {
-              setConversations(convData.conversations);
-            }
-          }
-        } catch { /* offline */ }
-      } catch { /* storage offline */ }
-
-      // Fetch categories & situations from backend and update local cache
-      try {
-        const [catRes, sitRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/v1/situations/categories`),
-          fetch(`${API_BASE_URL}/api/v1/situations`),
+        // 1. Parallel storage hydration across native bridge in a single batch
+        const [storedIdRaw, storedBm, storedRv, savedLang, cachedSits, cachedCats] = await Promise.all([
+          AsyncStorage.getItem('legalace_user_id'),
+          AsyncStorage.getItem('legalace_bookmarks'),
+          AsyncStorage.getItem('legalace_recently_viewed'),
+          getSavedLanguage(),
+          loadFromOfflineCache<SituationDetail[]>(CACHE_KEYS.SITUATIONS),
+          loadFromOfflineCache<CategoryItem[]>(CACHE_KEYS.CATEGORIES),
         ]);
 
-        if (catRes.ok && sitRes.ok && !ignore) {
-          const fetchedCats = await catRes.json();
-          const fetchedSits = await sitRes.json();
-          setCategories(fetchedCats);
-          setSituations(fetchedSits);
-          setIsOffline(false);
-          saveToOfflineCache(CACHE_KEYS.CATEGORIES, fetchedCats);
-          saveToOfflineCache(CACHE_KEYS.SITUATIONS, fetchedSits);
-        } else if (!ignore) {
-          setIsOffline(true);
+        let storedId = storedIdRaw;
+        if (!storedId) {
+          storedId = 'user_' + Math.random().toString(36).substring(2, 11);
+          AsyncStorage.setItem('legalace_user_id', storedId).catch(() => {});
         }
-      } catch {
+
         if (!ignore) {
-          setIsOffline(true);
+          setUserId(storedId);
+          if (storedBm) setBookmarks(JSON.parse(storedBm));
+          if (storedRv) setRecentlyViewed(JSON.parse(storedRv));
+          if (savedLang) setActiveLang(savedLang);
+
+          // Instant UI paint with offline/cached data
+          if (cachedSits && cachedSits.length > 0) {
+            setSituations(cachedSits);
+          } else {
+            setSituations(STATIC_OFFLINE_SITUATIONS);
+          }
+
+          if (cachedCats && cachedCats.length > 0) {
+            setCategories(cachedCats);
+          }
         }
+
+        // 2. Non-blocking background network sync with 3.5s timeout (never blocks UI rendering)
+        const controller = new AbortController();
+        const timerId = setTimeout(() => controller.abort(), 3500);
+
+        Promise.all([
+          fetch(`${API_BASE_URL}/api/v1/conversation/history/${storedId}`, { signal: controller.signal })
+            .then(res => (res.ok ? res.json() : null))
+            .then(convData => {
+              if (convData?.conversations && !ignore) setConversations(convData.conversations);
+            })
+            .catch(() => {}),
+          fetch(`${API_BASE_URL}/api/v1/situations/categories`, { signal: controller.signal })
+            .then(res => (res.ok ? res.json() : null))
+            .catch(() => null),
+          fetch(`${API_BASE_URL}/api/v1/situations`, { signal: controller.signal })
+            .then(res => (res.ok ? res.json() : null))
+            .catch(() => null),
+        ])
+          .then(([_, fetchedCats, fetchedSits]) => {
+            clearTimeout(timerId);
+            if (!ignore && fetchedCats && fetchedSits) {
+              setCategories(fetchedCats);
+              setSituations(fetchedSits);
+              setIsOffline(false);
+              saveToOfflineCache(CACHE_KEYS.CATEGORIES, fetchedCats);
+              saveToOfflineCache(CACHE_KEYS.SITUATIONS, fetchedSits);
+            }
+          })
+          .catch(() => {
+            clearTimeout(timerId);
+          });
+      } catch {
+        /* storage offline */
       }
     }
 
