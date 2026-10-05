@@ -18,7 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import { API_BASE_URL } from '../config/api';
-import { ConversationSummary, ActiveTab } from '../types';
+import { ConversationSummary, ActiveTab, UserProfile } from '../types';
 
 interface ProfileScreenProps {
   userId: string;
@@ -27,6 +27,9 @@ interface ProfileScreenProps {
   recentlyViewed: string[];
   onNavigate: (tab: ActiveTab) => void;
   onOpenSaved: () => void;
+  currentUser?: UserProfile | null;
+  isGuest?: boolean;
+  onSignOut?: () => void;
 }
 
 export interface SavedDocItem {
@@ -132,14 +135,17 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   recentlyViewed,
   onNavigate,
   onOpenSaved,
+  currentUser,
+  isGuest,
+  onSignOut,
 }) => {
   // Segmented Navigation: 'profile' | 'vault' | 'helplines'
   const [activeSegment, setActiveSegment] = useState<'profile' | 'vault' | 'helplines'>('profile');
   const [activeReadingDoc, setActiveReadingDoc] = useState<SavedDocItem | null>(null);
 
   // Profile data
-  const [userName, setUserName] = useState('LegalAce Citizen');
-  const [userEmail, setUserEmail] = useState('citizen@legalace.in');
+  const [userName, setUserName] = useState(currentUser?.name || 'LegalAce Citizen');
+  const [userEmail, setUserEmail] = useState(currentUser?.email || 'citizen@legalace.in');
   const [avatarColor, setAvatarColor] = useState('#4338ca');
   const [persona, setPersona] = useState('Individual Consumer');
   const [preferredState, setPreferredState] = useState('Karnataka');
@@ -185,6 +191,21 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     }
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.name) setUserName(currentUser.name);
+      if (currentUser.email) setUserEmail(currentUser.email);
+      if (currentUser.persona) {
+        const found = LEGAL_PERSONAS.find(p => p.id === currentUser.persona);
+        if (found) setPersona(found.label);
+      }
+      if (currentUser.state) setPreferredState(currentUser.state);
+    } else if (isGuest) {
+      setUserName('Guest Citizen');
+      setUserEmail('guest@legalace.local');
+    }
+  }, [currentUser, isGuest]);
 
   const handleSaveProfile = async () => {
     try {
@@ -492,9 +513,15 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   <Text style={styles.citizenNameText} numberOfLines={1}>
                     {userName}
                   </Text>
-                  <View style={styles.verifiedTag}>
-                    <Ionicons name="checkmark-circle" size={13} color="#10b981" />
-                    <Text style={styles.verifiedTagText}>VERIFIED</Text>
+                  <View style={[styles.verifiedTag, isGuest && { backgroundColor: '#fef3c7' }]}>
+                    <Ionicons
+                      name={isGuest ? 'person-outline' : 'checkmark-circle'}
+                      size={13}
+                      color={isGuest ? '#d97706' : '#10b981'}
+                    />
+                    <Text style={[styles.verifiedTagText, isGuest && { color: '#b45309' }]}>
+                      {isGuest ? 'GUEST' : 'VERIFIED'}
+                    </Text>
                   </View>
                 </View>
 
@@ -832,6 +859,29 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 </View>
                 <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
               </TouchableOpacity>
+
+              {onSignOut && (
+                <TouchableOpacity
+                  style={[styles.actionItem, { marginTop: 4, borderTopWidth: 1, borderTopColor: '#f1f5f9' }]}
+                  onPress={onSignOut}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.actionIcon, { backgroundColor: '#fee2e2' }]}>
+                    <Ionicons name="log-out-outline" size={20} color="#dc2626" />
+                  </View>
+                  <View style={styles.actionContent}>
+                    <Text style={[styles.actionTitle, { color: '#dc2626', fontWeight: '700' }]}>
+                      {isGuest ? 'Sign In / Register' : 'Log Out / Switch Account'}
+                    </Text>
+                    <Text style={styles.actionDesc}>
+                      {isGuest
+                        ? 'Leave guest mode and log into an account'
+                        : `Signed in as ${currentUser?.email || userEmail}`}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="#dc2626" />
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 

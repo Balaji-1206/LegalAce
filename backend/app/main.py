@@ -37,8 +37,13 @@ async def lifespan(app: FastAPI):
     logger.info("=== LegalAce Backend Starting Up ===")
 
     # 1. MongoDB
-    from app.database.mongodb import connect_to_mongo
+    from app.database.mongodb import connect_to_mongo, get_database
     await connect_to_mongo()
+    try:
+        from app.modules.auth.service import seed_demo_user
+        await seed_demo_user(get_database())
+    except Exception as exc:
+        logger.warning(f"Could not seed demo auth user: {exc}")
 
     # 2. Load embedding model (blocks until model is loaded from disk/cache)
     from app.modules.chatbot.rag import embedder
@@ -127,8 +132,10 @@ from app.modules.agent.api import router as agent_router
 from app.modules.document_xray.api import router as document_xray_router
 from app.modules.notifications.api import router as notifications_router
 from app.modules.legal_aid.api import router as legal_aid_router
+from app.modules.auth import auth_router
 
 app.include_router(health_router)
+app.include_router(auth_router)
 app.include_router(llm_settings_router)
 app.include_router(chat_router)
 app.include_router(conversation_router)

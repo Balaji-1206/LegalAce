@@ -165,3 +165,19 @@ export interface WizardActionPlan {
   urgent: boolean;
   disclaimer: string;
 }
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  persona?: string;
+  state?: string;
+  createdAt: string;
+}
+
+export interface AuthSession {
+  user: UserProfile;
+  token?: string;
+  isGuest?: boolean;
+}

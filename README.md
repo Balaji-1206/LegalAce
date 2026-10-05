@@ -93,6 +93,16 @@
 - **Statutory Eligibility**: Evaluates user criteria under **Section 12 of the Legal Services Authorities Act, 1987** (SC/ST, Women/Children, Persons with Disabilities, Industrial Workmen, Under-Trial Prisoners, Annual Income < ₹3,00,000, etc.).
 - **Nearest Authority Locator**: Built-in DLSA/SLSA office directory for Indian states + NALSA nationwide helpline (15100) with 1-tap calling.
 
+### 🔐 12. MongoDB Citizen Authentication & Direct In-App Reset Engine
+- **MongoDB-Backed Identity Store**: Citizen credentials and profiles persisted in the `LegalAce.users` collection with unique email and user ID constraints.
+- **Salted PBKDF2 Password Security**: NIST-standard PBKDF2 HMAC-SHA256 password hashing (100,000 iterations) with 16-byte cryptographically secure random salts and constant-time equality validation (`secrets.compare_digest`).
+- **Complete Auth Flow**: Streamlined Sign In and Sign Up with full name, email, password, and Indian State/Jurisdiction selector.
+- **Zero-External-Key Password Reset**: Direct in-app password reset modal requiring $0 API cost and no third-party email/SMS provider dependencies.
+- **Pre-Seeded Demo Account**: Automatically seeded into MongoDB on server startup:
+  - **Email**: `demo@legalace.in`
+  - **Password**: `legalace123`
+  - **Name**: Adv. Rahul Sharma (Delhi NCR)
+
 ---
 
 ## 🛠️ Technology Stack
@@ -121,6 +131,7 @@ LegalAce/
 │   │   ├── database/                # Async MongoDB connection
 │   │   └── modules/
 │   │       ├── agent/               # Agentic planner, tools & synthesizer
+│   │       ├── auth/                # Citizen authentication, MongoDB user store & reset
 │   │       ├── chatbot/             # RAG pipeline, retriever & conversation API
 │   │       ├── deadline_engine/     # Health score & APScheduler jobs
 │   │       ├── document_xray/       # Feature 3: Upload & AI PDF extraction
@@ -130,7 +141,7 @@ LegalAce/
 │   │       └── wizard/              # Guided legal questionnaires & notice drafting
 │   ├── data/                        # Indian Law Corpus (FAISS source)
 │   ├── faiss_index/                 # Pre-built vector index
-│   ├── tests/                       # 50 Automated Unit & Integration Tests
+│   ├── tests/                       # 85 Automated Unit & Integration Tests
 │   ├── requirements.txt
 │   └── .env
 └── exp/                             # Unified Cross-Platform React Native App (Expo)
@@ -138,7 +149,8 @@ LegalAce/
     ├── src/
     │   ├── components/              # BottomNav (sliding glass bar), FloatingChatWidget, Spotlight
     │   ├── config/                  # API client & multi-platform LAN URL auto-resolver
-    │   ├── screens/                 # All 8 core screens:
+    │   ├── screens/                 # All 9 core screens:
+    │   │   ├── AuthScreen.tsx       # Citizen Login, Sign-Up & Password Reset Gate
     │   │   ├── HomeScreen.tsx       # Citizen Dashboard & quick actions
     │   │   ├── WizardScreen.tsx     # Guided Legal Wizard & AI tree generator
     │   │   ├── SituationFinderScreen.tsx # 13 Legal categories & search
@@ -147,6 +159,7 @@ LegalAce/
     │   │   ├── LegalAidScreen.tsx   # Section 12 LSA Eligibility & DLSA Directory
     │   │   ├── DailyRightsScreen.tsx # Daily legal rights & awareness
     │   │   └── ProfileScreen.tsx    # Profile, Vault, Helplines & LLM Switcher
+    │   ├── services/                # authService (MongoDB sync + offline cache)
     │   ├── theme/                   # Curated dark glassmorphic palette
     │   └── types/                   # TypeScript interfaces & domain models
     ├── App.tsx                      # Root component with dynamic screen router
@@ -198,6 +211,12 @@ From the interactive terminal prompt, you can press:
 - `w` — Open in **Web Browser** (`http://localhost:8081`)
 - **Scan QR Code** — Open in the **Expo Go** app on your physical smartphone!
 
+### 4. Pre-Seeded Demo Login Credentials
+The application is pre-seeded with a ready-to-use demo citizen account stored directly in MongoDB:
+- **Email**: `demo@legalace.in`
+- **Password**: `legalace123`
+*(Or click **"Sign Up"** to create a custom account, or use **"Forgot Password?"** for direct in-app resets!)*
+
 ---
 
 ## 🧪 Testing & Verification
@@ -209,7 +228,9 @@ LegalAce includes a comprehensive automated test suite enforcing clean code stan
 cd backend
 .\.venv\Scripts\pytest -v
 ```
-*Current test suite: **78 tests passed** (100% green in ~34s), covering:*
+*Current test suite: **85 tests passed** (100% green), covering:*
+- `test_auth.py`: PBKDF2 salted password hashing, credential verification, demo seeding, and user registration
+- `test_auth_api.py`: FastAPI endpoints for `/api/auth/login`, `/api/auth/register`, and `/api/auth/reset-password`
 - `test_llm_gateway.py`: In-memory cache hit (0ms), reasoning `<think>` tag stripping, JSON parser fences
 - `test_intent_router.py`: Sub-millisecond (< 1ms) statutory category routing and emergency police detection
 - `test_grounding_citations.py`: Statutory excerpt extraction, normalized grounding confidence scoring (0-100%)

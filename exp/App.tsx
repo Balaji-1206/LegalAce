@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, StatusBar } from 'react-native';
+import { StyleSheet, View, Text, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,7 @@ import {
   SituationDetail,
   Message,
   ConversationSummary,
+  UserProfile,
 } from './src/types';
 import { SupportedLang, getSavedLanguage, saveLanguage } from './src/config/i18n';
 import {
@@ -20,6 +21,7 @@ import {
   CACHE_KEYS,
   STATIC_OFFLINE_SITUATIONS,
 } from './src/config/offlineCache';
+import { authService } from './src/services/authService';
 
 import Header from './src/components/Header';
 import BottomNav from './src/components/BottomNav';
@@ -27,6 +29,7 @@ import ToastProvider from './src/components/Toast';
 import SpotlightSearchModal from './src/components/SpotlightSearchModal';
 import FloatingChatWidget from './src/components/FloatingChatWidget';
 
+import AuthScreen from './src/screens/AuthScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import SituationFinderScreen from './src/screens/SituationFinderScreen';
 import WizardScreen from './src/screens/WizardScreen';
@@ -79,6 +82,9 @@ const SUGGESTIONS = [
 
 export default function App() {
   const [userId, setUserId] = useState<string>('user_mobile');
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [categories, setCategories] = useState<CategoryItem[]>(FALLBACK_CATEGORIES);
   const [situations, setSituations] = useState<SituationDetail[]>([]);
@@ -108,7 +114,8 @@ export default function App() {
     async function init() {
       try {
         // 1. Parallel storage hydration across native bridge in a single batch
-        const [storedIdRaw, storedBm, storedRv, savedLang, cachedSits, cachedCats] = await Promise.all([
+        const [session, storedIdRaw, storedBm, storedRv, savedLang, cachedSits, cachedCats] = await Promise.all([
+          authService.getInitialSession(),
           AsyncStorage.getItem('legalace_user_id'),
           AsyncStorage.getItem('legalace_bookmarks'),
           AsyncStorage.getItem('legalace_recently_viewed'),
@@ -117,13 +124,18 @@ export default function App() {
           loadFromOfflineCache<CategoryItem[]>(CACHE_KEYS.CATEGORIES),
         ]);
 
-        let storedId = storedIdRaw;
+        let storedId = session?.user?.id || storedIdRaw;
         if (!storedId) {
           storedId = 'user_' + Math.random().toString(36).substring(2, 11);
           AsyncStorage.setItem('legalace_user_id', storedId).catch(() => {});
         }
 
         if (!ignore) {
+          if (session?.user) {
+            setCurrentUser(session.user);
+            setIsGuest(!!session.isGuest);
+          }
+          setAuthLoading(false);
           setUserId(storedId);
           if (storedBm) setBookmarks(JSON.parse(storedBm));
           if (storedRv) setRecentlyViewed(JSON.parse(storedRv));
@@ -174,12 +186,20 @@ export default function App() {
           });
       } catch {
         /* storage offline */
+        if (!ignore) setAuthLoading(false);
       }
     }
 
     init();
     return () => { ignore = true; };
   }, []);
+
+  const handleSignOut = async () => {
+    await authService.signOut();
+    setCurrentUser(null);
+    setIsGuest(false);
+    setActiveTab('home');
+  };
 
   const toggleBookmark = async (id: string) => {
     const updated = bookmarks.includes(id)
@@ -306,6 +326,34 @@ export default function App() {
     setExpandedCitation(null);
   };
 
+  if (authLoading) {
+    return (
+      <SafeAreaProvider>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.bg }}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </SafeAreaProvider>
+    );
+  }
+
+  if (!currentUser && !isGuest) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar barStyle="light-content" backgroundColor="#1e1b4b" />
+        <AuthScreen
+          onLoginSuccess={(user) => {
+            setCurrentUser(user);
+            setIsGuest(false);
+            setUserId(user.id);
+          }}
+          onContinueAsGuest={() => {
+            setIsGuest(true);
+          }}
+        />
+      </SafeAreaProvider>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <ToastProvider>
@@ -405,6 +453,9 @@ export default function App() {
                   setSelectedCategory({ id: 'bookmarks', name: 'Saved Situations', icon: '⭐' } as any);
                   setSituationScreen('list');
                 }}
+                currentUser={currentUser}
+                isGuest={isGuest}
+                onSignOut={handleSignOut}
               />
             )}
 
